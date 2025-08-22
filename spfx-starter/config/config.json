@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "welcome-banner-part-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/welcomeBannerPart/WelcomeBannerPartWebPart.js",
+          "manifest": "./src/webparts/welcomeBannerPart/WelcomeBannerPartWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js"
+  }
+}
