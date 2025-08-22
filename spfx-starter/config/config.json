@@ -9,10 +9,20 @@
           "manifest": "./src/webparts/welcomeBannerPart/WelcomeBannerPartWebPart.manifest.json"
         }
       ]
+    },
+    "quick-access-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/quickAccess/QuickAccessWebPart.js",
+          "manifest": "./src/webparts/quickAccess/QuickAccessWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
-    "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js"
+    "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js",
+    "QuickAccessWebPartStrings": "lib/webparts/quickAccess/loc/{locale}.js",
+    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js"
   }
 }
