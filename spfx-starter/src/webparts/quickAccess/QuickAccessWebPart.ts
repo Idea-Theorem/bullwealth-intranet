@@ -71,9 +71,26 @@ export default class QuickAccessWebPart extends BaseClientSideWebPart<IQuickAcce
                     },
                     {
                       id: 'iconUrl',
-                      title: 'Icon URL (upload image to SharePoint library and paste absolute URL)',
-                      type: CustomCollectionFieldType.url,
-                      required: true
+                      title: 'Icon',
+                      type: CustomCollectionFieldType.custom,
+                      required: true,
+                      onCustomRender: (field, value, onUpdate, item, itemId, fieldId) => {
+                        return React.createElement('input', {
+                          type: 'file',
+                          accept: '.png,.jpg,.jpeg,.svg,.gif',
+                          onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                            const file = event.target.files && event.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (e: ProgressEvent<FileReader>) => {
+                                onUpdate(field.id, e.target?.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          },
+                          style: { width: '100%' }
+                        });
+                      }
                     },
                     {
                       id: 'url',
