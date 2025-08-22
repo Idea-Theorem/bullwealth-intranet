@@ -17,12 +17,21 @@
           "manifest": "./src/webparts/quickAccess/QuickAccessWebPart.manifest.json"
         }
       ]
+    },
+    "cards-component-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/cardsComponent/CardsComponentWebPart.js",
+          "manifest": "./src/webparts/cardsComponent/CardsComponentWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js",
     "QuickAccessWebPartStrings": "lib/webparts/quickAccess/loc/{locale}.js",
-    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js"
+    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js",
+    "CardsComponentWebPartStrings": "lib/webparts/cardsComponent/loc/{locale}.js"
   }
 }

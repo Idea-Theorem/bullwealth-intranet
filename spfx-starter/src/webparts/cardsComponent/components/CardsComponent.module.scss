@@ -1,0 +1,59 @@
+.cardsComponent {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.intro {
+  font-size: 16px;
+  margin-bottom: 24px;
+  color: #555;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  width: 280px;
+  text-align: center;
+}
+
+.iconContainer {
+  background-color: #e8f5e9;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  max-width: 24px;
+  max-height: 24px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.cardDescription {
+  font-size: 14px;
+  color: #666;
+}
