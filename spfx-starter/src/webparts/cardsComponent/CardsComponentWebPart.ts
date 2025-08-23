@@ -13,13 +13,7 @@ import { ICardsComponentProps } from './components/ICardsComponentProps';
 
 import { PropertyFieldCollectionData, CustomCollectionFieldType } from '@pnp/spfx-property-controls/lib/PropertyFieldCollectionData';
 
-export interface ICardsComponentWebPartProps {
-  title: string;
-  intro: string;
-  cards: any[];
-}
-
-export default class CardsComponentWebPart extends BaseClientSideWebPart<ICardsComponentWebPartProps> {
+export default class CardsComponentWebPart extends BaseClientSideWebPart<ICardsComponentProps> {
 
   public render(): void {
     const element: React.ReactElement<ICardsComponentProps> = React.createElement(

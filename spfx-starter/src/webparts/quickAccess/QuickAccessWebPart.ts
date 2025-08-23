@@ -13,13 +13,7 @@ import { IQuickAccessProps } from './components/IQuickAccessProps';
 
 import { PropertyFieldCollectionData, CustomCollectionFieldType } from '@pnp/spfx-property-controls/lib/PropertyFieldCollectionData';
 
-export interface IQuickAccessWebPartProps {
-  title: string;
-  quickLinks: any[];
-  supports: any[];
-}
-
-export default class QuickAccessWebPart extends BaseClientSideWebPart<IQuickAccessWebPartProps> {
+export default class QuickAccessWebPart extends BaseClientSideWebPart<IQuickAccessProps> {
 
   public render(): void {
     const element: React.ReactElement<IQuickAccessProps> = React.createElement(
