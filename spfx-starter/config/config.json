@@ -25,6 +25,14 @@
           "manifest": "./src/webparts/cardsComponent/CardsComponentWebPart.manifest.json"
         }
       ]
+    },
+    "company-news-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/companyNews/CompanyNewsWebPart.js",
+          "manifest": "./src/webparts/companyNews/CompanyNewsWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -32,6 +40,7 @@
     "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js",
     "QuickAccessWebPartStrings": "lib/webparts/quickAccess/loc/{locale}.js",
     "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js",
-    "CardsComponentWebPartStrings": "lib/webparts/cardsComponent/loc/{locale}.js"
+    "CardsComponentWebPartStrings": "lib/webparts/cardsComponent/loc/{locale}.js",
+    "CompanyNewsWebPartStrings": "lib/webparts/companyNews/loc/{locale}.js"
   }
 }

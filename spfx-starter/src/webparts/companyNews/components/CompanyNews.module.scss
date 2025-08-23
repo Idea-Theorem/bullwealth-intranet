@@ -1,0 +1,220 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.companyNews {
+  padding: 40px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  
+  .sectionTitle {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 40px;
+    
+    @media (max-width: 768px) {
+      font-size: 24px;
+      margin-bottom: 30px;
+    }
+  }
+
+  .newsContainer {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 30px;
+  }
+
+  .newsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    transition: transform 0.3s ease-in-out;
+    
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  .newsCard {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .cardImage {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    position: relative;
+    background: #f0f0f0;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .newsCard:hover & img {
+      transform: scale(1.05);
+    }
+  }
+
+  .cardContent {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .authorInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .authorName {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .date {
+    color: #999;
+    font-size: 11px;
+  }
+
+  .shareButton {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    
+    &:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    span {
+      @media (max-width: 576px) {
+        display: none;
+      }
+    }
+  }
+
+  .cardTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 16px 0;
+    line-height: 1.4;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .readMoreLink {
+    color: #4A90E2;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s ease;
+    
+    &:hover {
+      color: #357ABD;
+      text-decoration: underline;
+    }
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+  }
+
+  .dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d0d0d0;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: #999;
+      transform: scale(1.2);
+    }
+    
+    &.active {
+      background: #4A90E2;
+      width: 30px;
+      border-radius: 5px;
+    }
+  }
+}
+
+// Support for Microsoft Teams
+.teams {
+  .companyNews {
+    padding: 20px;
+    
+    .sectionTitle {
+      text-align: left;
+    }
+  }
+}

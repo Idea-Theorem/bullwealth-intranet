@@ -1,0 +1,61 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "e8c3f6d7-9b5a-4c2e-8d1f-3a7b9e6c5d4f",
+  "alias": "CompanyNewsWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Company News & Updates" },
+    "description": { "default": "Display company news and updates in a carousel format" },
+    "officeFabricIconFontName": "News",
+    "properties": {
+      "title": "Company News & Updates",
+      "itemsToShow": 4,
+      "newsItems": [
+        {
+          "id": "1",
+          "title": "Quarterly Company Meeting",
+          "author": "John Doe",
+          "date": "June 23, 2025",
+          "imageUrl": "",
+          "description": "Join us for our quarterly all-hands meeting",
+          "shareUrl": ""
+        },
+        {
+          "id": "2",
+          "title": "Announcements",
+          "author": "John Doe",
+          "date": "June 23, 2025",
+          "imageUrl": "",
+          "description": "Important company announcements",
+          "shareUrl": ""
+        },
+        {
+          "id": "3",
+          "title": "New HR Policy Update",
+          "author": "John Doe",
+          "date": "June 23, 2025",
+          "imageUrl": "",
+          "description": "Latest HR policy updates",
+          "shareUrl": ""
+        },
+        {
+          "id": "4",
+          "title": "Wealth Podcasts",
+          "author": "John Doe",
+          "date": "June 23, 2025",
+          "imageUrl": "",
+          "description": "Financial wellness podcasts",
+          "shareUrl": ""
+        }
+      ]
+    }
+  }]
+}
