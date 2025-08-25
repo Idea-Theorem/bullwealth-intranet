@@ -13,31 +13,7 @@ import * as strings from 'WelcomeBannerPartWebPartStrings';
 import WelcomeBannerPart from './components/WelcomeBannerPart';
 import { IWelcomeBannerPartProps } from './components/IWelcomeBannerPartProps';
 
-export interface IWelcomeBannerPartWebPartProps {
-  // Basic properties
-  description: string;
-  
-  // CEO Message properties
-  messageTitle: string;
-  ceoName: string;
-  ceoTitle: string;
-  ceoMessage: string;
-  ceoExpandedMessage: string;
-  
-  // Image URLs
-  backgroundImageUrl: string;
-  ceoImageUrl: string;
-  
-  // Video properties
-  videoUrl: string;
-  showVideo: boolean;
-  
-  // Button text
-  readMoreText: string;
-  readLessText: string;
-}
-
-export default class WelcomeBannerPartWebPart extends BaseClientSideWebPart<IWelcomeBannerPartWebPartProps> {
+export default class WelcomeBannerPartWebPart extends BaseClientSideWebPart<IWelcomeBannerPartProps> {
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
