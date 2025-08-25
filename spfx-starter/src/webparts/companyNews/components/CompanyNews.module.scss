@@ -60,10 +60,10 @@
     transition: all .3s ease;
     padding: 12px;
     
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    }
+    // &:hover {
+    //   transform: translateY(-4px);
+    //   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    // }
   }
 
   .cardImage {

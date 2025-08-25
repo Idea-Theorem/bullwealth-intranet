@@ -41,7 +41,7 @@ const QuickAccess: React.FC<IQuickAccessProps> = (props) => {
             )}
           </div>
           <div className={styles.support}>
-            <div className={styles.supportTitle}>Tech Support ({escape(secondSupport.name)})</div>
+            <div className={styles.supportTitle}>{escape(secondSupport.name)}</div>
             {secondSupport.email && (
               <div className={styles.supportItem}>
                 <Icon iconName="Mail" className={styles.supportIcon} />
