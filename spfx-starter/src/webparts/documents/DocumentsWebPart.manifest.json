@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "c9f4e2d8-7a6b-4e3c-9f2d-5b8a1c7d3e9f",
+  "alias": "DocumentsWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Documents" },
+    "description": { "default": "Display document categories with links to document libraries" },
+    "officeFabricIconFontName": "Documentation",
+    "properties": {
+      "title": "Documents",
+      "columnsPerRow": 4,
+      "category1Title": "Compliance",
+      "category1ImageUrl": "",
+      "category1DocumentUrl": "",
+      "category1ViewAllUrl": "",
+      "category2Title": "Research & Investments",
+      "category2ImageUrl": "",
+      "category2DocumentUrl": "",
+      "category2ViewAllUrl": "",
+      "category3Title": "Advisory Group",
+      "category3ImageUrl": "",
+      "category3DocumentUrl": "",
+      "category3ViewAllUrl": "",
+      "category4Title": "Operations",
+      "category4ImageUrl": "",
+      "category4DocumentUrl": "",
+      "category4ViewAllUrl": "",
+      "category5Title": "Business Development",
+      "category5ImageUrl": "",
+      "category5DocumentUrl": "",
+      "category5ViewAllUrl": "",
+      "category6Title": "Tax & Accounting",
+      "category6ImageUrl": "",
+      "category6DocumentUrl": "",
+      "category6ViewAllUrl": ""
+    }
+  }]
+}

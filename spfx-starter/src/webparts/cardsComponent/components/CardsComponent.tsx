@@ -7,6 +7,7 @@ const CardsComponent: React.FC<ICardsComponentProps> = (props) => {
   const cards = props.cards || [];
 
   return (
+    <div className={styles.CanvasSection}>
     <div className={styles.cardsComponent}>
       <h2 className={styles.title}>{escape(props.title || '6 Core Values')}</h2>
       <p className={styles.intro}>{escape(props.intro || 'At Bullwealth, our core values guide everything we do. They define who we are as a company and how we serve our clients.')}</p>
@@ -21,6 +22,7 @@ const CardsComponent: React.FC<ICardsComponentProps> = (props) => {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ const QuickAccess: React.FC<IQuickAccessProps> = (props) => {
   const secondSupport = supports[1] || { name: '', email: '', phone: '' };
 
   return (
+    <div className={styles.CanvasSection}>
     <div className={styles.quickAccess}>
       <h2 className={styles.title}>{escape(props.title || 'Quick Access')}</h2>
       <div className={styles.container}>
@@ -56,6 +57,7 @@ const QuickAccess: React.FC<IQuickAccessProps> = (props) => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

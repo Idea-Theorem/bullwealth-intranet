@@ -33,7 +33,27 @@
           "manifest": "./src/webparts/companyNews/CompanyNewsWebPart.manifest.json"
         }
       ]
+    },
+    "video-banner-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/videoBanner/VideoBannerWebPart.js",
+          "manifest": "./src/webparts/videoBanner/VideoBannerWebPart.manifest.json"
+        }
+      ]
+    },
+
+    "documents-web-part": {
+  "components": [
+    {
+      "entrypoint": "./lib/webparts/documents/DocumentsWebPart.js",
+      "manifest": "./src/webparts/documents/DocumentsWebPart.manifest.json"
     }
+  ]
+}
+
+
+    
   },
   "externals": {},
   "localizedResources": {

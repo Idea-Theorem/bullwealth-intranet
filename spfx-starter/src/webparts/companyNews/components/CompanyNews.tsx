@@ -169,7 +169,7 @@ export default class CompanyNews extends React.Component<ICompanyNewsProps, ICom
                 <div className={styles.cardContent}>
                   <div className={styles.cardHeader}>
                     <div className={styles.authorInfo}>
-                      <span className={styles.authorName}>{item.author}</span>
+                      <span className={styles.authorName}>{item.author}</span>-
                       <span className={styles.date}>{item.date}</span>
                     </div>
                     <button 

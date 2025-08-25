@@ -1,16 +1,21 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-
+@media screen and (min-width: 1024px) {
+    .a_a_cb6f7c2e:not(.e_a_cb6f7c2e) .h_a_cb6f7c2e {
+        display: flex;
+        max-width: 1200px !important;
+    }
+}
 .companyNews {
-  padding: 40px 0;
-  max-width: 1200px;
+      max-width: 1440px;
+    padding: 0px 0px 60px 0px;
   margin: 0 auto;
   
   .sectionTitle {
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
     color: #2c3e50;
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 2rem;
     
     @media (max-width: 768px) {
       font-size: 24px;
@@ -27,7 +32,7 @@
   .newsGrid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
+    gap: 20px;
     transition: transform 0.3s ease-in-out;
     
     @media (max-width: 1200px) {
@@ -46,13 +51,14 @@
   }
 
   .newsCard {
-    background: white;
+        background: #fff;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 6px 12px #00000013;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    transition: all .3s ease;
+    padding: 12px;
     
     &:hover {
       transform: translateY(-4px);
@@ -68,6 +74,7 @@
     background: #f0f0f0;
     
     img {
+          border-radius: 12px;
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -97,8 +104,8 @@
 
   .authorInfo {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    gap: 10px;
   }
 
   .authorName {
@@ -112,17 +119,17 @@
   }
 
   .shareButton {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
+        align-items: center;
+    background: 0 0;
+    border: 1px solid #A5A5A5;
+    border-radius: 5px;
     color: #666;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+    display: flex;
     font-size: 12px;
+    gap: 4px;
+    padding: 4px 8px;
+    transition: all .2s ease;
     
     &:hover {
       background: #f0f0f0;
@@ -142,11 +149,12 @@
   }
 
   .cardTitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0 0 16px 0;
-    line-height: 1.4;
+    font-size: 18px;
+    font-weight: 700;
+    color: #000;
+    margin: 0 0 15px 0;
+    line-height: 1.6;
+    font-family: Calibri;
     flex: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -156,7 +164,7 @@
   }
 
   .readMoreLink {
-    color: #4A90E2;
+    color: #42B574;
     background: none;
     border: none;
     padding: 0;
@@ -165,6 +173,7 @@
     cursor: pointer;
     text-align: left;
     transition: color 0.2s ease;
+    font-family: Calibri;
     
     &:hover {
       color: #357ABD;
@@ -186,24 +195,26 @@
   }
 
   .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #d0d0d0;
+    width: 14px;
+    height: 14px;
+    border-radius: 100px;
+    background: #B3B3B3;
     border: none;
     cursor: pointer;
     padding: 0;
     transition: all 0.3s ease;
     
     &:hover {
-      background: #999;
+      background: #42B574;
       transform: scale(1.2);
     }
     
     &.active {
-      background: #4A90E2;
-      width: 30px;
-      border-radius: 5px;
+          background: #42B574;
+    border-radius: 100px;
+    width: 14px;
+    height: 14px;
+
     }
   }
 }
