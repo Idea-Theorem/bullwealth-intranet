@@ -4,66 +4,36 @@ import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneTextField,
-  PropertyPaneSlider
+  PropertyPaneSlider,
+  PropertyPaneButton,
+  PropertyPaneButtonType
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import Documents from './components/Documents';
-import { IDocumentsProps } from './components/IDocumentsProps';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 export interface IDocumentCategory {
+  imageUrl: string;
   id: string;
   title: string;
-  imageUrl: string;
-  documentUrl: string;
+  imageData: string; // Base64 encoded image
+  libraryUrl: string;
+  libraryName: string;
   viewAllUrl: string;
 }
 
 export interface IDocumentsWebPartProps {
   title: string;
   columnsPerRow: number;
-  
-  // Support up to 8 document categories
-  category1Title: string;
-  category1ImageUrl: string;
-  category1DocumentUrl: string;
-  category1ViewAllUrl: string;
-  
-  category2Title: string;
-  category2ImageUrl: string;
-  category2DocumentUrl: string;
-  category2ViewAllUrl: string;
-  
-  category3Title: string;
-  category3ImageUrl: string;
-  category3DocumentUrl: string;
-  category3ViewAllUrl: string;
-  
-  category4Title: string;
-  category4ImageUrl: string;
-  category4DocumentUrl: string;
-  category4ViewAllUrl: string;
-  
-  category5Title: string;
-  category5ImageUrl: string;
-  category5DocumentUrl: string;
-  category5ViewAllUrl: string;
-  
-  category6Title: string;
-  category6ImageUrl: string;
-  category6DocumentUrl: string;
-  category6ViewAllUrl: string;
-  
-  category7Title: string;
-  category7ImageUrl: string;
-  category7DocumentUrl: string;
-  category7ViewAllUrl: string;
-  
-  category8Title: string;
-  category8ImageUrl: string;
-  category8DocumentUrl: string;
-  category8ViewAllUrl: string;
+  categories: string; // JSON string to store categories
+}
+
+export interface IDocumentsWebPartProps {
+  title: string;
+  columnsPerRow: number;
+  categories: string; // JSON string to store categories
 }
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
@@ -72,60 +42,120 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
   private _environmentMessage: string = '';
 
   public render(): void {
-    const categories: IDocumentCategory[] = [];
+    let categories: IDocumentCategory[] = [];
     
-    const defaultTitles = [
-      'Compliance',
-      'Research & Investments',
-      'Advisory Group',
-      'Operations',
-      'Business Development',
-      'Tax & Accounting',
-      'Employee Directory',
-      'Human Resources'
-    ];
-
-    // Build categories array from properties
-    for (let i = 1; i <= 8; i++) {
-      const props = this.properties as any;
-      if (props[`category${i}Title`]) {
-        categories.push({
-          id: i.toString(),
-          title: props[`category${i}Title`],
-          imageUrl: props[`category${i}ImageUrl`] || '',
-          documentUrl: props[`category${i}DocumentUrl`] || '#',
-          viewAllUrl: props[`category${i}ViewAllUrl`] || '#'
-        });
-      }
+    try {
+      categories = this.properties.categories ? JSON.parse(this.properties.categories) : this.getDefaultCategories();
+    } catch {
+      categories = this.getDefaultCategories();
     }
 
-    // If no categories configured, use defaults
-    if (categories.length === 0) {
-      for (let i = 0; i < 6; i++) {
-        categories.push({
-          id: (i + 1).toString(),
-          title: defaultTitles[i],
-          imageUrl: '',
-          documentUrl: '#',
-          viewAllUrl: '#'
-        });
-      }
-    }
-
-    const element: React.ReactElement<IDocumentsProps> = React.createElement(
+    const element = React.createElement(
       Documents,
       {
         title: this.properties.title || 'Documents',
-        categories: categories,
+        categories: categories.map(cat => ({
+          ...cat,
+          imageUrl: cat.imageUrl ?? '', // Provide empty string if imageUrl is missing
+        })),
         columnsPerRow: this.properties.columnsPerRow || 4,
+        context: this.context,
         isDarkTheme: this._isDarkTheme,
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName
+        userDisplayName: this.context.pageContext.user.displayName,
+        onCategoriesUpdate: (updatedCategories: IDocumentCategory[]) => {
+          this.properties.categories = JSON.stringify(updatedCategories);
+          this.context.propertyPane.refresh();
+          this.render();
+        }
       }
     );
 
     ReactDom.render(element, this.domElement);
+  }
+
+  private getDefaultCategories(): IDocumentCategory[] {
+    return [
+      {
+        id: '1',
+        title: 'Compliance',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Compliance Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      },
+      {
+        id: '2',
+        title: 'Research & Investments',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Research Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      },
+      {
+        id: '3',
+        title: 'Advisory Group',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Advisory Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      },
+      {
+        id: '4',
+        title: 'Operations',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Operations Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      },
+      {
+        id: '5',
+        title: 'Business Development',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Business Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      },
+      {
+        id: '6',
+        title: 'Tax & Accounting',
+        imageData: '',
+        libraryUrl: '',
+        libraryName: 'Tax Documents',
+        viewAllUrl: '',
+        imageUrl: ''
+      }
+    ];
+  }
+
+  private _uploadImage = (categoryIndex: number): void => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
+          if (categories[categoryIndex]) {
+            categories[categoryIndex].imageData = event.target?.result as string;
+            this.properties.categories = JSON.stringify(categories);
+            this.context.propertyPane.refresh();
+            this.render();
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    fileInput.click();
   }
 
   protected onInit(): Promise<void> {
@@ -191,31 +221,58 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    const categoryGroups = [];
+    const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
     
-    for (let i = 1; i <= 8; i++) {
-      categoryGroups.push({
-        groupName: `Category ${i}`,
-        groupFields: [
-          PropertyPaneTextField(`category${i}Title`, {
-            label: 'Title',
-            placeholder: 'Enter category title'
-          }),
-          PropertyPaneTextField(`category${i}ImageUrl`, {
-            label: 'Image URL',
-            placeholder: 'https://your-site/image.jpg'
-          }),
-          PropertyPaneTextField(`category${i}DocumentUrl`, {
-            label: 'Document Library URL',
-            placeholder: 'https://your-site/Shared%20Documents'
-          }),
-          PropertyPaneTextField(`category${i}ViewAllUrl`, {
-            label: 'View All Documents URL',
-            placeholder: 'https://your-site/Shared%20Documents/Forms/AllItems.aspx'
-          })
-        ]
-      });
-    }
+    const categoryGroups = categories.map((category, index) => ({
+      groupName: `Category: ${category.title}`,
+      groupFields: [
+        PropertyPaneTextField(`tempTitle_${index}`, {
+          label: 'Title',
+          value: category.title,
+          onGetErrorMessage: (value: string) => {
+            if (!value) return 'Title is required';
+            const cats = JSON.parse(this.properties.categories || '[]');
+            cats[index].title = value;
+            this.properties.categories = JSON.stringify(cats);
+            this.render();
+            return '';
+          }
+        }),
+        PropertyPaneTextField(`tempLibrary_${index}`, {
+          label: 'Document Library Name',
+          value: category.libraryName,
+          placeholder: 'e.g., Compliance Documents',
+          description: 'Enter the SharePoint library name',
+          onGetErrorMessage: (value: string) => {
+            const cats = JSON.parse(this.properties.categories || '[]');
+            cats[index].libraryName = value;
+            cats[index].libraryUrl = value ? `${this.context.pageContext.web.absoluteUrl}/${value.replace(/\s+/g, '')}` : '';
+            cats[index].viewAllUrl = value ? `${this.context.pageContext.web.absoluteUrl}/${value.replace(/\s+/g, '')}/Forms/AllItems.aspx` : '';
+            this.properties.categories = JSON.stringify(cats);
+            this.render();
+            return '';
+          }
+        }),
+        PropertyPaneButton(`uploadImage_${index}`, {
+          text: category.imageData ? 'Change Image' : 'Upload Image',
+          buttonType: PropertyPaneButtonType.Normal,
+          onClick: () => this._uploadImage(index)
+        }),
+        PropertyPaneButton(`deleteCategory_${index}`, {
+          text: 'Delete Category',
+          buttonType: PropertyPaneButtonType.Normal,
+          onClick: () => {
+            if (confirm('Are you sure you want to delete this category?')) {
+              const cats = JSON.parse(this.properties.categories || '[]');
+              cats.splice(index, 1);
+              this.properties.categories = JSON.stringify(cats);
+              this.context.propertyPane.refresh();
+              this.render();
+            }
+          }
+        })
+      ]
+    }));
 
     return {
       pages: [
@@ -225,11 +282,8 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
           },
           groups: [
             {
-              groupName: 'General Settings',
+              groupName: 'Display Settings',
               groupFields: [
-                PropertyPaneTextField('title', {
-                  label: 'Section Title'
-                }),
                 PropertyPaneSlider('columnsPerRow', {
                   label: 'Columns per row',
                   min: 2,
@@ -237,6 +291,24 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
                   value: this.properties.columnsPerRow || 4,
                   showValue: true,
                   step: 1
+                }),
+                PropertyPaneButton('addCategory', {
+                  text: 'Add New Category',
+                  buttonType: PropertyPaneButtonType.Primary,
+                  onClick: () => {
+                    const cats = JSON.parse(this.properties.categories || '[]');
+                    cats.push({
+                      id: Date.now().toString(),
+                      title: 'New Category',
+                      imageData: '',
+                      libraryUrl: '',
+                      libraryName: '',
+                      viewAllUrl: ''
+                    });
+                    this.properties.categories = JSON.stringify(cats);
+                    this.context.propertyPane.refresh();
+                    this.render();
+                  }
                 })
               ]
             },

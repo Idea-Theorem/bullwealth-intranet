@@ -1,0 +1,255 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.compliancePolicies {
+  padding: 0px 0;
+  background: #fff;
+  // min-height: 400px;
+  
+  @media (max-width: 768px) {
+    padding: 20px 0;
+  }
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px;
+  
+  @media (max-width: 768px) {
+    padding: 0 16px;
+  }
+}
+
+.sectionTitle {
+      border-bottom: 0px dotted #dee2e6;
+    color: #000;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 15px;
+    padding-bottom: 15px;
+    font-family: Calibri;
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+}
+
+.categoryHeader {
+  align-items: center;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 24px;
+    gap: 16px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+.categoryTitle {
+      color: #3F3F3F;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    font-family: Calibri;
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
+}
+
+.viewAllButton {
+  background: #42B574;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  }
+  
+  &:focus {
+    outline: 2px solid #27ae60;
+    outline-offset: 2px;
+  }
+  
+  @media (max-width: 576px) {
+    width: 100%;
+  }
+}
+
+.policiesGrid {
+  display: grid;
+  gap: 24px;
+  
+  @media (max-width: 768px) {
+    gap: 20px;
+  }
+  
+  @media (max-width: 576px) {
+    gap: 16px;
+  }
+  
+  &.columns1 {
+    grid-template-columns: 1fr;
+  }
+  
+  &.columns2 {
+    grid-template-columns: repeat(2, 1fr);
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &.columns3 {
+    grid-template-columns: repeat(3, 1fr);
+    
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &.columns4 {
+    grid-template-columns: repeat(4, 1fr);
+    
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.policyCard {
+  background: white;
+  border: 1px solid #27ae60;
+  border-radius: 8px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #229954;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+}
+
+.policyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+}
+
+.policyDate {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 16px;
+  
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+}
+
+.policyDescription {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4a5568;
+  margin: 0 0 20px 0;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+}
+
+.policyActions {
+  display: flex;
+  gap: 12px;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+    
+    .icon {
+      transform: translateY(-2px);
+    }
+  }
+  
+  &:focus {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+// Support for Microsoft Teams
+.teams {
+  .compliancePolicies {
+    background: transparent;
+  }
+  
+  .policyCard {
+    border-radius: 4px;
+  }
+}

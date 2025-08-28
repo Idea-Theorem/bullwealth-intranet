@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b5c7d9e4-1a8f-4e2c-9d6b-8f7a3c5e2b1d",
+  "alias": "HRDocumentsWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "HR Documents" },
+    "description": { "default": "Display HR documents with customizable icons" },
+    "officeFabricIconFontName": "DocumentSet",
+    "properties": {
+      "title": "Common HR Documents",
+      "columnsPerRow": 4,
+      "showDate": true,
+      "allowUpload": true,
+      "documents": ""
+    }
+  }]
+}

@@ -284,3 +284,9 @@
     border-radius: 0;
   }
 }
+
+/* Add your styles here */
+
+.viewButton { background-color: #0078d4; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+
+.viewButton:hover, .viewButton:focus { background-color: #005a9e; }

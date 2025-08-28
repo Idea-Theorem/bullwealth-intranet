@@ -1,0 +1,107 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.headingAndSubheading {
+  overflow: hidden;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  background-color: "[theme:bodyBackground, default: #ffffff]";
+  background-color: var(--bodyBackground);
+
+  .container {
+    max-width: 1440px;
+    margin: 0px auto;
+    width: 100%;
+    padding: 0px 20px;
+  }
+
+  .content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .heading {
+        color: #000000;
+    font-family: Segoe UI, "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0px;
+    line-height: 1.5;
+    margin-bottom: 5px;
+
+    @media (max-width: 768px) {
+      font-size: 22px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 20px;
+    }
+  }
+
+  .subheading {
+        color: #000000;
+    font-family: Segoe UI, "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0;
+
+
+    @media (max-width: 768px) {
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
+  }
+
+  .userInfo {
+    font-size: 14px;
+    color: #0078d4;
+    margin-top: 12px;
+    font-weight: 500;
+  }
+
+  // Teams-specific styles
+  &.teams {
+    background-color: transparent;
+    
+    .heading {
+      color: #242424;
+    }
+    
+    .subheading {
+      color: #484644;
+    }
+  }
+}
+
+// Dark theme support
+[data-theme="dark"] .headingAndSubheading {
+  .heading {
+    color: #ffffff;
+  }
+  
+  .subheading {
+    color: #d2d0ce;
+  }
+  
+  .userInfo {
+    color: #479ef5;
+  }
+}
+
+// High contrast theme support
+@media (prefers-contrast: high) {
+  .headingAndSubheading {
+    .heading {
+      color: WindowText;
+    }
+    
+    .subheading {
+      color: WindowText;
+    }
+  }
+}

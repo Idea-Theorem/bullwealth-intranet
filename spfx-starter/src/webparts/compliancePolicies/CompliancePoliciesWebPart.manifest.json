@@ -1,0 +1,41 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "d8e5f9a6-3c7b-4d8e-a1f9-6b9c2d4e5a7f",
+  "alias": "CompliancePoliciesWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Compliance Policies" },
+    "description": { "default": "Display compliance policies and documents with export and share functionality" },
+    "officeFabricIconFontName": "ComplianceAudit",
+    "properties": {
+      "sectionTitle": "Compliance",
+      "categoryTitle": "Policies",
+      "viewAllText": "View all",
+      "viewAllUrl": "",
+      "columnsPerRow": 3,
+      "showExportButton": true,
+      "showShareButton": true,
+      "numberOfPolicies": 3,
+      "policy1Title": "Record Keeping Policy",
+      "policy1Description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      "policy1Date": "Dec 22, 2023",
+      "policy1Url": "",
+      "policy2Title": "Cross Trade Policy",
+      "policy2Description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      "policy2Date": "Dec 22, 2023",
+      "policy2Url": "",
+      "policy3Title": "Compliance Manual Deck",
+      "policy3Description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      "policy3Date": "Dec 22, 2023",
+      "policy3Url": ""
+    }
+  }]
+}
