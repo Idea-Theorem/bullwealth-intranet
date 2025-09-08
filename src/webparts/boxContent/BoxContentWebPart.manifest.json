@@ -1,0 +1,31 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "87654321-4321-4321-4321-210987654321",
+  "alias": "BoxContentWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+  "preconfiguredEntries": [{
+    "groupId": "cf066440-0614-43d6-98ae-0b31cf14c7c3",
+    "group": { "default": "Text, media, and content" },
+    "title": { "default": "Box Content" },
+    "description": { "default": "Dynamic content box with customizable title, description, and action button" },
+    "officeFabricIconFontName": "GridViewMedium",
+    "properties": {
+      "title": "HR Platform Introduction",
+      "description": "Get started with our HR platform. HR Platform Introductory Call Recording",
+      "duration": "25 minutes",
+      "buttonText": "Watch",
+      "buttonUrl": "",
+      "buttonIcon": "Play",
+      "backgroundColor": "#ffffff",
+      "titleColor": "#323130",
+      "descriptionColor": "#605e5c",
+      "buttonColor": "#5cb85c",
+      "showDuration": true
+    }
+  }]
+}

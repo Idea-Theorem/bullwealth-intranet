@@ -1,0 +1,133 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "welcome-banner-part-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/welcomeBannerPart/WelcomeBannerPartWebPart.js",
+          "manifest": "./src/webparts/welcomeBannerPart/WelcomeBannerPartWebPart.manifest.json"
+        }
+      ]
+    },
+    "quick-access-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/quickAccess/QuickAccessWebPart.js",
+          "manifest": "./src/webparts/quickAccess/QuickAccessWebPart.manifest.json"
+        }
+      ]
+    },
+    "cards-component-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/cardsComponent/CardsComponentWebPart.js",
+          "manifest": "./src/webparts/cardsComponent/CardsComponentWebPart.manifest.json"
+        }
+      ]
+    },
+    "company-news-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/companyNews/CompanyNewsWebPart.js",
+          "manifest": "./src/webparts/companyNews/CompanyNewsWebPart.manifest.json"
+        }
+      ]
+    },
+    "video-banner-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/videoBanner/VideoBannerWebPart.js",
+          "manifest": "./src/webparts/videoBanner/VideoBannerWebPart.manifest.json"
+        }
+      ]
+    },
+    "documents-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/documents/DocumentsWebPart.js",
+          "manifest": "./src/webparts/documents/DocumentsWebPart.manifest.json"
+        }
+      ]
+    },
+    "compliance-policies-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/compliancePolicies/CompliancePoliciesWebPart.js",
+          "manifest": "./src/webparts/compliancePolicies/CompliancePoliciesWebPart.manifest.json"
+        }
+      ]
+    },
+    "document-library-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/documentLibrary/DocumentLibraryWebPart.js",
+          "manifest": "./src/webparts/documentLibrary/DocumentLibraryWebPart.manifest.json"
+        }
+      ]
+    },
+    "hr-documents-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/hrDocuments/HRDocumentsWebPart.js",
+          "manifest": "./src/webparts/hrDocuments/HRDocumentsWebPart.manifest.json"
+        }
+      ]
+    },
+    "heading-and-subheading-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/headingAndSubheading/HeadingAndSubheadingWebPart.js",
+          "manifest": "./src/webparts/headingAndSubheading/HeadingAndSubheadingWebPart.manifest.json"
+        }
+      ]
+    },
+    "box-content-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/boxContent/BoxContentWebPart.js",
+          "manifest": "./src/webparts/boxContent/BoxContentWebPart.manifest.json"
+        }
+      ]
+    },
+    "two-col-box-content-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/2ColBoxContent/2ColBoxContentWebPart.js",
+          "manifest": "./src/webparts/2ColBoxContent/2ColBoxContentWebPart.manifest.json"
+        }
+      ]
+    },
+    "employee-directory-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/employeeDirectory/EmployeeDirectoryWebPart.js",
+          "manifest": "./src/webparts/employeeDirectory/EmployeeDirectoryWebPart.manifest.json"
+        }
+      ]
+    },
+    "bull-wealth-navigation-application-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/bullWealthNavigation/BullWealthNavigationApplicationCustomizer.js",
+          "manifest": "./src/extensions/bullWealthNavigation/BullWealthNavigationApplicationCustomizer.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "WelcomeBannerPartWebPartStrings": "lib/webparts/welcomeBannerPart/loc/{locale}.js",
+    "QuickAccessWebPartStrings": "lib/webparts/quickAccess/loc/{locale}.js",
+    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js",
+    "CardsComponentWebPartStrings": "lib/webparts/cardsComponent/loc/{locale}.js",
+    "CompanyNewsWebPartStrings": "lib/webparts/companyNews/loc/{locale}.js",
+    "HeadingAndSubheadingWebPartStrings": "lib/webparts/headingAndSubheading/loc/{locale}.js",
+    "BoxContentWebPartStrings": "lib/webparts/boxContent/loc/{locale}.js",
+    "TwoColBoxContentWebPartStrings": "lib/webparts/2ColBoxContent/loc/{locale}.js",
+    "EmployeeDirectoryWebPartStrings": "lib/webparts/employeeDirectory/loc/{locale}.js",
+    "DocumentLibraryWebPartStrings": "lib/webparts/documentLibrary/loc/{locale}.js",
+    "BullWealthNavigationApplicationCustomizerStrings": "lib/extensions/bullWealthNavigation/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+  }
+}

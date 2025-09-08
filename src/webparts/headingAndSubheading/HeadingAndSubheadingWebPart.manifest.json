@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "12345678-1234-1234-1234-123456789012",
+  "alias": "HeadingAndSubheadingWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+  "preconfiguredEntries": [{
+    "groupId": "cf066440-0614-43d6-98ae-0b31cf14c7c3",
+    "group": { "default": "Text, media, and content" },
+    "title": { "default": "Heading and Subheading" },
+    "description": { "default": "Display customizable heading and subheading content" },
+    "officeFabricIconFontName": "Header1",
+    "properties": {
+      "heading": "Human Resource",
+      "subheading": "Below is various documents, training and material for HR"
+    }
+  }]
+}

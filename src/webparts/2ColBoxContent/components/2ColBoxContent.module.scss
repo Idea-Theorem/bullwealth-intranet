@@ -1,0 +1,301 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.twoColBoxContent {
+  padding: 16px;
+  
+  .cardsContainer {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    align-items: stretch;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &.reversed {
+      flex-direction: row-reverse;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+      }
+    }
+  }
+
+  .cardWrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .contactCard {
+    background-color: #ffffff;
+    border: 1px solid #e1dfdd;
+    border-radius: 6px;
+    padding: 16px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease-in-out;
+    
+    &:hover {
+      box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .cardHeader {
+    margin-bottom: 16px;
+  }
+
+  .headerContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+  }
+
+  .titleSection {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cardTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #323130;
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+  }
+
+  .cardSubtitle {
+    font-size: 11px;
+    font-weight: 400;
+    color: #605e5c;
+    margin: 0;
+    line-height: 1.3;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+  }
+
+  .headerButtons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    
+    @media (max-width: 768px) {
+      width: 100%;
+    }
+  }
+
+  .headerButton {
+    background-color: #5cb85c;
+    border: none;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: all 0.2s ease-in-out;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    min-height: 24px;
+    white-space: nowrap;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+
+    // Phone button specific color - target the second button
+    &:last-child {
+      background-color: #5bc0de;
+    }
+
+    @media (max-width: 768px) {
+      flex: 1;
+      padding: 8px 12px;
+    }
+  }
+
+  .cardBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contactInfo {
+    flex: 1;
+  }
+
+  .nameSection {
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .nameLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #323130;
+    margin-right: 2px;
+  }
+
+  .nameValue {
+    font-size: 12px;
+    font-weight: 400;
+    color: #323130;
+  }
+
+  .contactDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .contactItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .contactIcon {
+    font-size: 12px;
+    color: #605e5c;
+    flex-shrink: 0;
+    width: 12px;
+    text-align: center;
+  }
+
+  .contactLink {
+    font-size: 12px;
+    font-weight: 400;
+    color: #0078d4;
+    text-decoration: none;
+    word-break: break-all;
+    line-height: 1.3;
+    
+    &:hover {
+      text-decoration: underline;
+      color: #106ebe;
+    }
+
+    &:visited {
+      color: #0078d4;
+    }
+  }
+
+  .buttonIcon {
+    font-size: 10px;
+  }
+
+  // Remove the old action buttons styles since we moved them to header
+  .actionButtons {
+    display: none;
+  }
+
+  .actionButton {
+    display: none;
+  }
+
+  // Teams-specific styles
+  &.teams {
+    .contactCard {
+      background-color: transparent;
+      border: 1px solid #e1dfdd;
+    }
+    
+    .cardTitle {
+      color: #242424;
+    }
+    
+    .cardSubtitle {
+      color: #484644;
+    }
+
+    .nameValue {
+      color: #242424;
+    }
+
+    .contactIcon {
+      color: #484644;
+    }
+  }
+}
+
+// Dark theme support
+[data-theme="dark"] .twoColBoxContent {
+  .contactCard {
+    background-color: #201f1e;
+    border-color: #323130;
+  }
+  
+  .cardTitle,
+  .nameLabel,
+  .nameValue {
+    color: #ffffff;
+  }
+  
+  .cardSubtitle {
+    color: #d2d0ce;
+  }
+
+  .contactIcon {
+    color: #d2d0ce;
+  }
+
+  .contactLink {
+    color: #479ef5;
+
+    &:hover {
+      color: #62abf5;
+    }
+
+    &:visited {
+      color: #479ef5;
+    }
+  }
+}
+
+// High contrast theme support
+@media (prefers-contrast: high) {
+  .twoColBoxContent {
+    .contactCard {
+      border-width: 2px;
+    }
+    
+    .cardTitle,
+    .nameLabel,
+    .nameValue {
+      color: WindowText;
+    }
+    
+    .cardSubtitle {
+      color: WindowText;
+    }
+
+    .contactLink {
+      color: LinkText;
+
+      &:hover {
+        color: LinkText;
+      }
+    }
+
+    .headerButton {
+      border: 1px solid WindowText;
+    }
+  }
+}

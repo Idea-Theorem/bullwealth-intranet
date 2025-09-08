@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-extension-manifest.schema.json",
+  "id": "3a58288d-22b2-4c3c-99b7-dfc042999e43",
+  "alias": "BullWealthNavigationApplicationCustomizer",
+  "componentType": "Extension",
+  "extensionType": "ApplicationCustomizer",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage"],
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "BullWealth Navigation" },
+    "description": { "default": "Custom navigation for BullWealth Intranet" },
+    "officeFabricIconFontName": "Nav2DMapView",
+    "properties": {
+      "homeUrl": "/",
+      "bullWealthUrl": "/sites/bullwealth",
+      "cloverUrl": "/sites/clover",
+      "hrUrl": "/sites/hr",
+      "itPolicyUrl": "/sites/it-policy",
+      "helpUrl": "/sites/help"
+    }
+  }]
+}

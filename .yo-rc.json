@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": false,
+    "nodeVersion": "22.18.0",
+    "sdksVersions": {},
+    "version": "1.21.1",
+    "libraryName": "welcome-banner",
+    "libraryId": "e1a45c8f-413c-4de9-abc8-3611caa22b12",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "welcome-banner",
+    "solutionShortDescription": "welcome-banner description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "extension",
+    "extensionType": "ApplicationCustomizer"
+  }
+}

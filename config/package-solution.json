@@ -1,0 +1,45 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "IdeaTheorem Intranet Theme",
+    "id": "e1a45c8f-413c-4de9-abc8-3611caa22b12",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "IdeaTheorem",
+      "websiteUrl": "https://ideatheorem.com",
+      "privacyUrl": "https://ideatheorem.com/privacy",
+      "termsOfUseUrl": "https://ideatheorem.com/terms",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "IdeaTheorem Intranet Navigation and Theme"
+      },
+      "longDescription": {
+        "default": "Custom navigation and theme components for IdeaTheorem Intranet"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "IdeaTheorem Navigation Feature",
+        "description": "Tenant-wide navigation deployment for IdeaTheorem Intranet",
+        "id": "d3c0475b-59bb-4570-bfcc-0ce0c0426620",
+        "version": "1.0.0.0",
+        "assets": {
+          "elementManifests": [
+            "ClientSideInstance.xml"
+          ]
+        }
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/ideatheorem-intranet-theme.sppkg"
+  }
+}

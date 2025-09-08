@@ -1,0 +1,24 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "62b0589b-2871-4b8e-b522-148aa27704e7",
+  "alias": "EmployeeDirectoryWebPart",
+  "componentType": "WebPart",
+  
+  "version": "*",
+  "manifestVersion": 2,
+  
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Employee Directory" },
+    "description": { "default": "Display employee directory with contact information" },
+    "officeFabricIconFontName": "People",
+    "properties": {
+      "title": "Compliance",
+      "maxEmployeesToShow": 5
+    }
+  }]
+}
