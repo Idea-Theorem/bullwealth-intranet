@@ -1,0 +1,203 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.welcomeBannerPart {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 3px solid #9b59b6; // Purple border as shown in image
+  
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.7) 0%, rgba(155, 89, 182, 0.7) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .contentCard {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 900px;
+    width: 100%;
+    display: flex;
+    gap: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      padding: 30px;
+      gap: 30px;
+    }
+  }
+
+  .textSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    padding-bottom: 10px;
+    
+    @media (max-width: 768px) {
+      font-size: 24px;
+    }
+  }
+
+  .messageContent {
+    flex: 1;
+  }
+
+  .message {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #34495e;
+    margin: 0 0 10px 0;
+    font-style: italic;
+  }
+
+  .expandedMessage {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #34495e;
+    margin: 10px 0;
+    font-style: italic;
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  .readMoreButton {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-self: flex-start;
+    
+    &:hover {
+      background-color: #229954;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+    }
+    
+    &:focus {
+      outline: 2px solid #27ae60;
+      outline-offset: 2px;
+    }
+  }
+
+  .videoSection {
+    flex: 0 0 300px;
+    
+    @media (max-width: 768px) {
+      flex: 1;
+      width: 100%;
+    }
+  }
+
+  .videoThumbnail {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+      
+      .playButton {
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+    }
+  }
+
+  .ceoImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .playButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background-color: white;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    &:focus {
+      outline: 3px solid #3498db;
+      outline-offset: 2px;
+    }
+  }
+
+  .playIcon {
+    width: 24px;
+    height: 24px;
+    color: #2c3e50;
+    margin-left: 3px; // Slight offset to center the triangle visually
+  }
+
+  .playIcon {
+    width: 24px;
+    height: 24px;
+    color: #2c3e50;
+    margin-left: 3px; // Slight offset to center the triangle visually
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Support for Microsoft Teams
+.teams {
+  .welcomeBannerPart {
+    border: none;
+    border-radius: 0;
+  }
+}

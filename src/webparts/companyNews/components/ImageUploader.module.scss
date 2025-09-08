@@ -1,0 +1,23 @@
+.imageUploader {
+  margin-bottom: 15px;
+  
+  .imagePreview {
+    margin-bottom: 10px;
+    
+    .previewImage {
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f5f5f5;
+    }
+  }
+  
+  .uploadButtons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,224 @@
+.companyNews {
+  max-width: 1440px;
+  padding: 0px 0px 60px 0px;
+  margin: 0 auto;
+  
+  .sectionTitle {
+    color: #000000;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    margin-top: 4rem;
+    
+    @media (max-width: 768px) {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+  }
+
+  .newsContainer {
+    position: relative;
+    overflow: visible;
+    margin-bottom: 30px;
+    
+    .carousel {
+      position: relative;
+      
+      // ✅ REMOVED: .prevButton, .nextButton styles completely
+    }
+  }
+
+  .newsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    transition: transform 0.3s ease-in-out;
+    
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  .newsCard {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px #00000013;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all .3s ease;
+    padding: 12px;
+    height: 100%;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .cardImage {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    position: relative;
+    
+    img {
+      border-radius: 12px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .newsCard:hover & img {
+      transform: scale(1.05);
+    }
+  }
+
+  .cardContent {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .authorInfo {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    
+    .dateSeparator {
+      color: #A5A5A5;
+    }
+  }
+
+  .authorName {
+    font-weight: 700;
+    font-size: 12px;
+    color: #000;
+  }
+
+  .date {
+    color: #000;
+    font-size: 11px;
+  }
+
+  .shareButton {
+    align-items: center;
+    background: 0 0;
+    border: 1px solid #A5A5A5;
+    border-radius: 5px;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    font-size: 12px;
+    gap: 4px;
+    padding: 4px 8px;
+    transition: all .2s ease;
+    
+    &:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    span {
+      @media (max-width: 576px) {
+        display: none;
+      }
+    }
+  }
+
+  .cardTitle {
+    color: #000;
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .readMoreLink {
+    color: #42B574;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s ease;
+    
+    &:hover {
+      color: #357ABD;
+      text-decoration: none;
+    }
+  }
+
+  // ✅ Enhanced Dots-Only Pagination
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4rem;
+    
+    .dots {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      
+      .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #B3B3B3;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        
+        &:hover {
+          background: #42B574;
+          transform: scale(1.3);
+          box-shadow: 0 4px 8px rgba(66, 181, 116, 0.3);
+        }
+        
+        &.active {
+          background: #42B574;
+          transform: scale(1.2);
+          box-shadow: 0 4px 8px rgba(66, 181, 116, 0.4);
+        }
+      }
+    }
+  }
+}

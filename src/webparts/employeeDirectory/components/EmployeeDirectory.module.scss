@@ -1,0 +1,529 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.employeeDirectory {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #605e5c;
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #605e5c;
+}
+
+.errorIcon {
+  font-size: 32px;
+  color: #d83b01;
+  margin-bottom: 10px;
+}
+
+.departmentSection {
+  margin-bottom: 24px;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+.departmentSection:last-child {
+  margin-bottom: 0;
+}
+
+.departmentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f8f8;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-bottom: 1px solid #e1dfdd;
+}
+
+.departmentHeader:hover {
+  background: #f0f0f0;
+}
+
+.departmentHeader:focus,
+.departmentHeader:focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: -2px;
+}
+
+.departmentTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.departmentInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.employeeCount {
+  font-size: 14px;
+  color: #605e5c;
+  font-weight: 500;
+}
+
+.toggleIcon {
+  font-size: 16px;
+  color: #0078d4;
+  transition: transform 0.2s ease-in-out;
+}
+
+.employeeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  background: #ffffff;
+  overflow: visible;
+}
+
+.employeeCard {
+  background: #ffffff;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.employeeCard:hover {
+  border-color: #0078d4;
+  box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+  transform: translateY(-2px);
+}
+
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profileImage {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e1dfdd;
+  background: #f3f2f1;
+}
+
+.employeeInfo {
+  text-align: center;
+  width: 100%;
+}
+
+.employeeName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323130;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.employeeTitle {
+  font-size: 14px;
+  color: #605e5c;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #605e5c;
+}
+
+.contactItem span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.contactIcon {
+  font-size: 14px;
+  color: #0078d4;
+  flex-shrink: 0;
+}
+
+.actionSection {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.contactButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #16a085;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.contactButton:hover {
+  background: #138d75;
+  transform: translateY(-1px);
+}
+
+.contactButton:active {
+  transform: translateY(0);
+}
+
+.contactButton:focus,
+.contactButton:focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: 2px;
+}
+
+.buttonIcon {
+  font-size: 14px;
+}
+
+.noEmployees {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #605e5c;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.noEmployees p {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.noEmployeesIcon {
+  font-size: 32px;
+  color: #c8c6c4;
+  margin-bottom: 12px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e1dfdd;
+}
+
+.paginationDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c8c6c4;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.paginationDot:hover {
+  background: #605e5c;
+  transform: scale(1.1);
+}
+
+.paginationDot:focus,
+.paginationDot:focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: 2px;
+}
+
+.active {
+  background: #0078d4 !important;
+  transform: scale(1.25);
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .employeeGrid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .employeeGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .employeeDirectory {
+    padding: 16px;
+  }
+
+  .employeeGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .employeeCard {
+    padding: 16px;
+  }
+
+  .header h2 {
+    font-size: 20px;
+  }
+
+  .departmentTitle {
+    font-size: 16px;
+  }
+
+  .departmentHeader {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .employeeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .departmentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .departmentInfo {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .employeeDirectory {
+    padding: 12px;
+  }
+
+  .header {
+    margin-bottom: 16px;
+  }
+
+  .departmentSection {
+    margin-bottom: 16px;
+  }
+
+  .employeeGrid {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .employeeCard {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .profileImage {
+    width: 48px;
+    height: 48px;
+  }
+
+  .employeeName {
+    font-size: 16px;
+  }
+
+  .employeeTitle {
+    font-size: 12px;
+  }
+
+  .contactItem {
+    font-size: 12px;
+  }
+
+  .contactItem span {
+    max-width: 160px;
+  }
+
+  .contactButton {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 80px;
+  }
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  .employeeDirectory {
+    background: #1f1f1f;
+    color: #ffffff;
+    border-color: #3c3c3c;
+  }
+
+  .header h2 {
+    color: #ffffff;
+  }
+
+  .departmentSection {
+    border-color: #3c3c3c;
+    background: #2d2d2d;
+  }
+
+  .departmentHeader {
+    background: #323232;
+    border-bottom-color: #3c3c3c;
+  }
+
+  .departmentHeader:hover {
+    background: #3c3c3c;
+  }
+
+  .departmentHeader:focus,
+  .departmentHeader:focus-visible {
+    outline-color: #106ebe;
+  }
+
+  .departmentTitle {
+    color: #ffffff;
+  }
+
+  .employeeCount {
+    color: #b3b3b3;
+  }
+
+  .toggleIcon {
+    color: #106ebe;
+  }
+
+  .employeeGrid {
+    background: #2d2d2d;
+  }
+
+  .employeeCard {
+    background: #2d2d2d;
+    border-color: #3c3c3c;
+  }
+
+  .employeeCard:hover {
+    border-color: #106ebe;
+    box-shadow: 0 4px 12px rgba(16, 110, 190, 0.15);
+  }
+
+  .profileImage {
+    border-color: #3c3c3c;
+    background: #323232;
+  }
+
+  .employeeName {
+    color: #ffffff;
+  }
+
+  .employeeTitle {
+    color: #b3b3b3;
+  }
+
+  .contactItem {
+    color: #b3b3b3;
+  }
+
+  .contactIcon {
+    color: #106ebe;
+  }
+
+  .contactButton:focus,
+  .contactButton:focus-visible {
+    outline-color: #106ebe;
+  }
+
+  .noEmployees {
+    color: #b3b3b3;
+  }
+
+  .noEmployees p {
+    color: #b3b3b3;
+  }
+
+  .noEmployeesIcon {
+    color: #5c5c5c;
+  }
+
+  .pagination {
+    border-top-color: #3c3c3c;
+  }
+
+  .paginationDot {
+    background: #5c5c5c;
+  }
+
+  .paginationDot:hover {
+    background: #8a8a8a;
+  }
+
+  .paginationDot:focus,
+  .paginationDot:focus-visible {
+    outline-color: #106ebe;
+  }
+
+  .active {
+    background: #106ebe !important;
+  }
+
+  .error {
+    color: #b3b3b3;
+  }
+
+  .errorIcon {
+    color: #f85149;
+  }
+}

@@ -1,0 +1,291 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+:global {
+  .ControlZone {
+     margin: 0px 0 !important;
+    padding: 0px !important;
+  }
+}
+.ControlZone  {
+   
+}
+.videoBanner {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 12px;
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    min-height: 400px;
+  }
+  
+  @media (max-width: 480px) {
+    min-height: 350px;
+    border-radius: 8px;
+  }
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0px;
+  
+  @media (max-width: 768px) {
+    padding: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 20px;
+  }
+}
+
+.contentWrapper {
+  background: white;
+  border-radius: 12px 12px 0px 0px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  max-width: 1076px;
+  width: 100%;
+  overflow: hidden;
+      height: 433px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    max-width: 600px;
+  }
+}
+
+.textContent {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  
+  @media (max-width: 768px) {
+    padding: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 20px;
+  }
+}
+
+.title {
+  color: #000000;
+    font-size: 40px;
+    font-weight: 700;
+    margin: 0 0 15px;
+    line-height: 1.5;
+  
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 24px;
+  }
+}
+
+.message {
+  color: #000000;
+    font-size: 22px;
+    font-style: normal;
+    line-height: 1.5;
+    margin: 0 0 10px;
+  
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
+}
+
+.readMoreButton {
+  background-color: #42B574;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+  margin-top: 20px;
+  
+  &:hover {
+    background-color: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  }
+  
+  &:focus {
+    outline: 2px solid #27ae60;
+    outline-offset: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+}
+
+.videoSection {
+      background: transparent !important;
+    flex: 0 0 400px;
+    position: relative;
+    padding: 30px !important;
+  
+  @media (max-width: 768px) {
+    flex: 1;
+    width: 100%;
+    height: 300px;
+  }
+  
+  @media (max-width: 480px) {
+    height: 250px;
+  }
+}
+
+.thumbnailContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  border-radius: 12px;
+}
+
+.playButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    
+    .playIcon {
+      filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.3));
+    }
+  }
+  
+  &:focus {
+    outline: 3px solid white;
+    outline-offset: 4px;
+    border-radius: 50%;
+  }
+}
+
+.playIcon {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  transition: filter 0.3s ease;
+  
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+.videoPlayer {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// Modal Styles
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.modalContent {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  background: black;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10001;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: rotate(90deg);
+  }
+}
+
+.videoFrame,
+.modalVideo {
+  width: 100%;
+  height: 80vh;
+  border: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Support for Microsoft Teams
+.teams {
+  .videoBanner {
+    border-radius: 0;
+  }
+}
+
+/* Add your styles here */
+
+.viewButton { background-color: #0078d4; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+
+.viewButton:hover, .viewButton:focus { background-color: #005a9e; }

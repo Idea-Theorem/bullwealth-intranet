@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+    <CustomAction 
+        Title="BullWealth Navigation"
+        RegistrationType="List"
+        RegistrationId="101"
+        Location="ClientSideExtension.ApplicationCustomizer"
+        ClientSideComponentId="3a58288d-22b2-4c3c-99b7-dfc042999e43"
+        ClientSideComponentProperties="{}">
+    </CustomAction>
+</Elements>

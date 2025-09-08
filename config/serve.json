@@ -1,0 +1,30 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/spfx-serve.schema.json",
+  "port": 4321,
+  "https": true,
+  "initialPage": "https://{tenantDomain}/_layouts/workbench.aspx",
+  "serveConfigurations": {
+    "default": {
+      "pageUrl": "https://{tenantDomain}/SitePages/myPage.aspx",
+      "customActions": {
+        "62019796-de34-4650-9cbf-69353a38415d": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {
+            "testMessage": "Test message"
+          }
+        }
+      }
+    },
+    "bullWealthNavigation": {
+      "pageUrl": "https://{tenantDomain}/SitePages/myPage.aspx",
+      "customActions": {
+        "62019796-de34-4650-9cbf-69353a38415d": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {
+            "testMessage": "Test message"
+          }
+        }
+      }
+    }
+  }
+}

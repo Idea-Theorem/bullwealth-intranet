@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+    <ClientSideComponentInstance
+        Title="BullWealth Navigation"
+        Location="ClientSideExtension.ApplicationCustomizer"
+        ComponentId="3a58288d-22b2-4c3c-99b7-dfc042999e43"
+        Properties="{&quot;title&quot;:&quot;BullWealth Navigation&quot;}">
+    </ClientSideComponentInstance>
+</Elements>

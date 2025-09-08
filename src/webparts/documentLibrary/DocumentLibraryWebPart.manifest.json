@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "f4b7c4e8-d9a2-4c5e-b8f3-1a2b3c4d5e6f",
+  "alias": "DocumentLibraryWebPart",
+  "componentType": "WebPart",
+  
+  "version": "*",
+  "manifestVersion": 2,
+  
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Document Library" },
+    "description": { "default": "Display documents from SharePoint with modern interface" },
+    "officeFabricIconFontName": "DocumentSet",
+    "properties": {
+      "title": "Compliance",
+      "description": "Below are documents related to Compliance.",
+      "listName": "Documents",
+      "itemsPerPage": 10
+    }
+  }]
+}
