@@ -16,8 +16,12 @@ import { DatePicker } from '@fluentui/react/lib/DatePicker';
 import CompanyNews from './components/CompanyNews';
 import { ICompanyNewsProps, INewsItem } from './components/ICompanyNewsProps';
 
-// Import PnP JS
-import { sp } from '@pnp/sp/presets/all';
+// Import PnP JS - FIXED
+import { spfi, SPFx } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/folders';
+import '@pnp/sp/files';
+
 import '@pnp/polyfill-ie11';
 
 export interface ICompanyNewsWebPartProps {
@@ -33,12 +37,13 @@ export interface ICompanyNewsWebPartProps {
 
 export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNewsWebPartProps> {
 
+  private _sp: ReturnType<typeof spfi>;
+
   protected async onInit(): Promise<void> {
     await super.onInit();
     
-    sp.setup({
-      spfxContext: this.context as any
-    });
+    // FIXED: Initialize PnP correctly
+    this._sp = spfi().using(SPFx(this.context));
 
     // Initialize with sample data if empty
     if (!this.properties.newsItems || this.properties.newsItems.length === 0) {
@@ -106,7 +111,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     ReactDom.render(element, this.domElement);
   }
 
-  // Method to upload image to SharePoint
+  // Method to upload image to SharePoint - FIXED
   private async uploadImageToSharePoint(file: File): Promise<string> {
     try {
       const timestamp = new Date().getTime();
@@ -114,12 +119,12 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
       const folderUrl = `${this.context.pageContext.web.serverRelativeUrl}/SiteAssets/NewsImages`;
       
       try {
-        await sp.web.getFolderByServerRelativeUrl(folderUrl).get();
+        await this._sp.web.getFolderByServerRelativePath(folderUrl)();
       } catch {
-        await sp.web.folders.addUsingPath(folderUrl);
+        await this._sp.web.folders.addUsingPath('SiteAssets/NewsImages');
       }
       
-      const folder = sp.web.getFolderByServerRelativeUrl(folderUrl);
+      const folder = this._sp.web.getFolderByServerRelativePath(folderUrl);
       await folder.files.addUsingPath(fileName, file, { Overwrite: true });
       
       const siteUrl = this.context.pageContext.web.absoluteUrl;
@@ -183,7 +188,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                   label: 'Show Navigation Dots',
                   checked: this.properties.showDots
                 })
-                // ✅ Removed showArrows toggle - arrows always hidden
               ]
             },
             {
@@ -210,7 +214,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       required: true,
                       placeholder: "Enter author name"
                     },
-                    // ✅ Date Picker Field
                     {
                       id: "date",
                       title: "Date",
@@ -251,7 +254,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                         );
                       }
                     },
-                    // ✅ Image Upload Field
                     {
                       id: "imageUrl",
                       title: "Image",
@@ -259,7 +261,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       required: false,
                       onCustomRender: (field, value, onUpdate, item, itemId) => {
                         return React.createElement("div", { style: { margin: "10px 0" } },
-                          // Image preview
                           value && React.createElement("img", {
                             src: value,
                             alt: "Preview",
@@ -273,7 +274,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                               borderRadius: "4px"
                             }
                           }),
-                          // File upload button
                           React.createElement("div", { style: { marginBottom: "10px" } },
                             React.createElement("input", {
                               type: "file",
@@ -297,7 +297,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                               }
                             })
                           ),
-                          // URL input as fallback
                           React.createElement("input", {
                             type: "text",
                             placeholder: "Or enter image URL",

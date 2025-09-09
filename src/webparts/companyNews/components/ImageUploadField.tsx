@@ -2,7 +2,10 @@ import * as React from 'react';
 import { useState, useRef } from 'react';
 import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
-import { sp } from '@pnp/sp/presets/all';
+import { spfi, SPFx } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/folders';
+import '@pnp/sp/files';
 
 interface IImageUploadFieldProps {
   value: string;
@@ -15,6 +18,9 @@ export const ImageUploadField: React.FC<IImageUploadFieldProps> = ({ value, onCh
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Initialize PnP correctly
+  const sp = spfi().using(SPFx(context));
+
   const handleUpload = async (file: File): Promise<void> => {
     setUploading(true);
     setMessage('Uploading image...');
@@ -26,13 +32,13 @@ export const ImageUploadField: React.FC<IImageUploadFieldProps> = ({ value, onCh
       
       // Ensure folder exists
       try {
-        await sp.web.getFolderByServerRelativeUrl(folderUrl).get();
+        await sp.web.getFolderByServerRelativePath(folderUrl)();
       } catch {
-        await sp.web.folders.addUsingPath(folderUrl);
+        await sp.web.folders.addUsingPath('SiteAssets/NewsImages');
       }
       
       // Upload file
-      const folder = sp.web.getFolderByServerRelativeUrl(folderUrl);
+      const folder = sp.web.getFolderByServerRelativePath(folderUrl);
       await folder.files.addUsingPath(fileName, file, { Overwrite: true });
       
       // Return full URL
