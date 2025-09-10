@@ -1,0 +1,34 @@
+// ONLY mixins and global styles - NO @font-face declarations
+:global {
+  .ms-Fabric,
+  .ms-Fabric *,
+  body,
+  html {
+    font-family: 'Calibri', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  }
+
+  .ControlZone,
+  .CanvasZone,
+  [data-sp-web-part] {
+    font-family: 'Calibri', sans-serif !important;
+    
+    * {
+      font-family: 'Calibri', sans-serif !important;
+    }
+  }
+}
+
+// Font mixins only
+@mixin calibri-font {
+  font-family: 'Calibri', sans-serif;
+}
+
+@mixin calibri-title {
+  @include calibri-font;
+  font-weight: 700;
+}
+
+@mixin calibri-body {
+  @include calibri-font;
+  font-weight: 400;
+}

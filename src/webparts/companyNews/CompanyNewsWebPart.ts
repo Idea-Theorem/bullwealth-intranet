@@ -1,5 +1,7 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+// Import main styles (this loads the font faces)
+import '../../styles/main.scss';
 import { Version } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
@@ -32,6 +34,7 @@ export interface ICompanyNewsWebPartProps {
   itemsToShow: number;
   showDots: boolean;
   showArrows: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -144,6 +147,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     return Version.parse('1.0');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected onPropertyPaneFieldChanged(propertyPath: string, _oldValue: any, newValue: any): void {
     (this.properties as any)[propertyPath] = newValue;
     this.render();

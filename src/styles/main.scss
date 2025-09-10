@@ -1,0 +1,11 @@
+// Import font faces ONLY in main.scss
+@import 'font-faces';
+@import 'fonts';
+
+:global {
+  .ms-TextField-field,
+  .ms-Button,
+  .ms-Button-label {
+    font-family: 'Calibri', sans-serif !important;
+  }
+}

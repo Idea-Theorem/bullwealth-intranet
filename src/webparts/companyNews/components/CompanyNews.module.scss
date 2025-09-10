@@ -1,9 +1,24 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fonts';
+
+:global {
+  .ControlZone {
+     margin: 0px 0 !important;
+    padding: 0px !important;
+  }
+}
+
+.ControlZone {
+  @include calibri-font;
+}
 .companyNews {
+  @include calibri-font;
   max-width: 1440px;
   padding: 0px 0px 60px 0px;
   margin: 0 auto;
   
   .sectionTitle {
+    @include calibri-title; // Uses Calibri Bold
     color: #000000;
     font-size: 28px;
     font-weight: 700;
@@ -15,6 +30,10 @@
       font-size: 20px;
       margin-bottom: 30px;
     }
+  }
+
+  * {
+    @include calibri-font;
   }
 
   .newsContainer {
@@ -87,6 +106,7 @@
   }
 
   .cardContent {
+    @include calibri-body; // Uses Calibri Regular
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -94,6 +114,7 @@
   }
 
   .cardHeader {
+    @include calibri-body; // Uses Calibri Regular
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -103,6 +124,7 @@
   }
 
   .authorInfo {
+    @include calibri-body; // Uses Calibri Regular
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -113,12 +135,14 @@
   }
 
   .authorName {
+    @include calibri-body; // Uses Calibri Regular
     font-weight: 700;
     font-size: 12px;
     color: #000;
   }
 
   .date {
+    @include calibri-body; // Uses Calibri Regular
     color: #000;
     font-size: 11px;
   }
@@ -154,6 +178,7 @@
   }
 
   .cardTitle {
+    @include calibri-title; // Uses Calibri Bold
     color: #000;
     margin: 0 0 15px 0;
     font-size: 20px;
@@ -168,6 +193,7 @@
   }
 
   .readMoreLink {
+    @include calibri-body; // Uses Calibri Regular
     color: #42B574;
     background: none;
     border: none;

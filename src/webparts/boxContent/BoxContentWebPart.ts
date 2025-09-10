@@ -1,5 +1,7 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+// Import global styles - ADD THIS LINE
+import '../../styles/main.scss';
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
