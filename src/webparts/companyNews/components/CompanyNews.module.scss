@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 @import '~@fluentui/react/dist/sass/References.scss';
 @import '../../../styles/fonts';
 
@@ -13,19 +12,13 @@
   @include calibri-font;
 }
 .companyNews {
-  @include calibri-font;
-=======
-.companyNews {
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
+  //@include calibri-font;
   max-width: 1440px;
   padding: 0px 0px 60px 0px;
   margin: 0 auto;
   
   .sectionTitle {
-<<<<<<< HEAD
     @include calibri-title; // Uses Calibri Bold
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     color: #000000;
     font-size: 28px;
     font-weight: 700;
@@ -39,13 +32,10 @@
     }
   }
 
-<<<<<<< HEAD
-  * {
-    @include calibri-font;
-  }
+  // * {
+  //   @include calibri-font;
+  // }
 
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   .newsContainer {
     position: relative;
     overflow: visible;
@@ -116,10 +106,7 @@
   }
 
   .cardContent {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -127,10 +114,7 @@
   }
 
   .cardHeader {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -140,10 +124,7 @@
   }
 
   .authorInfo {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -154,20 +135,14 @@
   }
 
   .authorName {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     font-weight: 700;
     font-size: 12px;
     color: #000;
   }
 
   .date {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     color: #000;
     font-size: 11px;
   }
@@ -203,10 +178,7 @@
   }
 
   .cardTitle {
-<<<<<<< HEAD
     @include calibri-title; // Uses Calibri Bold
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     color: #000;
     margin: 0 0 15px 0;
     font-size: 20px;
@@ -221,10 +193,7 @@
   }
 
   .readMoreLink {
-<<<<<<< HEAD
     @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     color: #42B574;
     background: none;
     border: none;

@@ -1,29 +1,19 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-<<<<<<< HEAD
 @import '../../../styles/fonts';
 
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 :global {
   .ControlZone {
      margin: 0px 0 !important;
     padding: 0px !important;
   }
 }
-<<<<<<< HEAD
 
 .ControlZone {
   @include calibri-font;
 }
 
 .videoBanner {
-  @include calibri-font;
-=======
-.ControlZone  {
-   
-}
-.videoBanner {
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
+  //@include calibri-font;
   position: relative;
   width: 100%;
   min-height: 500px;
@@ -41,12 +31,9 @@
     min-height: 350px;
     border-radius: 8px;
   }
-<<<<<<< HEAD
-  * {
-    @include calibri-font;
-  }
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
+  // * {
+  //   @include calibri-font;
+  // }
 }
 
 .overlay {
@@ -103,10 +90,7 @@
 }
 
 .title {
-<<<<<<< HEAD
   @include calibri-title; // Uses Calibri Bold
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   color: #000000;
     font-size: 40px;
     font-weight: 700;
@@ -123,10 +107,7 @@
 }
 
 .message {
-<<<<<<< HEAD
   @include calibri-body; // Uses Calibri Regular
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   color: #000000;
     font-size: 22px;
     font-style: normal;

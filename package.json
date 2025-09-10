@@ -26,15 +26,9 @@
     "@pnp/logging": "^2.15.0",
     "@pnp/polyfill-ie11": "^2.0.2",
     "@pnp/queryable": "^3.22.0",
-<<<<<<< HEAD
     "@pnp/sp": "^4.10.0",
     "@pnp/spfx-controls-react": "3.16.0",
     "@pnp/spfx-property-controls": "3.21.0",
-=======
-    "@pnp/sp": "2.15.0",
-    "@pnp/spfx-controls-react": "3.16.0",
-    "@pnp/spfx-property-controls": "^3.21.0",
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
     "office-ui-fabric-react": "^7.204.1",
     "react": "17.0.1",
     "react-datepicker": "^8.7.0",

@@ -1,9 +1,6 @@
 'use strict';
 
-<<<<<<< HEAD
 // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 const build = require('@microsoft/sp-build-web');
 
 build.addSuppression(`Warning - [sass] The local CSS class 'ms-Grid' is not camelCase and will not be type-safe.`);
@@ -17,7 +14,6 @@ build.rig.getTasks = function () {
   return result;
 };
 
-<<<<<<< HEAD
 // Add font loader configuration for handling TTF, WOFF, etc.
 const fontLoaderConfig = {
   test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
@@ -36,6 +32,4 @@ build.configureWebpack.mergeConfig({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 build.initialize(require('gulp'));

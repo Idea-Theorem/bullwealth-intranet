@@ -1,10 +1,7 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-<<<<<<< HEAD
 // Import main styles (this loads the font faces)
 import '../../styles/main.scss';
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 import { Version } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
@@ -21,17 +18,12 @@ import { DatePicker } from '@fluentui/react/lib/DatePicker';
 import CompanyNews from './components/CompanyNews';
 import { ICompanyNewsProps, INewsItem } from './components/ICompanyNewsProps';
 
-<<<<<<< HEAD
 // Import PnP JS - FIXED
 import { spfi, SPFx } from '@pnp/sp';
 import '@pnp/sp/webs';
 import '@pnp/sp/folders';
 import '@pnp/sp/files';
 
-=======
-// Import PnP JS
-import { sp } from '@pnp/sp/presets/all';
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 import '@pnp/polyfill-ie11';
 
 export interface ICompanyNewsWebPartProps {
@@ -42,16 +34,12 @@ export interface ICompanyNewsWebPartProps {
   itemsToShow: number;
   showDots: boolean;
   showArrows: boolean;
-<<<<<<< HEAD
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   [key: string]: any;
 }
 
 export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNewsWebPartProps> {
 
-<<<<<<< HEAD
   private _sp: ReturnType<typeof spfi>;
 
   protected async onInit(): Promise<void> {
@@ -59,14 +47,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     
     // FIXED: Initialize PnP correctly
     this._sp = spfi().using(SPFx(this.context));
-=======
-  protected async onInit(): Promise<void> {
-    await super.onInit();
-    
-    sp.setup({
-      spfxContext: this.context as any
-    });
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 
     // Initialize with sample data if empty
     if (!this.properties.newsItems || this.properties.newsItems.length === 0) {
@@ -134,11 +114,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     ReactDom.render(element, this.domElement);
   }
 
-<<<<<<< HEAD
   // Method to upload image to SharePoint - FIXED
-=======
-  // Method to upload image to SharePoint
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   private async uploadImageToSharePoint(file: File): Promise<string> {
     try {
       const timestamp = new Date().getTime();
@@ -146,21 +122,12 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
       const folderUrl = `${this.context.pageContext.web.serverRelativeUrl}/SiteAssets/NewsImages`;
       
       try {
-<<<<<<< HEAD
         await this._sp.web.getFolderByServerRelativePath(folderUrl)();
       } catch {
         await this._sp.web.folders.addUsingPath('SiteAssets/NewsImages');
       }
       
       const folder = this._sp.web.getFolderByServerRelativePath(folderUrl);
-=======
-        await sp.web.getFolderByServerRelativeUrl(folderUrl).get();
-      } catch {
-        await sp.web.folders.addUsingPath(folderUrl);
-      }
-      
-      const folder = sp.web.getFolderByServerRelativeUrl(folderUrl);
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
       await folder.files.addUsingPath(fileName, file, { Overwrite: true });
       
       const siteUrl = this.context.pageContext.web.absoluteUrl;
@@ -180,10 +147,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     return Version.parse('1.0');
   }
 
-<<<<<<< HEAD
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-=======
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   protected onPropertyPaneFieldChanged(propertyPath: string, _oldValue: any, newValue: any): void {
     (this.properties as any)[propertyPath] = newValue;
     this.render();
@@ -228,10 +192,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                   label: 'Show Navigation Dots',
                   checked: this.properties.showDots
                 })
-<<<<<<< HEAD
-=======
-                // ✅ Removed showArrows toggle - arrows always hidden
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
               ]
             },
             {
@@ -258,10 +218,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       required: true,
                       placeholder: "Enter author name"
                     },
-<<<<<<< HEAD
-=======
-                    // ✅ Date Picker Field
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                     {
                       id: "date",
                       title: "Date",
@@ -302,10 +258,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                         );
                       }
                     },
-<<<<<<< HEAD
-=======
-                    // ✅ Image Upload Field
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                     {
                       id: "imageUrl",
                       title: "Image",
@@ -313,10 +265,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       required: false,
                       onCustomRender: (field, value, onUpdate, item, itemId) => {
                         return React.createElement("div", { style: { margin: "10px 0" } },
-<<<<<<< HEAD
-=======
-                          // Image preview
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                           value && React.createElement("img", {
                             src: value,
                             alt: "Preview",
@@ -330,10 +278,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                               borderRadius: "4px"
                             }
                           }),
-<<<<<<< HEAD
-=======
-                          // File upload button
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                           React.createElement("div", { style: { marginBottom: "10px" } },
                             React.createElement("input", {
                               type: "file",
@@ -357,10 +301,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                               }
                             })
                           ),
-<<<<<<< HEAD
-=======
-                          // URL input as fallback
->>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                           React.createElement("input", {
                             type: "text",
                             placeholder: "Or enter image URL",
