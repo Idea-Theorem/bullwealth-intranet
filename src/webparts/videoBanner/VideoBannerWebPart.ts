@@ -1,8 +1,11 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+<<<<<<< HEAD
 // Import main styles (this loads the font faces)
 import '../../styles/main.scss';
 
+=======
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
@@ -12,12 +15,15 @@ import {
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
+<<<<<<< HEAD
 // Import PnP property controls
 import {
   PropertyFieldFilePicker,
   IFilePickerResult
 } from '@pnp/spfx-property-controls/lib/PropertyFieldFilePicker';
 
+=======
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 import VideoBanner from './components/VideoBanner';
 import { IVideoBannerProps } from './components/IVideoBannerProps';
 
@@ -26,11 +32,16 @@ export interface IVideoBannerWebPartProps {
   message: string;
   buttonText: string;
   videoUrl: string;
+<<<<<<< HEAD
   videoFile?: IFilePickerResult;
   thumbnailUrl: string;
   thumbnailFile?: IFilePickerResult;
   backgroundImageUrl: string;
   backgroundImageFile?: IFilePickerResult;
+=======
+  thumbnailUrl: string;
+  backgroundImageUrl: string;
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   autoPlay: boolean;
   showInModal: boolean;
 }
@@ -41,6 +52,7 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
   private _environmentMessage: string = '';
 
   public render(): void {
+<<<<<<< HEAD
     // Safe property access with optional chaining
     const thumbnailUrl = this.properties.thumbnailFile?.fileAbsoluteUrl || this.properties.thumbnailUrl;
     const backgroundImageUrl = this.properties.backgroundImageFile?.fileAbsoluteUrl || this.properties.backgroundImageUrl;
@@ -55,6 +67,17 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
         videoUrl: videoUrl || '',
         thumbnailUrl: thumbnailUrl || '',
         backgroundImageUrl: backgroundImageUrl || '',
+=======
+    const element: React.ReactElement<IVideoBannerProps> = React.createElement(
+      VideoBanner,
+      {
+        title: this.properties.title || 'Message from Ceo',
+        message: this.properties.message || '"We wouldn\'t be where we are today without each and every one of you. Thank you for making us successful!"',
+        buttonText: this.properties.buttonText || 'Read More',
+        videoUrl: this.properties.videoUrl || '',
+        thumbnailUrl: this.properties.thumbnailUrl || '',
+        backgroundImageUrl: this.properties.backgroundImageUrl || '',
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
         autoPlay: this.properties.autoPlay || false,
         showInModal: this.properties.showInModal !== false,
         isDarkTheme: this._isDarkTheme,
@@ -104,7 +127,13 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
     }
 
     this._isDarkTheme = !!currentTheme.isInverted;
+<<<<<<< HEAD
     const { semanticColors } = currentTheme;
+=======
+    const {
+      semanticColors
+    } = currentTheme;
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 
     if (semanticColors) {
       this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
@@ -151,6 +180,7 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
             {
               groupName: 'Media Settings',
               groupFields: [
+<<<<<<< HEAD
                 // Video File Picker
                 PropertyFieldFilePicker('videoFile', {
                   context: this.context as any,
@@ -222,6 +252,18 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
                 }),
                 PropertyPaneTextField('backgroundImageUrl', {
                   label: 'Or Background Image URL',
+=======
+                PropertyPaneTextField('videoUrl', {
+                  label: 'Video URL',
+                  placeholder: 'https://your-video-url.mp4 or YouTube/Stream URL'
+                }),
+                PropertyPaneTextField('thumbnailUrl', {
+                  label: 'Video Thumbnail URL',
+                  placeholder: 'https://your-site/thumbnail.jpg'
+                }),
+                PropertyPaneTextField('backgroundImageUrl', {
+                  label: 'Background Image URL',
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
                   placeholder: 'https://your-site/background.jpg'
                 })
               ]
@@ -246,4 +288,8 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
       ]
     };
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec

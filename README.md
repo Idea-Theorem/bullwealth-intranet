@@ -1,5 +1,6 @@
 # welcome-banner
 
+<<<<<<< HEAD
 ## Summary
 
 Short summary on functionality and used technologies.
@@ -71,3 +72,25 @@ This extension illustrates the following concepts:
 - [Use Microsoft Graph in your solution](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/web-parts/get-started/using-microsoft-graph-apis)
 - [Publish SharePoint Framework applications to the Marketplace](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/publish-to-marketplace-overview)
 - [Microsoft 365 Patterns and Practices](https://aka.ms/m365pnp) - Guidance, tooling, samples and open-source controls for your Microsoft 365 development
+=======
+
+## Pre requisites:
+
+1- npm install -g gulp-cli yo @microsoft/generator-sharepoint
+2- node version => 20
+
+
+## Run instructions
+1- npm install
+2- gulp build
+3- gulp serve --nobrowser
+4- Access the following link for debugging:
+  https://ideatheorem0.sharepoint.com/sites/BullWealthIntranet-test/_layouts/15/workbench.aspx?debug=true&debugManifestsFile=https://localhost:4321/temp/build/manifests.js
+
+
+## How to create a new part?
+
+1- yo @microsoft/sharepoint
+2- Responde the prompts
+
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec

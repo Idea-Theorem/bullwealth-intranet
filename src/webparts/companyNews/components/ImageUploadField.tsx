@@ -2,10 +2,14 @@ import * as React from 'react';
 import { useState, useRef } from 'react';
 import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
+<<<<<<< HEAD
 import { spfi, SPFx } from '@pnp/sp';
 import '@pnp/sp/webs';
 import '@pnp/sp/folders';
 import '@pnp/sp/files';
+=======
+import { sp } from '@pnp/sp/presets/all';
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
 
 interface IImageUploadFieldProps {
   value: string;
@@ -18,9 +22,12 @@ export const ImageUploadField: React.FC<IImageUploadFieldProps> = ({ value, onCh
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+<<<<<<< HEAD
   // Initialize PnP correctly
   const sp = spfi().using(SPFx(context));
 
+=======
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
   const handleUpload = async (file: File): Promise<void> => {
     setUploading(true);
     setMessage('Uploading image...');
@@ -32,6 +39,7 @@ export const ImageUploadField: React.FC<IImageUploadFieldProps> = ({ value, onCh
       
       // Ensure folder exists
       try {
+<<<<<<< HEAD
         await sp.web.getFolderByServerRelativePath(folderUrl)();
       } catch {
         await sp.web.folders.addUsingPath('SiteAssets/NewsImages');
@@ -39,6 +47,15 @@ export const ImageUploadField: React.FC<IImageUploadFieldProps> = ({ value, onCh
       
       // Upload file
       const folder = sp.web.getFolderByServerRelativePath(folderUrl);
+=======
+        await sp.web.getFolderByServerRelativeUrl(folderUrl).get();
+      } catch {
+        await sp.web.folders.addUsingPath(folderUrl);
+      }
+      
+      // Upload file
+      const folder = sp.web.getFolderByServerRelativeUrl(folderUrl);
+>>>>>>> 9c3c809eaa69f41d431d5185d9da9217288dffec
       await folder.files.addUsingPath(fileName, file, { Overwrite: true });
       
       // Return full URL
