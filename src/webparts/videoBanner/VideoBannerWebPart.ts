@@ -1,5 +1,9 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+
+import { SPComponentLoader } from '@microsoft/sp-loader';
+
+
 // Import main styles (this loads the font faces)
 import '../../styles/main.scss';
 
@@ -20,6 +24,9 @@ import {
 
 import VideoBanner from './components/VideoBanner';
 import { IVideoBannerProps } from './components/IVideoBannerProps';
+
+// Load Fabric icons CSS
+SPComponentLoader.loadCss('https://static2.sharepointonline.com/files/fabric/assets/icons/fabricmdl2icons-2.69.css');
 
 export interface IVideoBannerWebPartProps {
   title: string;

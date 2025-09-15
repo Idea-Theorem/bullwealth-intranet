@@ -1,5 +1,10 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+// Import main styles (this loads the font faces)
+//import '../../styles/main.scss';
+
+// Add this import for icon initialization
+
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,

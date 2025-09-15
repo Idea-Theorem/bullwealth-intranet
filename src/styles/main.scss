@@ -1,11 +1,28 @@
-// Import font faces ONLY in main.scss
-@import 'font-faces';
-@import 'fonts';
-
+// In your _fonts.scss or main.scss
 :global {
+  // Apply Calibri ONLY to text elements, NOT icons
+  body,
+  html,
+  .ms-Fabric p,
+  .ms-Fabric span:not(.ms-Icon):not([data-icon-name]),
+  .ms-Fabric h1,
+  .ms-Fabric h2, 
+  .ms-Fabric h3,
+  .ms-Fabric h4,
+  .ms-Fabric h5,
+  .ms-Fabric h6,
   .ms-TextField-field,
-  .ms-Button,
   .ms-Button-label {
-    font-family: 'Calibri', sans-serif !important;
+    font-family: Calibri, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
+  }
+
+  // Preserve icon fonts - THIS IS CRITICAL
+  .ms-Icon,
+  i[data-icon-name],
+  .ms-Button-icon,
+  .ms-CommandBar-item i {
+    font-family: 'FabricMDL2Icons';
+    font-weight: normal;
+    font-style: normal;
   }
 }

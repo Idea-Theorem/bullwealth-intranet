@@ -1,3 +1,12 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fonts';
+
+:global {
+  .ControlZone {
+     margin: 0px 0 !important;
+    padding: 0px !important;
+  }
+}
 .quickAccess {
   background-color: #F9F9F9;
   border-radius: 8px;
@@ -14,6 +23,7 @@
     align-items: center;
 }
 .title {
+  @include calibri-title; // Uses Calibri Bold
   font-size: 24px;
   margin-bottom: 2.5rem;
   text-align: center;
@@ -70,8 +80,9 @@
 }
 
 .tileTitle {
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
+   @include calibri-body; // Uses Calibri Regular
 }
 
 .support {
@@ -83,12 +94,14 @@
 }
 
 .supportTitle {
-  font-size: 16px;
+  @include calibri-title; // Uses Calibri Bold
+  font-size: 18px;
   margin-bottom: 12px;
   font-weight: 700;
 }
 
 .supportItem {
+  @include calibri-body;
   font-size: 16px;
   margin-bottom: 10px;
   display: flex;
@@ -96,11 +109,12 @@
 }
 
 .supportItem1 {
+  @include calibri-body;
   font-size: 16px;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .supportIcon {

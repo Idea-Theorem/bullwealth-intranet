@@ -1,4 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fonts';
 
 .documents {
   padding: 10px 20px 20px;
@@ -273,27 +274,27 @@
   }
 }
 
-.editModeToggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #0078d4;
-  color: white;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 100;
-  transition: all 0.3s ease;
+// .editModeToggle {
+//   position: fixed;
+//   bottom: 20px;
+//   right: 20px;
+//   width: 50px;
+//   height: 50px;
+//   border-radius: 50%;
+//   background: #0078d4;
+//   color: white;
+//   border: none;
+//   font-size: 20px;
+//   cursor: pointer;
+//   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+//   z-index: 100;
+//   transition: all 0.3s ease;
   
-  &:hover {
-    background: #106ebe;
-    transform: scale(1.1);
-  }
-}
+//   &:hover {
+//     background: #106ebe;
+//     transform: scale(1.1);
+//   }
+// }
 
 .categoryInfo {
   padding: 15px 5px;
@@ -301,20 +302,19 @@
 }
 
 .categoryTitle {
+  @include calibri-title; 
       color: #000000;
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 20px;;
     line-height: 1.5;
     margin: 0 0 15px;
-    font-family: Calibri;
 }
 
 .viewAllLink {
+  @include calibri-title; 
       color: #42B574;
     font-size: 15px;
     text-decoration: none;
     transition: color .3s ease;
-    font-weight: 600;
 
   
   &:hover {

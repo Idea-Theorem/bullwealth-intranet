@@ -1,26 +1,10 @@
 @import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fonts';
 
 .documentLibrary {
   background: #ffffff;
   padding: 10px 10px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.documentLibrary {
-  font-family: var(--fontFamilyBase), "Segoe UI", "Segoe UI Web (West European)", sans-serif;
-  
-  .documentTitle {
-    font-family: var(--fontFamilyDisplay), "Segoe UI", "Segoe UI Web (West European)", sans-serif;
-  }
-  
-  .documentDescription,
-  .documentMeta {
-    font-family: var(--fontFamilyContent), "Segoe UI", "Segoe UI Web (West European)", sans-serif;
-  }
-  
-  .cardActionButton {
-    font-family: var(--fontFamilyInteractive), "Segoe UI", "Segoe UI Web (West European)", sans-serif;
-  }
 }
 
 
@@ -32,15 +16,14 @@
 }
 
 .mainTitle {
+  @include calibri-title; 
       border-radius: 0px;
     color: #323130;
     cursor: text;
     font-size: 32px;
-    font-weight: 700;
     margin: 0;
     padding: 0px;
     transition: all .2s ease;
-    font-family: Calibri;
 }
 
 .mainTitle:hover {
@@ -76,11 +59,10 @@
 }
 
 .folderTitle {
+  @include calibri-title; 
       color: #323130;
     font-size: 26px;
-    font-weight: 700;
     margin: 0;
-    font-family: Calibri;
 }
 
 .viewAllButton {
@@ -143,8 +125,8 @@
 }
 
 .documentTitle {
-  font-size: 16px;
-  font-weight: 600;
+  @include calibri-title; 
+  font-size: 18px;
   color: #323130;
   margin: 0 0 12px 0;
   line-height: 1.4;
@@ -157,14 +139,15 @@
 }
 
 .documentMeta {
-  font-size: 13px;
+  @include calibri-body; 
+  font-size: 14px;
   color: #605e5c;
   margin: 0 0 16px 0;
-  font-weight: 400;
 }
 
 .documentDescription {
-  font-size: 14px;
+  @include calibri-body; 
+  font-size: 16px;
   color: #323130;
   margin: 0;
   line-height: 1.5;
@@ -404,18 +387,18 @@
   flex-shrink: 0;
 }
 
+
 .fileName {
+  @include calibri-body; 
       color: #000000;
     cursor: pointer;
     font-size: 16px;
-    font-weight: 400;
     overflow: hidden;
     text-decoration: none;
     text-overflow: ellipsis;
     transition: all .1s ease;
     white-space: nowrap;
     line-height: 22px;
-    font-family: var(--fontFamilyDisplay), "Segoe UI", "Segoe UI Web (West European)", sans-serif;
 }
 
 .fileName:hover {
@@ -541,6 +524,7 @@
 }
 
 .dataCell {
+  @include calibri-body; 
   font-size: 14px;
   color: #323130;
   overflow: hidden;

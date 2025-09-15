@@ -1,7 +1,9 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
 // Import global styles - ADD THIS LINE
-import '../../styles/main.scss';
+//import '../../styles/main.scss';
+// Add this import at the top
+import { initializeIcons } from '@fluentui/react';
 
 import { Version } from '@microsoft/sp-core-library';
 import {
@@ -31,6 +33,25 @@ export interface IDocumentsWebPartProps {
 }
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
+
+  protected onInit(): Promise<void> {
+    // Initialize Fluent UI icons - THIS IS THE RIGHT PLACE
+    initializeIcons();
+
+    // Set default values
+    if (!this.properties.title) {
+      this.properties.title = 'Documents';
+    }
+    if (!this.properties.columnsPerRow) {
+      this.properties.columnsPerRow = 4;
+    }
+
+    return this._getEnvironmentMessage().then(message => {
+      this._environmentMessage = message;
+    });
+    
+    return super.onInit();
+  }
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
@@ -155,19 +176,19 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
 
   // ✅ FIXED: Removed unused _formatUrl function
 
-  protected onInit(): Promise<void> {
-    // Set default values
-    if (!this.properties.title) {
-      this.properties.title = 'Documents';
-    }
-    if (!this.properties.columnsPerRow) {
-      this.properties.columnsPerRow = 4;
-    }
+  // protected onInit(): Promise<void> {
+  //   // Set default values
+  //   if (!this.properties.title) {
+  //     this.properties.title = 'Documents';
+  //   }
+  //   if (!this.properties.columnsPerRow) {
+  //     this.properties.columnsPerRow = 4;
+  //   }
 
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
-  }
+  //   return this._getEnvironmentMessage().then(message => {
+  //     this._environmentMessage = message;
+  //   });
+  // }
 
   private _getEnvironmentMessage(): Promise<string> {
     if (!!this.context.sdks.microsoftTeams) {

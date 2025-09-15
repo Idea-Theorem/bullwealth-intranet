@@ -1,7 +1,7 @@
 {
   "includeExtensions": [
     "ttf",
-    "woff",
+    "woff", 
     "woff2",
     "eot",
     "svg"
