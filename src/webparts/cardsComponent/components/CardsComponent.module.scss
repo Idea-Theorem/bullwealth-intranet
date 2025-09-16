@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 :global {
   .ControlZone {
@@ -30,16 +30,15 @@
     }
 }
 .title {
-  @include calibri-title; // Uses Calibri Bold
+  //@include calibri-title; // Uses Calibri Bold
   font-size: 24px;
   margin-bottom: 8px;
-  title: #000000;
-   font-family: Calibri;
+  color: #000000;
    font-weight: 700;
 }
 
 .intro {
-   @include calibri-body;
+   //@include calibri-body;
       color: #000;
     font-size: 18px;
     margin-bottom: 30px;
@@ -78,14 +77,14 @@
 }
 
 .cardTitle {
-   @include calibri-title;
+   //@include calibri-title;
   color: #000 !important;
   font-size: 18px;
   margin-bottom: 8px;
 }
 
 .cardDescription {
-   @include calibri-body;
+   //@include calibri-body;
     color: #000;
     font-size: 16px;
     line-height: 20px;

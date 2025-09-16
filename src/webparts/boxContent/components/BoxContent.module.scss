@@ -37,7 +37,6 @@
   }
 
   .title {
-        font-family: Calibri, "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
     font-size: 24px;
     font-weight: 700;
     line-height: 1.5;
@@ -51,7 +50,6 @@
 
   .description {
         color: #637381;
-    font-family: Segoe UI, "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 24px;
@@ -81,7 +79,6 @@
     align-items: center;
     gap: 6px;
     transition: all 0.2s ease-in-out;
-    font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
     
     &:hover {
       background-color: #449d44;

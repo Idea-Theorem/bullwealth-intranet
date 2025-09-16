@@ -1,10 +1,9 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 .documentLibrary {
   background: #ffffff;
   padding: 10px 10px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 
@@ -16,7 +15,7 @@
 }
 
 .mainTitle {
-  @include calibri-title; 
+ // @include calibri-title; 
       border-radius: 0px;
     color: #323130;
     cursor: text;
@@ -59,7 +58,7 @@
 }
 
 .folderTitle {
-  @include calibri-title; 
+  //@include calibri-title; 
       color: #323130;
     font-size: 26px;
     margin: 0;
@@ -125,7 +124,7 @@
 }
 
 .documentTitle {
-  @include calibri-title; 
+  //@include calibri-title; 
   font-size: 18px;
   color: #323130;
   margin: 0 0 12px 0;
@@ -139,14 +138,14 @@
 }
 
 .documentMeta {
-  @include calibri-body; 
+//  @include calibri-body; 
   font-size: 14px;
   color: #605e5c;
   margin: 0 0 16px 0;
 }
 
 .documentDescription {
-  @include calibri-body; 
+ // @include calibri-body; 
   font-size: 16px;
   color: #323130;
   margin: 0;
@@ -389,7 +388,7 @@
 
 
 .fileName {
-  @include calibri-body; 
+ // @include calibri-body; 
       color: #000000;
     cursor: pointer;
     font-size: 16px;
@@ -524,7 +523,7 @@
 }
 
 .dataCell {
-  @include calibri-body; 
+  //@include calibri-body; 
   font-size: 14px;
   color: #323130;
   overflow: hidden;

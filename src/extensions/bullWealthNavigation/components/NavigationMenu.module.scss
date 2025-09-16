@@ -1,3 +1,6 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+//@import '../../../styles/fonts';
+
 .navigationWrapper {
   width: 100%;
   background: #ffffff;
@@ -12,11 +15,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 24px;
   height: 56px; // Slightly taller to match your design
-  font-family: 'Calibri', 'Segoe UI', 'Segoe UI Web (West European)', sans-serif;
   background: #ffffff;
 
   .brand {

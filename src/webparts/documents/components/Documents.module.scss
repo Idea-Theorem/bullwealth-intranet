@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 .documents {
   padding: 10px 20px 20px;
@@ -302,7 +302,7 @@
 }
 
 .categoryTitle {
-  @include calibri-title; 
+ // @include calibri-title; 
       color: #000000;
     font-size: 20px;;
     line-height: 1.5;
@@ -310,7 +310,7 @@
 }
 
 .viewAllLink {
-  @include calibri-title; 
+ // @include calibri-title; 
       color: #42B574;
     font-size: 15px;
     text-decoration: none;

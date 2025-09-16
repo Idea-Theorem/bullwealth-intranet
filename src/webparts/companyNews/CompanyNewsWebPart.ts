@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
 // Import main styles (this loads the font faces)
-import '../../styles/main.scss';
+//import '../../styles/main.scss';
 import { Version } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
@@ -149,6 +149,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected onPropertyPaneFieldChanged(propertyPath: string, _oldValue: any, newValue: any): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (this.properties as any)[propertyPath] = newValue;
     this.render();
   }
@@ -288,6 +289,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                                 borderRadius: "4px",
                                 width: "100%"
                               },
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               onChange: async (e: any) => {
                                 const file = e.target.files[0];
                                 if (file) {
@@ -305,6 +307,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                             type: "text",
                             placeholder: "Or enter image URL",
                             value: value || "",
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onChange: (e: any) => onUpdate(field.id, e.target.value),
                             style: { 
                               width: "100%", 

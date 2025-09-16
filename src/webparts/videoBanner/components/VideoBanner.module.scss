@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 :global {
   .ControlZone {
@@ -90,7 +90,7 @@
 }
 
 .title {
-  @include calibri-title; // Uses Calibri Bold
+ // @include calibri-title; // Uses Calibri Bold
   color: #000000;
     font-size: 40px;
     font-weight: 700;
@@ -107,7 +107,7 @@
 }
 
 .message {
-  @include calibri-body; // Uses Calibri Regular
+  //@include calibri-body; // Uses Calibri Regular
   color: #000000;
     font-size: 22px;
     font-style: normal;

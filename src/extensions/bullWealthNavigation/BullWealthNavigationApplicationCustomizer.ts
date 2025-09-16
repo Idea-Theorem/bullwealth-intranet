@@ -9,6 +9,9 @@ import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import NavigationMenu from './components/NavigationMenu';
 import { INavigationMenuProps } from './components/INavigationProps';
+import { SPComponentLoader } from '@microsoft/sp-loader';
+import { NavigationService } from './services/NavigationService';
+import { initializeIcons } from '@fluentui/react/lib/Icons';
 
 const LOG_SOURCE: string = 'BullWealthNavigationApplicationCustomizer';
 
@@ -25,24 +28,41 @@ export default class BullWealthNavigationApplicationCustomizer
   extends BaseApplicationCustomizer<IBullWealthNavigationApplicationCustomizerProperties> {
 
   private _topPlaceholder: PlaceholderContent | undefined;
+  private _navigationService: NavigationService;
 
   @override
   public onInit(): Promise<void> {
     Log.info(LOG_SOURCE, `Initialized ${LOG_SOURCE}`);
 
-    // Wait for placeholders to be available
-    this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
+    // Load Fabric icons first
+    this.loadFabricIconsImmediately();
 
-    // Call render in case placeholders are already available
+    // Initialize navigation service with correct URL
+    const correctSiteUrl = 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet';
+    this._navigationService = new NavigationService(
+      this.context.spHttpClient,
+      correctSiteUrl
+    );
+
+    // Wait for placeholders
+    this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
     this._renderPlaceHolders();
 
     return Promise.resolve();
   }
 
-  private _renderPlaceHolders(): void {
-    console.log('BullWealth Navigation: Attempting to render...');
+  private loadFabricIconsImmediately(): void {
+  // ONLY load Fabric CSS - don't override fonts
+  SPComponentLoader.loadCss('https://res.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.0.0/css/fabric.min.css');
+  
+  // Initialize icons but DON'T override font-family
+  initializeIcons();
+  
+  console.log('✅ Fabric icons loaded - letting SharePoint handle fonts');
+}
 
-    // Handle the top placeholder (header area)
+
+  private _renderPlaceHolders(): void {
     if (!this._topPlaceholder) {
       this._topPlaceholder = this.context.placeholderProvider.tryCreateContent(
         PlaceholderName.Top,
@@ -50,26 +70,41 @@ export default class BullWealthNavigationApplicationCustomizer
       );
 
       if (!this._topPlaceholder) {
-        console.error('The expected placeholder (Top) was not found.');
+        console.error('❌ Top placeholder not found');
         return;
       }
 
       if (this._topPlaceholder.domElement) {
-        console.log('✅ Top placeholder found, rendering navigation...');
-        
-        // Create React element
-        const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
-          items: [], // Component defines its own items
-          siteUrl: this.context.pageContext.web.absoluteUrl
-        });
+        this._navigationService.getNavigationItems()
+          .then(navigationItems => {
+            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
+              items: navigationItems,
+              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet'
+            });
 
-        ReactDom.render(element, this._topPlaceholder.domElement);
-        console.log('✅ Navigation rendered successfully!');
+            if (this._topPlaceholder && this._topPlaceholder.domElement) {
+              ReactDom.render(element, this._topPlaceholder.domElement);
+              console.log('✅ Navigation rendered');
+            }
+          })
+          .catch(error => {
+            console.error('❌ Navigation error:', error);
+            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
+              items: [],
+              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet'
+            });
+
+            if (this._topPlaceholder && this._topPlaceholder.domElement) {
+              ReactDom.render(element, this._topPlaceholder.domElement);
+            }
+          });
       }
     }
   }
 
   private _onDispose(): void {
-    console.log('[BullWealth Navigation] Disposed custom top placeholder.');
+    if (this._topPlaceholder && this._topPlaceholder.domElement) {
+      ReactDom.unmountComponentAtNode(this._topPlaceholder.domElement);
+    }
   }
 }

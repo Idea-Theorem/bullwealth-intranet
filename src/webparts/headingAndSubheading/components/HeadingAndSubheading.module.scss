@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 .headingAndSubheading {
   overflow: hidden;
@@ -23,7 +23,7 @@
   }
 
   .heading {
-    @include calibri-title; // Uses Calibri Bold
+    //@include calibri-title; // Uses Calibri Bold
     color: #000000;
     font-size: 32px;
     letter-spacing: 0px;
@@ -40,7 +40,7 @@
   }
 
   .subheading {
-    @include calibri-body;
+   // @include calibri-body;
     color: #000000;
     font-size: 18px;
     font-weight: 400;

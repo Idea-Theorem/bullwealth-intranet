@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 :global {
   .ControlZone {
@@ -23,7 +23,7 @@
     align-items: center;
 }
 .title {
-  @include calibri-title; // Uses Calibri Bold
+  //@include calibri-title; // Uses Calibri Bold
   font-size: 24px;
   margin-bottom: 2.5rem;
   text-align: center;
@@ -82,7 +82,7 @@
 .tileTitle {
   font-size: 16px;
   text-align: center;
-   @include calibri-body; // Uses Calibri Regular
+   //@include calibri-body; // Uses Calibri Regular
 }
 
 .support {
@@ -94,14 +94,14 @@
 }
 
 .supportTitle {
-  @include calibri-title; // Uses Calibri Bold
+  //@include calibri-title; // Uses Calibri Bold
   font-size: 18px;
   margin-bottom: 12px;
   font-weight: 700;
 }
 
 .supportItem {
-  @include calibri-body;
+ // @include calibri-body;
   font-size: 16px;
   margin-bottom: 10px;
   display: flex;
@@ -109,7 +109,7 @@
 }
 
 .supportItem1 {
-  @include calibri-body;
+  //@include calibri-body;
   font-size: 16px;
   margin-bottom: 10px;
   display: flex;
