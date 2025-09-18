@@ -8,9 +8,7 @@
   }
 }
 
-// .ControlZone {
-//   @include calibri-font;
-// }
+
 .companyNews {
   //@include calibri-font;
   max-width: 1440px;
@@ -106,7 +104,7 @@
   }
 
   .cardContent {
-   // @include calibri-body; // Uses Calibri Regular
+    //@include calibri-body; // Uses Calibri Regular
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -115,11 +113,7 @@
 
   .cardHeader {
    // @include calibri-body; // Uses Calibri Regular
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    font-size: 12px;
+       align-items: center;
     color: #666;
   }
 

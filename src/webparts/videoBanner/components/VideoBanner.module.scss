@@ -8,10 +8,6 @@
   }
 }
 
-// .ControlZone {
-//   @include calibri-font;
-// }
-
 .videoBanner {
   //@include calibri-font;
   position: relative;
@@ -107,7 +103,7 @@
 }
 
 .message {
-  //@include calibri-body; // Uses Calibri Regular
+ // @include calibri-body; // Uses Calibri Regular
   color: #000000;
     font-size: 22px;
     font-style: normal;

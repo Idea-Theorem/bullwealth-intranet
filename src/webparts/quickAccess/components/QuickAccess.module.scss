@@ -80,8 +80,9 @@
 }
 
 .tileTitle {
-  font-size: 16px;
-  text-align: center;
+      font-size: 14px;
+    text-align: center;
+    font-weight: 500;
    //@include calibri-body; // Uses Calibri Regular
 }
 
@@ -94,8 +95,7 @@
 }
 
 .supportTitle {
-  //@include calibri-title; // Uses Calibri Bold
-  font-size: 18px;
+  font-size: 16px;
   margin-bottom: 12px;
   font-weight: 700;
 }

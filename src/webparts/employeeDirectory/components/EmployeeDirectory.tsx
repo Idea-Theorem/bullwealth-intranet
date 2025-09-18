@@ -168,52 +168,77 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
   }
 
   return (
-    <div className={styles.employeeDirectory}>
-      <div className={styles.header}>
-        <h2>{props.title}</h2>
+    <div className={styles.employeeCard} key={employee.id}>
+      <div className={styles.profileSection}>
+        <img
+          className={styles.profileImage}
+          src={employee.profileImage}
+          alt={`${employee.name} profile`}
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=E1E1E1&color=666666`;
+          }}
+        />
+        <div className={styles.employeeInfo}>
+          <h3 className={styles.employeeName}>{employee.name}</h3>
+        </div>
       </div>
-      
-      <div className={styles.employeeGrid}>
-        {currentEmployees.map((employee) => (
-          <div key={employee.id} className={styles.employeeCard}>
-            <div className={styles.profileSection}>
-              <img 
-                src={employee.profileImage} 
-                alt={`${employee.name} profile`}
-                className={styles.profileImage}
-                onError={(e: any) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23e1e1e1'/%3E%3Ctext x='16' y='21' font-family='Arial' font-size='14' text-anchor='middle' fill='%23666'%3E${employee.name.split(' ').map(n => n[0]).join('')}%3C/text%3E%3C/svg%3E`;
-                }}
-              />
-              <div className={styles.employeeInfo}>
-                <h3 className={styles.employeeName}>{employee.name}</h3>
-                <p className={styles.employeeTitle}>{employee.title}</p>
-                <div className={styles.contactInfo}>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Mail" className={styles.contactIcon} />
-                    <span>{employee.email}</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Phone" className={styles.contactIcon} />
-                    <span>{employee.phone}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className={styles.actionSection}>
-              <button 
-                className={styles.contactButton}
-                onClick={() => handleContact(employee)}
-                title={`Email ${employee.name}`}
+      <p className={styles.employeeTitle}>{employee.title}</p>
+      <div className={styles.contactInfo}>
+        <div className={styles.contactItem}>
+          <Icon iconName="Mail" className={styles.contactIcon} />
+          <span className={styles.contactText}>{employee.email}</span>
+        </div>
+        {/* <div className={styles.contactItem}>
+          <Icon iconName="Phone" className={styles.contactIcon} />
+          <span className={styles.contactText}>{employee.phone}</span>
+        </div> */}
+      </div>
+      <div className={styles.actionSection}>
+        <button 
+          className={styles.contactButton} 
+          onClick={() => handleContactClick(employee.email)} 
+          type="button"
+        >
+          <Icon iconName="Mail" className={styles.buttonIcon} />
+          Contact
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
+  const renderSection = (title: string, employees: IEmployee[]) => {
+    if (!employees || employees.length === 0) return null;
+
+    const currentPage = currentPages[title] || 0;
+    const pageCount = Math.ceil(employees.length / cardsPerPage);
+    const startIdx = currentPage * cardsPerPage;
+    const currentEmployees = employees.slice(startIdx, startIdx + cardsPerPage);
+
+    return (
+      <div key={title} className={styles.departmentSection}>
+        <h2 className={styles.departmentTitle}>{title}</h2>
+        <div className={styles.employeeGrid}>
+          {currentEmployees.map(renderEmployeeCard)}
+        </div>
+        {pageCount > 1 && (
+          <div className={styles.pagination}>
+            {Array.from({ length: pageCount }).map((_, idx) => (
+              <button
+                key={idx}
+                className={`${styles.paginationDot} ${idx === currentPage ? styles.active : ''}`}
+                onClick={() => handlePageChange(title, idx)}
+                type="button"
+                aria-label={`Page ${idx + 1}`}
               >
-                <Icon iconName="Mail" className={styles.buttonIcon} />
-                Contact
+                ●
               </button>
-            </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
       
       {totalPages > 1 && (
