@@ -15,61 +15,31 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     }
   };
 
-  // Navigation items matching your design exactly
-  const navigationItems: INavigationItem[] = [
-    {
-      name: 'Home',
-      url: '/',
-      icon: 'Home'
-    },
-    {
-      name: 'BullWealth',
-      url: '#',
-      icon: 'FolderHorizontal',
-      children: [
-        { name: 'Compliance', url: '/sites/bullwealth/compliance' },
-        { name: 'Research & Investment', url: '/sites/bullwealth/research' },
-        { name: 'Advisory Group', url: '/sites/bullwealth/advisory' },
-        { name: 'Operations', url: '/sites/bullwealth/operations' },
-        { name: 'Business Development', url: '/sites/bullwealth/business-development' },
-        { name: 'Tax and Accounting', url: '/sites/bullwealth/tax-accounting' },
-        { name: 'Employee Directory', url: '/sites/bullwealth/employee-directory' }
-      ]
-    },
-    {
-      name: 'Clover',
-      url: '#',
-      icon: 'FolderHorizontal',
-      children: [
-        { name: 'Platform Overview', url: '/sites/clover/platform' },
-        { name: 'Documentation', url: '/sites/clover/docs' },
-        { name: 'Support Center', url: '/sites/clover/support' },
-        { name: 'Training', url: '/sites/clover/training' },
-        { name: 'Updates', url: '/sites/clover/updates' }
-      ]
-    },
-    {
-      name: 'Human Resource',
-      url: '/sites/hr',
-      icon: 'People'
-    },
-    {
-      name: 'IT Policy',
-      url: '/sites/it-policy',
-      icon: 'DocumentSet'
-    },
-    {
-      name: 'Help Centre',
-      url: '/sites/help',
-      icon: 'Help'
-    }
-  ];
+  const getFallbackNavigation = (): INavigationItem[] => {
+    return [
+      { name: 'Home', url: '/', icon: 'Home' },
+      { 
+        name: 'BullWealth', 
+        url: '/sites/BullWealthIntranet/bullwealth', // Make parent clickable
+        icon: 'Building', 
+        children: [
+          { name: 'Compliance', url: '/sites/bullwealth/compliance' },
+          { name: 'Research & Investment', url: '/sites/bullwealth/research' }
+        ]
+      },
+      { name: 'Human Resource', url: '/sites/hr', icon: 'People' },
+      { name: 'IT Policy', url: '/sites/it-policy', icon: 'Shield' },
+      { name: 'Help Centre', url: '/sites/help', icon: 'Help' }
+    ];
+  };
+
+  const navigationItems = (items && items.length > 0) ? items : getFallbackNavigation();
 
   return (
     <div className={styles.navigationWrapper}>
       <nav className={styles.navigationMenu}>
         <div className={styles.brand}>
-          <h1 className={styles.brandTitle}>BullWealth Intranet</h1>
+          <a href="https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/SitePages/Home.aspx"><h1 className={styles.brandTitle}>Mrked Capital Intranet</h1></a>
         </div>
 
         <ul className={styles.navList}>

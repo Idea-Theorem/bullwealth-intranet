@@ -1,5 +1,5 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 :global {
   .ControlZone {
@@ -8,9 +8,7 @@
   }
 }
 
-.ControlZone {
-  @include calibri-font;
-}
+
 .companyNews {
   //@include calibri-font;
   max-width: 1440px;
@@ -18,7 +16,7 @@
   margin: 0 auto;
   
   .sectionTitle {
-    @include calibri-title; // Uses Calibri Bold
+    //@include calibri-title; // Uses Calibri Bold
     color: #000000;
     font-size: 28px;
     font-weight: 700;
@@ -106,7 +104,7 @@
   }
 
   .cardContent {
-    @include calibri-body; // Uses Calibri Regular
+    //@include calibri-body; // Uses Calibri Regular
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -114,17 +112,13 @@
   }
 
   .cardHeader {
-    @include calibri-body; // Uses Calibri Regular
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    font-size: 12px;
+   // @include calibri-body; // Uses Calibri Regular
+       align-items: center;
     color: #666;
   }
 
   .authorInfo {
-    @include calibri-body; // Uses Calibri Regular
+   // @include calibri-body; // Uses Calibri Regular
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -135,14 +129,14 @@
   }
 
   .authorName {
-    @include calibri-body; // Uses Calibri Regular
+    //@include calibri-body; // Uses Calibri Regular
     font-weight: 700;
     font-size: 12px;
     color: #000;
   }
 
   .date {
-    @include calibri-body; // Uses Calibri Regular
+    //@include calibri-body; // Uses Calibri Regular
     color: #000;
     font-size: 11px;
   }
@@ -178,7 +172,7 @@
   }
 
   .cardTitle {
-    @include calibri-title; // Uses Calibri Bold
+    //@include calibri-title; // Uses Calibri Bold
     color: #000;
     margin: 0 0 15px 0;
     font-size: 20px;
@@ -193,7 +187,7 @@
   }
 
   .readMoreLink {
-    @include calibri-body; // Uses Calibri Regular
+    //@include calibri-body; // Uses Calibri Regular
     color: #42B574;
     background: none;
     border: none;

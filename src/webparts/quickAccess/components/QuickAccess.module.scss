@@ -70,8 +70,10 @@
 }
 
 .tileTitle {
-  font-size: 14px;
-  text-align: center;
+      font-size: 14px;
+    text-align: center;
+    font-weight: 500;
+   //@include calibri-body; // Uses Calibri Regular
 }
 
 .support {

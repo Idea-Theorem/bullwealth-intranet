@@ -1,8 +1,6 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-// Import global styles - ADD THIS LINE
-import '../../styles/main.scss';
-
+import { initializeIcons } from '@fluentui/react';
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
@@ -31,6 +29,21 @@ export interface IDocumentsWebPartProps {
 }
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
+
+  protected onInit(): Promise<void> {
+    initializeIcons();
+
+    if (!this.properties.title) {
+      this.properties.title = 'Documents';
+    }
+    if (!this.properties.columnsPerRow) {
+      this.properties.columnsPerRow = 4;
+    }
+
+    return this._getEnvironmentMessage().then(message => {
+      this._environmentMessage = message;
+    });
+  }
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
@@ -151,22 +164,6 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     } catch {
       return false;
     }
-  }
-
-  // ✅ FIXED: Removed unused _formatUrl function
-
-  protected onInit(): Promise<void> {
-    // Set default values
-    if (!this.properties.title) {
-      this.properties.title = 'Documents';
-    }
-    if (!this.properties.columnsPerRow) {
-      this.properties.columnsPerRow = 4;
-    }
-
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
   }
 
   private _getEnvironmentMessage(): Promise<string> {
