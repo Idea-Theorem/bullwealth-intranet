@@ -1,9 +1,18 @@
-@import '~@fluentui/react/dist/sass/References.scss';
+// Global SharePoint layout override
+:global {
+  @media screen and (min-width: 1024px) {
+      .r_cJ1Dm_y298L:not(.f_XsZ2U_y298L) .s_ywkch_y298L {
+          display: flex;
+          max-width: 1440px !important;
+      }
+  }
+}
 
 .employeeDirectory {
-  padding: 20px;
-  background: #ffffff;
+  padding: 20px 25px;
+  background: #F9F9F9;
   border-radius: 8px;
+<<<<<<< Updated upstream
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin: 10px 0;
 }
@@ -89,441 +98,236 @@
 .departmentInfo {
   display: flex;
   align-items: center;
+=======
+>>>>>>> Stashed changes
   gap: 12px;
-}
-
-.employeeCount {
-  font-size: 14px;
-  color: #605e5c;
-  font-weight: 500;
-}
-
-.toggleIcon {
-  font-size: 16px;
-  color: #0078d4;
-  transition: transform 0.2s ease-in-out;
-}
-
-.employeeGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 20px;
-  background: #ffffff;
-  overflow: visible;
-}
-
-.employeeCard {
-  background: #ffffff;
-  border: 1px solid #e1dfdd;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.employeeCard:hover {
-  border-color: #0078d4;
-  box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
-  transform: translateY(-2px);
-}
-
-.profileSection {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.profileImage {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e1dfdd;
-  background: #f3f2f1;
-}
-
-.employeeInfo {
-  text-align: center;
-  width: 100%;
-}
-
-.employeeName {
-  font-size: 18px;
-  font-weight: 600;
-  color: #323130;
-  margin: 0 0 4px 0;
-  line-height: 1.3;
-}
-
-.employeeTitle {
-  font-size: 14px;
-  color: #605e5c;
-  margin: 0 0 12px 0;
-  line-height: 1.4;
-}
-
-.contactInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-}
-
-.contactItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #605e5c;
-}
-
-.contactItem span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-}
-
-.contactIcon {
-  font-size: 14px;
-  color: #0078d4;
-  flex-shrink: 0;
-}
-
-.actionSection {
-  display: flex;
-  justify-content: center;
-  margin-top: auto;
-}
-
-.contactButton {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #16a085;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  min-width: 100px;
-  justify-content: center;
-}
-
-.contactButton:hover {
-  background: #138d75;
-  transform: translateY(-1px);
-}
-
-.contactButton:active {
-  transform: translateY(0);
-}
-
-.contactButton:focus,
-.contactButton:focus-visible {
-  outline: 2px solid #0078d4;
-  outline-offset: 2px;
-}
-
-.buttonIcon {
-  font-size: 14px;
-}
-
-.noEmployees {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: #605e5c;
-  text-align: center;
-  grid-column: 1 / -1;
-}
-
-.noEmployees p {
-  margin: 0;
-  font-size: 14px;
-  font-style: italic;
-}
-
-.noEmployeesIcon {
-  font-size: 32px;
-  color: #c8c6c4;
-  margin-bottom: 12px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #e1dfdd;
-}
-
-.paginationDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #c8c6c4;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-.paginationDot:hover {
-  background: #605e5c;
-  transform: scale(1.1);
-}
-
-.paginationDot:focus,
-.paginationDot:focus-visible {
-  outline: 2px solid #0078d4;
-  outline-offset: 2px;
-}
-
-.active {
-  background: #0078d4 !important;
-  transform: scale(1.25);
-}
-
-/* Responsive Design */
-@media (max-width: 1400px) {
-  .employeeGrid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-}
-
-@media (max-width: 1200px) {
-  .employeeGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .employeeDirectory {
-    padding: 16px;
-  }
-
-  .employeeGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .employeeCard {
-    padding: 16px;
-  }
-
-  .header h2 {
-    font-size: 20px;
-  }
-
-  .departmentTitle {
-    font-size: 16px;
-  }
-
-  .departmentHeader {
-    padding: 12px 16px;
-  }
-}
-
-@media (max-width: 600px) {
-  .employeeGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .departmentHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .departmentInfo {
-    align-self: flex-end;
-  }
-}
-
-@media (max-width: 480px) {
-  .employeeDirectory {
-    padding: 12px;
-  }
 
   .header {
-    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .orgChartButton {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #f3f2f1;
+      color: #323130;
+      border: 1px solid #e1dfdd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: #e1dfdd;
+        color: #323130;
+      }
+
+      svg {
+        font-size: 16px;
+      }
+    }
   }
 
-  .departmentSection {
-    margin-bottom: 16px;
+  .loaderContainer {
+    display: flex;
+    justify-content: center;
+    padding: 50px 0;
   }
 
-  .employeeGrid {
-    padding: 12px;
-    gap: 8px;
-  }
-
-  .employeeCard {
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .profileImage {
-    width: 48px;
-    height: 48px;
-  }
-
-  .employeeName {
+  .noSections {
+    text-align: center;
+    padding: 40px;
+    color: #605e5c;
     font-size: 16px;
   }
 
-  .employeeTitle {
-    font-size: 12px;
-  }
-
-  .contactItem {
-    font-size: 12px;
-  }
-
-  .contactItem span {
-    max-width: 160px;
-  }
-
-  .contactButton {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-width: 80px;
-  }
-}
-
-/* Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  .employeeDirectory {
-    background: #1f1f1f;
-    color: #ffffff;
-    border-color: #3c3c3c;
-  }
-
-  .header h2 {
-    color: #ffffff;
-  }
-
   .departmentSection {
-    border-color: #3c3c3c;
-    background: #2d2d2d;
-  }
+    margin-bottom: 40px;
 
-  .departmentHeader {
-    background: #323232;
-    border-bottom-color: #3c3c3c;
-  }
-
-  .departmentHeader:hover {
-    background: #3c3c3c;
-  }
-
-  .departmentHeader:focus,
-  .departmentHeader:focus-visible {
-    outline-color: #106ebe;
-  }
-
-  .departmentTitle {
-    color: #ffffff;
-  }
-
-  .employeeCount {
-    color: #b3b3b3;
-  }
-
-  .toggleIcon {
-    color: #106ebe;
+    .departmentTitle {
+          color: #000000;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    text-transform: capitalize;
+    }
   }
 
   .employeeGrid {
-    background: #2d2d2d;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .employeeCard {
-    background: #2d2d2d;
-    border-color: #3c3c3c;
+ .employeeCard {
+  background: #fff;
+    border: 1px solid #ffffff;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    text-align: left;
+    transition: box-shadow .2s, transform .2s;
+    box-shadow: 0px 2px 6px #00000010;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
   }
 
-  .employeeCard:hover {
-    border-color: #106ebe;
-    box-shadow: 0 4px 12px rgba(16, 110, 190, 0.15);
+  // Image + Name side by side (horizontal)
+  .profileSection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+
+    .profileImage {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e1dfdd;
+      flex-shrink: 0;
+    }
+
+    .employeeInfo {
+      flex: 1;
+
+      .employeeName {
+        color: #000000;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px;
+      }
+    }
   }
 
-  .profileImage {
-    border-color: #3c3c3c;
-    background: #323232;
-  }
-
-  .employeeName {
-    color: #ffffff;
-  }
-
+  // Job title below image+name section
   .employeeTitle {
-    color: #b3b3b3;
+    font-size: 14px;
+    color: #000;
+    margin: 0 0 16px 0;
+    text-align: left;
   }
 
-  .contactItem {
-    color: #b3b3b3;
+  .contactInfo {
+    width: 100%;
+    margin-bottom: 16px;
+
+    .contactItem {
+      display: flex;
+      align-items: center;
+      font-size: 15px;
+      color: #000;
+      margin-bottom: 10px;
+
+      .contactIcon {
+        margin-right: 6px;
+        font-size: 16px;
+        color: #000;
+      }
+
+      .contactText {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
   }
 
-  .contactIcon {
-    color: #106ebe;
-  }
+  .actionSection {
+    width: 100%;
 
-  .contactButton:focus,
-  .contactButton:focus-visible {
-    outline-color: #106ebe;
-  }
+    .contactButton {
+      width: 100%;
+      background-color: #42B574;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s;
 
-  .noEmployees {
-    color: #b3b3b3;
-  }
+      &:hover {
+        background-color: #45a049;
+      }
 
-  .noEmployees p {
-    color: #b3b3b3;
-  }
+      &:active {
+        background-color: #3d8b40;
+      }
 
-  .noEmployeesIcon {
-    color: #5c5c5c;
+      .buttonIcon {
+        font-size: 18px;
+      }
+    }
   }
+}
+
+
 
   .pagination {
-    border-top-color: #3c3c3c;
-  }
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
 
-  .paginationDot {
-    background: #5c5c5c;
-  }
+    .paginationDot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #c8c6c4;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 10px;
+      color: transparent;
 
-  .paginationDot:hover {
-    background: #8a8a8a;
-  }
+      &:hover {
+        background: #a19f9d;
+      }
 
-  .paginationDot:focus,
-  .paginationDot:focus-visible {
-    outline-color: #106ebe;
-  }
-
-  .active {
-    background: #106ebe !important;
-  }
-
-  .error {
-    color: #b3b3b3;
-  }
-
-  .errorIcon {
-    color: #f85149;
+      &.active {
+        background: #42B574;
+      }
+    }
   }
 }

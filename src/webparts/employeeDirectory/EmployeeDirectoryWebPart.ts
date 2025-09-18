@@ -7,86 +7,36 @@ import {
   PropertyPaneSlider
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { IReadonlyTheme } from '@microsoft/sp-component-base';
+import { PropertyFieldCollectionData, CustomCollectionFieldType } from '@pnp/spfx-property-controls/lib/PropertyFieldCollectionData';
 
-import * as strings from 'EmployeeDirectoryWebPartStrings';
 import EmployeeDirectory from './components/EmployeeDirectory';
-import { IEmployeeDirectoryProps } from './components/IEmployeeDirectoryProps';
+import { IEmployeeDirectoryProps, ISection } from './components/IEmployeeDirectoryProps';
 
 export interface IEmployeeDirectoryWebPartProps {
   title: string;
   maxEmployeesToShow: number;
+  orgChartLink: string;
+  sections: ISection[];
 }
 
 export default class EmployeeDirectoryWebPart extends BaseClientSideWebPart<IEmployeeDirectoryWebPartProps> {
-
-  private _isDarkTheme: boolean = false;
-  private _environmentMessage: string = '';
 
   public render(): void {
     const element: React.ReactElement<IEmployeeDirectoryProps> = React.createElement(
       EmployeeDirectory,
       {
-        title: this.properties.title,
-        maxEmployeesToShow: this.properties.maxEmployeesToShow,
-        isDarkTheme: this._isDarkTheme,
-        environmentMessage: this._environmentMessage,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName,
+        title: this.properties.title || 'Employee Directory',
+        maxEmployeesToShow: this.properties.maxEmployeesToShow || 5,
+        orgChartLink: this.properties.orgChartLink || '',
+        sections: this.properties.sections || [
+          { title: 'Compliance', listName: 'Employee - Compliance' },
+          { title: 'Research & Investment', listName: 'Employee - Research & Investment' }
+        ],
         context: this.context
       }
     );
 
     ReactDom.render(element, this.domElement);
-  }
-
-  protected onInit(): Promise<void> {
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
-  }
-
-  private _getEnvironmentMessage(): Promise<string> {
-    if (!!this.context.sdks.microsoftTeams) { // running in Teams, office.com or Outlook
-      return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
-        .then(context => {
-          let environmentMessage: string = '';
-          switch (context.app.host.name) {
-            case 'Office': // running in Office
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOffice : strings.AppOfficeEnvironment;
-              break;
-            case 'Outlook': // running in Outlook
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOutlook : strings.AppOutlookEnvironment;
-              break;
-            case 'Teams': // running in Teams
-            case 'TeamsModern':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentTeams : strings.AppTeamsTabEnvironment;
-              break;
-            default:
-              environmentMessage = strings.UnknownEnvironment;
-          }
-          return environmentMessage;
-        });
-    }
-
-    return Promise.resolve(this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentSharePoint : strings.AppSharePointEnvironment);
-  }
-
-  protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
-    if (!currentTheme) {
-      return;
-    }
-
-    this._isDarkTheme = !!currentTheme.isInverted;
-    const {
-      semanticColors
-    } = currentTheme;
-
-    if (semanticColors) {
-      this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
-      this.domElement.style.setProperty('--link', semanticColors.link || null);
-      this.domElement.style.setProperty('--linkHovered', semanticColors.linkHovered || null);
-    }
   }
 
   protected onDispose(): void {
@@ -102,23 +52,51 @@ export default class EmployeeDirectoryWebPart extends BaseClientSideWebPart<IEmp
       pages: [
         {
           header: {
-            description: strings.PropertyPaneDescription
+            description: "Configure Employee Directory"
           },
           groups: [
             {
-              groupName: strings.BasicGroupName,
+              groupName: "General Settings",
               groupFields: [
                 PropertyPaneTextField('title', {
-                  label: 'Web Part Title',
-                  value: 'Compliance'
+                  label: 'Web Part Title'
+                }),
+                PropertyPaneTextField('orgChartLink', {
+                  label: 'Org Chart Link (URL)'
                 }),
                 PropertyPaneSlider('maxEmployeesToShow', {
-                  label: 'Maximum employees to show',
+                  label: 'Max Employees Per Page',
                   min: 1,
                   max: 20,
-                  value: 5,
-                  showValue: true,
-                  step: 1
+                  value: this.properties.maxEmployeesToShow || 5,
+                  showValue: true
+                })
+              ]
+            },
+            {
+              groupName: "Department Sections",
+              groupFields: [
+                PropertyFieldCollectionData('sections', {
+                  key: 'sections',
+                  label: 'Employee Sections',
+                  panelHeader: 'Configure directory sections',
+                  manageBtnLabel: 'Manage Sections',
+                  value: this.properties.sections,
+                  fields: [
+                    {
+                      id: 'title',
+                      title: 'Section Title',
+                      type: CustomCollectionFieldType.string,
+                      required: true
+                    },
+                    {
+                      id: 'listName',
+                      title: 'SharePoint List Name',
+                      type: CustomCollectionFieldType.string,
+                      required: true
+                    }
+                  ],
+                  disabled: false
                 })
               ]
             }

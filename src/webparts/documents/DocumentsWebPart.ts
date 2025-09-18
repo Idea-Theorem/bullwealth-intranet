@@ -1,8 +1,12 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
+<<<<<<< Updated upstream
 // Import global styles - ADD THIS LINE
 import '../../styles/main.scss';
 
+=======
+import { initializeIcons } from '@fluentui/react';
+>>>>>>> Stashed changes
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
@@ -13,15 +17,16 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
-
 import Documents from './components/Documents';
+import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http'; // Make sure this import exists
 
 export interface IDocumentCategory {
   id: string;
   title: string;
-  imageData: string; // Base64 encoded image
-  libraryUrl: string; // Main URL field (changed from libraryName)
-  viewAllUrl?: string; // Optional: Alternative view URL
+  imageData: string;
+  libraryUrl: string;
+  viewAllUrl?: string;
+  viewDocumentsText?: string; // NEW: Custom link text
 }
 
 export interface IDocumentsWebPartProps {
@@ -32,6 +37,24 @@ export interface IDocumentsWebPartProps {
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
 
+<<<<<<< Updated upstream
+=======
+  protected onInit(): Promise<void> {
+    initializeIcons();
+
+    if (!this.properties.title) {
+      this.properties.title = 'Documents';
+    }
+    if (!this.properties.columnsPerRow) {
+      this.properties.columnsPerRow = 4;
+    }
+
+    return this._getEnvironmentMessage().then(message => {
+      this._environmentMessage = message;
+    });
+  }
+
+>>>>>>> Stashed changes
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
 
@@ -47,7 +70,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     const element = React.createElement(
       Documents,
       {
-        title: this.properties.title || 'Documents', // ✅ Fixed: Now matches interface
+        title: this.properties.title || 'Documents',
         categories: categories,
         columnsPerRow: this.properties.columnsPerRow || 4,
         context: this.context,
@@ -74,45 +97,103 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
         title: 'Compliance',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Compliance`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents' // Default text
       },
       {
         id: '2',
         title: 'Research & Investments',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Research`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents'
       },
       {
         id: '3',
         title: 'Advisory Group',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Advisory`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents'
       },
       {
         id: '4',
         title: 'Operations',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Operations`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents'
       },
       {
         id: '5',
         title: 'Business Development',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Business`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents'
       },
       {
         id: '6',
         title: 'Tax & Accounting',
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Tax`,
-        viewAllUrl: ''
+        viewAllUrl: '',
+        viewDocumentsText: 'View Documents'
       }
     ];
   }
+
+  private _uploadImageToSharePoint = async (categoryIndex: number): Promise<void> => {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      try {
+        const fileName = `document-category-${Date.now()}-${file.name}`;
+        const siteUrl = this.context.pageContext.web.absoluteUrl;
+        const uploadUrl = `${siteUrl}/_api/web/lists/getbytitle('Site Assets')/RootFolder/Files/Add(url='${fileName}',overwrite=true)`;
+
+        const arrayBuffer = await file.arrayBuffer();
+        
+        const response: SPHttpClientResponse = await this.context.spHttpClient.post(
+          uploadUrl,
+          SPHttpClient.configurations.v1, // ✅ FIXED: Use static property
+          {
+            headers: {
+              'Accept': 'application/json;odata=verbose',
+              'Content-Type': 'application/json;odata=verbose'
+            },
+            body: arrayBuffer
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          const imageUrl = result.d.ServerRelativeUrl.startsWith('/') 
+            ? `${siteUrl}${result.d.ServerRelativeUrl}`
+            : result.d.ServerRelativeUrl;
+
+          const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
+          if (categories[categoryIndex]) {
+            categories[categoryIndex].imageData = imageUrl;
+            this.properties.categories = JSON.stringify(categories);
+            this.context.propertyPane.refresh();
+            this.render();
+          }
+        } else {
+          alert('Upload failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert('Upload failed. Please try again.');
+      }
+    }
+  };
+  fileInput.click();
+}
 
   private _uploadImage = (categoryIndex: number): void => {
     const fileInput = document.createElement('input');
@@ -138,11 +219,9 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     fileInput.click();
   }
 
-  // Helper function to validate URL
   private _isValidUrl = (url: string): boolean => {
     try {
       if (!url) return false;
-      // Allow relative URLs or full URLs
       if (url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://')) {
         return true;
       }
@@ -153,6 +232,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     }
   }
 
+<<<<<<< Updated upstream
   // ✅ FIXED: Removed unused _formatUrl function
 
   protected onInit(): Promise<void> {
@@ -169,23 +249,18 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     });
   }
 
+=======
+>>>>>>> Stashed changes
   private _getEnvironmentMessage(): Promise<string> {
     if (!!this.context.sdks.microsoftTeams) {
       return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
         .then(context => {
           let environmentMessage: string = '';
           switch (context.app.host.name) {
-            case 'Office':
-              environmentMessage = 'Office';
-              break;
-            case 'Outlook':
-              environmentMessage = 'Outlook';
-              break;
-            case 'Teams':
-              environmentMessage = 'Teams';
-              break;
-            default:
-              environmentMessage = 'SharePoint';
+            case 'Office': environmentMessage = 'Office'; break;
+            case 'Outlook': environmentMessage = 'Outlook'; break;
+            case 'Teams': environmentMessage = 'Teams'; break;
+            default: environmentMessage = 'SharePoint';
           }
           return environmentMessage;
         });
@@ -235,48 +310,61 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
             return '';
           }
         }),
-        // ✅ UPDATED: URL field instead of Library Name
         PropertyPaneTextField(`tempLibraryUrl_${index}`, {
           label: 'Library URL',
           value: category.libraryUrl,
-          placeholder: 'https://yourtenant.sharepoint.com/sites/yoursite/DocumentLibrary',
+          placeholder: 'https://bullwealthmanagementgro.sharepoint...',
           description: 'Enter the complete URL to the SharePoint document library',
-          multiline: false,
           onGetErrorMessage: (value: string) => {
             const cats = JSON.parse(this.properties.categories || '[]');
             cats[index].libraryUrl = value;
             this.properties.categories = JSON.stringify(cats);
             this.render();
             
-            // Validate URL format
             if (value && !this._isValidUrl(value)) {
               return 'Please enter a valid URL (e.g., https://yourtenant.sharepoint.com/sites/yoursite/DocumentLibrary)';
             }
             return '';
           }
         }),
-        // ✅ ADDED: Optional View All URL field
         PropertyPaneTextField(`tempViewAllUrl_${index}`, {
           label: 'View All URL (Optional)',
           value: category.viewAllUrl || '',
-          placeholder: 'https://yourtenant.sharepoint.com/sites/yoursite/DocumentLibrary/Forms/AllItems.aspx',
+          placeholder: 'https://yourtenant.sharepoint.com/sites/y...',
           description: 'Optional: Custom URL for "View Documents" link',
-          multiline: false,
           onGetErrorMessage: (value: string) => {
             const cats = JSON.parse(this.properties.categories || '[]');
             cats[index].viewAllUrl = value;
             this.properties.categories = JSON.stringify(cats);
             this.render();
             
-            // Validate URL format if provided
             if (value && !this._isValidUrl(value)) {
               return 'Please enter a valid URL';
             }
             return '';
           }
         }),
+        // NEW: Editable link text field
+        PropertyPaneTextField(`tempViewDocumentsText_${index}`, {
+          label: 'Link Text',
+          value: category.viewDocumentsText || 'View Documents',
+          placeholder: 'View Documents',
+          description: 'Text displayed on the link button',
+          onGetErrorMessage: (value: string) => {
+            const cats = JSON.parse(this.properties.categories || '[]');
+            cats[index].viewDocumentsText = value || 'View Documents';
+            this.properties.categories = JSON.stringify(cats);
+            this.render();
+            return '';
+          }
+        }),
+        PropertyPaneButton(`uploadImageSP_${index}`, {
+          text: 'Upload to SharePoint',
+          buttonType: PropertyPaneButtonType.Primary,
+          onClick: () => this._uploadImageToSharePoint(index)
+        }),
         PropertyPaneButton(`uploadImage_${index}`, {
-          text: category.imageData ? 'Change Image' : 'Upload Image',
+          text: category.imageData ? 'Change Image' : 'Upload Image (Base64)',
           buttonType: PropertyPaneButtonType.Normal,
           onClick: () => this._uploadImage(index)
         }),
@@ -325,7 +413,8 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
                       title: 'New Category',
                       imageData: '',
                       libraryUrl: `${baseUrl}/Shared Documents`,
-                      viewAllUrl: ''
+                      viewAllUrl: '',
+                      viewDocumentsText: 'View Documents' // Default text
                     });
                     this.properties.categories = JSON.stringify(cats);
                     this.context.propertyPane.refresh();

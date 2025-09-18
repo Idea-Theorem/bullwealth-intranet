@@ -15,6 +15,7 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     }
   };
 
+<<<<<<< Updated upstream
   // Navigation items matching your design exactly
   const navigationItems: INavigationItem[] = [
     {
@@ -64,6 +65,27 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
       icon: 'Help'
     }
   ];
+=======
+  const getFallbackNavigation = (): INavigationItem[] => {
+    return [
+      { name: 'Home', url: '/', icon: 'Home' },
+      { 
+        name: 'BullWealth', 
+        url: '/sites/BullWealthIntranet/bullwealth', // Make parent clickable
+        icon: 'Building', 
+        children: [
+          { name: 'Compliance', url: '/sites/bullwealth/compliance' },
+          { name: 'Research & Investment', url: '/sites/bullwealth/research' }
+        ]
+      },
+      { name: 'Human Resource', url: '/sites/hr', icon: 'People' },
+      { name: 'IT Policy', url: '/sites/it-policy', icon: 'Shield' },
+      { name: 'Help Centre', url: '/sites/help', icon: 'Help' }
+    ];
+  };
+
+  const navigationItems = (items && items.length > 0) ? items : getFallbackNavigation();
+>>>>>>> Stashed changes
 
   return (
     <div className={styles.navigationWrapper}>
@@ -85,10 +107,25 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
                 className={styles.navLink}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (!item.children) {
+                  
+                  // UPDATED: Handle parent item clicks
+                  if (item.children) {
+                    // Parent has children - check if it should be clickable
+                    if (item.url && item.url !== '#') {
+                      // Parent is clickable - navigate to its URL
+                      console.log(`Navigating to parent: ${item.name} -> ${item.url}`);
+                      handleLinkClick(item.url, item.external);
+                    } else {
+                      // Parent is just a dropdown container - toggle dropdown
+                      setActiveDropdown(activeDropdown === item.name ? null : item.name);
+                    }
+                  } else {
+                    // No children, just navigate
                     handleLinkClick(item.url, item.external);
                   }
                 }}
+                // Add title to show it's clickable
+                title={item.children && item.url && item.url !== '#' ? `Go to ${item.name} page` : undefined}
               >
                 {item.icon && (
                   <Icon iconName={item.icon} className={styles.navIcon} />

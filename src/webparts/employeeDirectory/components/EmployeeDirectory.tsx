@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import styles from './EmployeeDirectory.module.scss';
@@ -7,162 +9,169 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import { Spinner } from '@fluentui/react/lib/Spinner';
 
 const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
-  const [allEmployees, setAllEmployees] = useState<IEmployee[]>([]);
+  const [sectionData, setSectionData] = useState<{ [key: string]: IEmployee[] }>({});
+  const [currentPages, setCurrentPages] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const employeesPerPage = 4; // Show 4 employees per page
+
+  const cardsPerPage = props.maxEmployeesToShow || 5;
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    fetchEmployees().catch((err) => {
-      console.error('Error in fetchEmployees:', err);
-    });
-  }, []);
-
-  const fetchEmployees = async (): Promise<void> => {
-    try {
+    const fetchEmployeesForSections = async () => {
       setLoading(true);
-      
-      // Try to get from SharePoint User Information List
-      const usersUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/siteusers?$filter=PrincipalType eq 1&$select=Id,Title,Email,JobTitle,Picture&$top=50`;
-      
-      const response: SPHttpClientResponse = await props.context.spHttpClient.get(
-        usersUrl,
-        SPHttpClient.configurations.v1
-      );
+      const newSectionData: { [key: string]: IEmployee[] } = {};
+      const newPaginationState: { [key: string]: number } = {};
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.value && data.value.length > 0) {
-          // Map SharePoint users to our employee interface
-          const sharePointEmployees: IEmployee[] = data.value
-            .filter((user: any) => user.Email && user.Email.indexOf('@') > -1) // Only users with valid emails
-            .map((user: any, index: number) => ({
-              id: user.Id || index + 1,
-              name: user.Title || 'Unknown User',
-              title: user.JobTitle || 'Employee',
-              email: user.Email,
-              phone: '555-123-4567', // Default phone since SP doesn't have this in user info
-              profileImage: user.Picture || `/_layouts/15/userphoto.aspx?size=L&username=${user.Email}`,
-              department: 'General'
-            }));
-
-          setAllEmployees(sharePointEmployees);
-        } else {
-          // Fallback to demo data if no SharePoint users found
-          throw new Error('No users found in SharePoint');
+      for (const section of props.sections) {
+        if (section && section.listName && section.title) {
+          try {
+            const url = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(section.listName)}')/items?$select=Id,Title,JobTitle,Email,WorkPhone,PhotoUrl&$top=50`;
+            const response: SPHttpClientResponse = await props.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+            
+            if (response.ok) {
+              const data = await response.json();
+              newSectionData[section.title] = Array.isArray(data.value) ? data.value.map((item: any, idx: number) => ({
+                id: item.Id || idx + 1,
+                name: item.Title || "Unknown Employee",
+                title: item.JobTitle || "Senior Tax Accountant",
+                email: item.Email || "employee@company.com",
+                phone: item.WorkPhone || "555-123-4567",
+                profileImage: item.PhotoUrl || `https://randomuser.me/api/portraits/${idx % 2 === 0 ? 'men' : 'women'}/${(idx + 20) % 100}.jpg`
+              })) : [];
+            } else {
+              // Fallback to demo data if no SharePoint data found
+              newSectionData[section.title] = generateDemoEmployees(section.title, 8);
+            }
+            newPaginationState[section.title] = 0;
+          } catch (error) {
+            console.error(`Error fetching ${section.title}:`, error);
+            // Fallback to demo data
+            newSectionData[section.title] = generateDemoEmployees(section.title, 8);
+            newPaginationState[section.title] = 0;
+          }
         }
-      } else {
-        throw new Error('Failed to fetch from SharePoint');
       }
-    } catch (err: any) {
-      console.error('Error fetching employees, using demo data:', err);
-      
-      // Fallback demo data - more realistic variety
-      const demoEmployees: IEmployee[] = [
-        {
-          id: 1,
-          name: 'Sarah Johnson',
-          title: 'Senior Tax Accountant',
-          email: 'sarah.johnson@company.com',
-          phone: '555-123-4567',
-          profileImage: `https://randomuser.me/api/portraits/women/44.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 2,
-          name: 'Michael Chen',
-          title: 'Financial Analyst',
-          email: 'michael.chen@company.com',
-          phone: '555-123-4568',
-          profileImage: `https://randomuser.me/api/portraits/men/32.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 3,
-          name: 'Emily Davis',
-          title: 'Compliance Manager',
-          email: 'emily.davis@company.com',
-          phone: '555-123-4569',
-          profileImage: `https://randomuser.me/api/portraits/women/68.jpg`,
-          department: 'Compliance'
-        },
-        {
-          id: 4,
-          name: 'Robert Wilson',
-          title: 'Senior Auditor',
-          email: 'robert.wilson@company.com',
-          phone: '555-123-4570',
-          profileImage: `https://randomuser.me/api/portraits/men/75.jpg`,
-          department: 'Audit'
-        },
-        {
-          id: 5,
-          name: 'Lisa Martinez',
-          title: 'Risk Analyst',
-          email: 'lisa.martinez@company.com',
-          phone: '555-123-4571',
-          profileImage: `https://randomuser.me/api/portraits/women/55.jpg`,
-          department: 'Risk Management'
-        },
-        {
-          id: 6,
-          name: 'David Thompson',
-          title: 'Tax Specialist',
-          email: 'david.thompson@company.com',
-          phone: '555-123-4572',
-          profileImage: `https://randomuser.me/api/portraits/men/41.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 7,
-          name: 'Jennifer Brown',
-          title: 'Compliance Officer',
-          email: 'jennifer.brown@company.com',
-          phone: '555-123-4573',
-          profileImage: `https://randomuser.me/api/portraits/women/22.jpg`,
-          department: 'Compliance'
-        },
-        {
-          id: 8,
-          name: 'James Rodriguez',
-          title: 'Financial Controller',
-          email: 'james.rodriguez@company.com',
-          phone: '555-123-4574',
-          profileImage: `https://randomuser.me/api/portraits/men/18.jpg`,
-          department: 'Finance'
-        }
-      ];
 
-      setAllEmployees(demoEmployees);
-    } finally {
+      setSectionData(newSectionData);
+      setCurrentPages(newPaginationState);
+      setLoading(false);
+    };
+
+    if (props.sections && props.sections.length > 0) {
+      fetchEmployeesForSections();
+    } else {
       setLoading(false);
     }
+  }, [props.sections, props.context]);
+
+  const generateDemoEmployees = (department: string, count: number): IEmployee[] => {
+    const names = [
+      'John Doe', 'Ana Martinez', 'Brandon Hubah', 'Denisa Farrow', 'Michael Chen',
+      'Sarah Wilson', 'David Brown', 'Emily Davis', 'Robert Taylor', 'Lisa Martinez'
+    ];
+
+    const jobTitles = department === 'Compliance' 
+      ? ['Senior Tax Accountant', 'Compliance Officer', 'Audit Manager', 'Risk Analyst']
+      : ['Senior Tax Accountant', 'Investment Analyst', 'Research Manager', 'Portfolio Manager'];
+
+    return Array.from({ length: count }, (_, index) => ({
+      id: index + 1,
+      name: names[index % names.length],
+      title: jobTitles[index % jobTitles.length],
+      email: `${names[index % names.length].toLowerCase().replace(' ', '.')}@bullwealth.com`,
+      phone: `555-123-45${60 + index}`,
+      profileImage: `https://randomuser.me/api/portraits/${index % 2 === 0 ? 'men' : 'women'}/${(index + 20) % 100}.jpg`
+    }));
   };
 
-  const handleContact = (employee: IEmployee): void => {
-    window.open(`mailto:${employee.email}`, '_blank');
+  const handleContactClick = (email: string) => {
+    window.open(`mailto:${email}`, "_blank");
   };
 
-  const handlePageChange = (pageIndex: number): void => {
-    setCurrentPage(pageIndex);
+  const handlePageChange = (sectionTitle: string, pageNum: number) => {
+    setCurrentPages(prev => ({ ...prev, [sectionTitle]: pageNum }));
   };
 
-  // Calculate pagination
-  const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
-  const startIndex = currentPage * employeesPerPage;
-  const currentEmployees = allEmployees.slice(startIndex, startIndex + employeesPerPage);
+ const renderEmployeeCard = (employee: IEmployee) => {
+  return (
+    <div className={styles.employeeCard} key={employee.id}>
+      <div className={styles.profileSection}>
+        <img
+          className={styles.profileImage}
+          src={employee.profileImage}
+          alt={`${employee.name} profile`}
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=E1E1E1&color=666666`;
+          }}
+        />
+        <div className={styles.employeeInfo}>
+          <h3 className={styles.employeeName}>{employee.name}</h3>
+        </div>
+      </div>
+      <p className={styles.employeeTitle}>{employee.title}</p>
+      <div className={styles.contactInfo}>
+        <div className={styles.contactItem}>
+          <Icon iconName="Mail" className={styles.contactIcon} />
+          <span className={styles.contactText}>{employee.email}</span>
+        </div>
+        <div className={styles.contactItem}>
+          <Icon iconName="Phone" className={styles.contactIcon} />
+          <span className={styles.contactText}>{employee.phone}</span>
+        </div>
+      </div>
+      <div className={styles.actionSection}>
+        <button 
+          className={styles.contactButton} 
+          onClick={() => handleContactClick(employee.email)} 
+          type="button"
+        >
+          <Icon iconName="Mail" className={styles.buttonIcon} />
+          Contact
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
+  const renderSection = (title: string, employees: IEmployee[]) => {
+    if (!employees || employees.length === 0) return null;
+
+    const currentPage = currentPages[title] || 0;
+    const pageCount = Math.ceil(employees.length / cardsPerPage);
+    const startIdx = currentPage * cardsPerPage;
+    const currentEmployees = employees.slice(startIdx, startIdx + cardsPerPage);
+
+    return (
+      <div key={title} className={styles.departmentSection}>
+        <h2 className={styles.departmentTitle}>{title.toUpperCase()}</h2>
+        <div className={styles.employeeGrid}>
+          {currentEmployees.map(renderEmployeeCard)}
+        </div>
+        {pageCount > 1 && (
+          <div className={styles.pagination}>
+            {Array.from({ length: pageCount }).map((_, idx) => (
+              <button
+                key={idx}
+                className={`${styles.paginationDot} ${idx === currentPage ? styles.active : ''}`}
+                onClick={() => handlePageChange(title, idx)}
+                type="button"
+                aria-label={`Page ${idx + 1}`}
+              >
+                ●
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
-      <div className={styles.employeeDirectory}>
-        <div className={styles.header}>
-          <h2>{props.title}</h2>
-        </div>
-        <div className={styles.loading}>
-          <Spinner label="Loading employees..." />
-        </div>
+      <div className={styles.loaderContainer}>
+        <Spinner label="Loading employees..." />
       </div>
     );
   }
@@ -170,63 +179,26 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
   return (
     <div className={styles.employeeDirectory}>
       <div className={styles.header}>
-        <h2>{props.title}</h2>
+        <h1>{props.title}</h1>
+        {props.orgChartLink && (
+          <a 
+            href={props.orgChartLink} 
+            className={styles.orgChartButton} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Icon iconName="Org" />
+            Org Chart
+          </a>
+        )}
       </div>
-      
-      <div className={styles.employeeGrid}>
-        {currentEmployees.map((employee) => (
-          <div key={employee.id} className={styles.employeeCard}>
-            <div className={styles.profileSection}>
-              <img 
-                src={employee.profileImage} 
-                alt={`${employee.name} profile`}
-                className={styles.profileImage}
-                onError={(e: any) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23e1e1e1'/%3E%3Ctext x='16' y='21' font-family='Arial' font-size='14' text-anchor='middle' fill='%23666'%3E${employee.name.split(' ').map(n => n[0]).join('')}%3C/text%3E%3C/svg%3E`;
-                }}
-              />
-              <div className={styles.employeeInfo}>
-                <h3 className={styles.employeeName}>{employee.name}</h3>
-                <p className={styles.employeeTitle}>{employee.title}</p>
-                <div className={styles.contactInfo}>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Mail" className={styles.contactIcon} />
-                    <span>{employee.email}</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Phone" className={styles.contactIcon} />
-                    <span>{employee.phone}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className={styles.actionSection}>
-              <button 
-                className={styles.contactButton}
-                onClick={() => handleContact(employee)}
-                title={`Email ${employee.name}`}
-              >
-                <Icon iconName="Mail" className={styles.buttonIcon} />
-                Contact
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          {Array.from({ length: totalPages }, (_, index) => (
-            <button
-              key={index}
-              className={`${styles.paginationDot} ${index === currentPage ? styles.active : ''}`}
-              onClick={() => handlePageChange(index)}
-              title={`Page ${index + 1}`}
-              aria-label={`Go to page ${index + 1}`}
-            />
-          ))}
+      {props.sections && props.sections.length > 0 ? (
+        props.sections.map(section =>
+          renderSection(section.title, sectionData[section.title] || [])
+        )
+      ) : (
+        <div className={styles.noSections}>
+          No sections configured. Please configure sections in the web part properties.
         </div>
       )}
     </div>

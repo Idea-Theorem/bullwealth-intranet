@@ -3,11 +3,14 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 export interface IEmployeeDirectoryProps {
   title: string;
   maxEmployeesToShow: number;
-  isDarkTheme: boolean;
-  environmentMessage: string;
-  hasTeamsContext: boolean;
-  userDisplayName: string;
+  orgChartLink: string;
+  sections: ISection[];
   context: WebPartContext;
+}
+
+export interface ISection {
+  title: string;
+  listName: string;
 }
 
 export interface IEmployee {
@@ -17,5 +20,4 @@ export interface IEmployee {
   email: string;
   phone: string;
   profileImage: string;
-  department?: string;
 }

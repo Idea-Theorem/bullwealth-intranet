@@ -30,19 +30,61 @@ export default class BullWealthNavigationApplicationCustomizer
   public onInit(): Promise<void> {
     Log.info(LOG_SOURCE, `Initialized ${LOG_SOURCE}`);
 
+<<<<<<< Updated upstream
     // Wait for placeholders to be available
     this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
 
     // Call render in case placeholders are already available
+=======
+    // Load Fabric icons first
+    this.loadFabricIconsImmediately();
+
+    // Initialize navigation service with correct URL
+    const correctSiteUrl = 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet';
+    this._navigationService = new NavigationService(
+      this.context.spHttpClient,
+      correctSiteUrl
+    );
+
+    // Wait for placeholders
+    this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
+>>>>>>> Stashed changes
     this._renderPlaceHolders();
 
     return Promise.resolve();
   }
 
+<<<<<<< Updated upstream
   private _renderPlaceHolders(): void {
     console.log('BullWealth Navigation: Attempting to render...');
 
     // Handle the top placeholder (header area)
+=======
+  private loadFabricIconsImmediately(): void {
+  // ONLY load Fabric CSS - don't override fonts
+  SPComponentLoader.loadCss('https://res.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.0.0/css/fabric.min.css');
+  
+  // Initialize icons but DON'T override font-family
+  initializeIcons();
+
+    const globalOverrideCSS = document.createElement('style');
+    globalOverrideCSS.id = 'sharepoint-layout-override';
+    globalOverrideCSS.innerHTML = `
+    @media screen and (min-width: 1024px) {
+      .r_cJ1Dm_y298L:not(.f_XsZ2U_y298L) .s_ywkch_y298L {
+        max-width: 1440px !important;
+      }
+    }
+  `;
+  
+  document.head.appendChild(globalOverrideCSS);
+  
+  console.log('✅ Fabric icons loaded - letting SharePoint handle fonts');
+}
+
+
+  private _renderPlaceHolders(): void {
+>>>>>>> Stashed changes
     if (!this._topPlaceholder) {
       this._topPlaceholder = this.context.placeholderProvider.tryCreateContent(
         PlaceholderName.Top,
@@ -50,11 +92,16 @@ export default class BullWealthNavigationApplicationCustomizer
       );
 
       if (!this._topPlaceholder) {
+<<<<<<< Updated upstream
         console.error('The expected placeholder (Top) was not found.');
+=======
+        console.error('❌ Top placeholder not found');
+>>>>>>> Stashed changes
         return;
       }
 
       if (this._topPlaceholder.domElement) {
+<<<<<<< Updated upstream
         console.log('✅ Top placeholder found, rendering navigation...');
         
         // Create React element
@@ -65,11 +112,42 @@ export default class BullWealthNavigationApplicationCustomizer
 
         ReactDom.render(element, this._topPlaceholder.domElement);
         console.log('✅ Navigation rendered successfully!');
+=======
+        this._navigationService.getNavigationItems()
+          .then(navigationItems => {
+            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
+              items: navigationItems,
+              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet'
+            });
+
+            if (this._topPlaceholder && this._topPlaceholder.domElement) {
+              ReactDom.render(element, this._topPlaceholder.domElement);
+              console.log('✅ Navigation rendered');
+            }
+          })
+          .catch(error => {
+            console.error('❌ Navigation error:', error);
+            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
+              items: [],
+              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/BullWealthIntranet'
+            });
+
+            if (this._topPlaceholder && this._topPlaceholder.domElement) {
+              ReactDom.render(element, this._topPlaceholder.domElement);
+            }
+          });
+>>>>>>> Stashed changes
       }
     }
   }
 
   private _onDispose(): void {
+<<<<<<< Updated upstream
     console.log('[BullWealth Navigation] Disposed custom top placeholder.');
+=======
+    if (this._topPlaceholder && this._topPlaceholder.domElement) {
+      ReactDom.unmountComponentAtNode(this._topPlaceholder.domElement);
+    }
+>>>>>>> Stashed changes
   }
 }

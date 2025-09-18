@@ -21,15 +21,15 @@
 
   .brand {
     .brandTitle {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #323130;
-      text-decoration: none;
-      cursor: pointer;
+      color: #000;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    text-decoration: none;
       
       &:hover {
-        color: #0078d4;
+        color: #000;
       }
     }
   }
@@ -59,17 +59,18 @@
         border-radius: 0;
         
         &:hover {
-          color: #0078d4;
+          color: #42B574;
           background: rgba(0, 120, 212, 0.05);
         }
 
         .navIcon {
           font-size: 16px;
-          color: #0078d4;
+          color: #42B574;
         }
 
         .navText {
           font-size: 14px;
+          font-weight: 500;
         }
 
         .dropdownArrow {
@@ -81,9 +82,9 @@
 
       // Active item styling (for Home)
       &.activeItem .navLink {
-        color: #0078d4;
-        border-bottom: 2px solid #0078d4;
-        background: rgba(0, 120, 212, 0.05);
+        background: rgb(0 120 212 / 0%);
+    border-bottom: 2px solid #42B574;
+    color: #42B574;
       }
 
       // Dropdown styling - matches your screenshot exactly
@@ -231,3 +232,11 @@
     }
   }
 }
+<<<<<<< Updated upstream
+=======
+
+.headerRow-50.headerRow-50.headerRow-50.headerRow-50.headerRow-50 {
+    position: relative;
+    display: none !important;
+}
+>>>>>>> Stashed changes
