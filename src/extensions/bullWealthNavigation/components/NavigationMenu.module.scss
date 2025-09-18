@@ -1,3 +1,6 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+//@import '../../../styles/fonts';
+
 .navigationWrapper {
   width: 100%;
   background: #ffffff;
@@ -12,25 +15,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 24px;
   height: 56px; // Slightly taller to match your design
-  font-family: 'Calibri', 'Segoe UI', 'Segoe UI Web (West European)', sans-serif;
   background: #ffffff;
 
   .brand {
     .brandTitle {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
       color: #000;
-    cursor: pointer;
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0;
-    text-decoration: none;
+      text-decoration: none;
+      cursor: pointer;
       
       &:hover {
-        color: #000;
+        color: #42B574;
       }
+    }
+    a{
+      text-decoration: none;
     }
   }
 
@@ -50,9 +55,9 @@
         align-items: center;
         gap: 8px;
         text-decoration: none;
-        color: #323130;
-        font-size: 14px;
-        font-weight: 400;
+        color: #000;
+        font-size: 15px;
+        font-weight: 500;
         padding: 16px 20px;
         transition: all 0.2s ease-in-out;
         white-space: nowrap;
@@ -68,9 +73,9 @@
           color: #42B574;
         }
 
+
         .navText {
           font-size: 14px;
-          font-weight: 500;
         }
 
         .dropdownArrow {
@@ -82,9 +87,9 @@
 
       // Active item styling (for Home)
       &.activeItem .navLink {
-        background: rgb(0 120 212 / 0%);
-    border-bottom: 2px solid #42B574;
-    color: #42B574;
+        color: #42B574;
+        border-bottom: 3px solid #42B574;
+        background: rgba(0, 120, 212, 0.05);
       }
 
       // Dropdown styling - matches your screenshot exactly
@@ -111,8 +116,9 @@
         }
 
         .dropdownHeader {
+          display: none;
           padding: 12px 16px;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
           color: #666;
           background: #f8f9fa;
@@ -131,15 +137,15 @@
               display: block;
               padding: 12px 16px;
               text-decoration: none;
-              color: #323130;
-              font-size: 14px;
-              font-weight: 400;
+              color: #000;
+              font-size: 15px;
+              font-weight: 500;
               transition: all 0.2s ease;
               border: none;
 
               &:hover {
                 background-color: #f3f2f1;
-                color: #0078d4;
+                color: #42B574;
                 padding-left: 20px; // Slight indent on hover
               }
             }
@@ -232,11 +238,3 @@
     }
   }
 }
-<<<<<<< Updated upstream
-=======
-
-.headerRow-50.headerRow-50.headerRow-50.headerRow-50.headerRow-50 {
-    position: relative;
-    display: none !important;
-}
->>>>>>> Stashed changes

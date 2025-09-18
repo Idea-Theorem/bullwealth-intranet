@@ -1,12 +1,6 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-<<<<<<< Updated upstream
-// Import global styles - ADD THIS LINE
-import '../../styles/main.scss';
-
-=======
 import { initializeIcons } from '@fluentui/react';
->>>>>>> Stashed changes
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
@@ -37,8 +31,6 @@ export interface IDocumentsWebPartProps {
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
 
-<<<<<<< Updated upstream
-=======
   protected onInit(): Promise<void> {
     initializeIcons();
 
@@ -54,7 +46,6 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     });
   }
 
->>>>>>> Stashed changes
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
 
@@ -232,25 +223,6 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     }
   }
 
-<<<<<<< Updated upstream
-  // ✅ FIXED: Removed unused _formatUrl function
-
-  protected onInit(): Promise<void> {
-    // Set default values
-    if (!this.properties.title) {
-      this.properties.title = 'Documents';
-    }
-    if (!this.properties.columnsPerRow) {
-      this.properties.columnsPerRow = 4;
-    }
-
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
-  }
-
-=======
->>>>>>> Stashed changes
   private _getEnvironmentMessage(): Promise<string> {
     if (!!this.context.sdks.microsoftTeams) {
       return this.context.sdks.microsoftTeams.teamsJs.app.getContext()

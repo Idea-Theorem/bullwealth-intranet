@@ -4,7 +4,7 @@ import styles from './DocumentLibrary.module.scss';
 import { IDocumentLibraryProps, IDocument } from './IDocumentLibraryProps';
 import { SPHttpClient } from '@microsoft/sp-http';
 import { Icon } from '@fluentui/react/lib/Icon';
-import { Spinner } from '@fluentui/react/lib/Spinner';
+//import { Spinner } from '@fluentui/react/lib/Spinner';
 import { IconButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { ContextualMenu, IContextualMenuItem } from '@fluentui/react/lib/ContextualMenu';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
@@ -20,7 +20,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [foldersWithDocuments, setFoldersWithDocuments] = useState<IFolderWithDocuments[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string>('');
   const [currentDocuments, setCurrentDocuments] = useState<IDocument[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  //const [setLoading] = useState<boolean>(true);
   const [selectedDocument, setSelectedDocument] = useState<IDocument | null>(null);
   const [contextMenuTarget, setContextMenuTarget] = useState<HTMLElement | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -61,7 +61,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   };
 
   const loadFolderStructure = async (): Promise<void> => {
-    setLoading(true);
+    //setLoading(true);
     console.log('=== LOADING FOLDER STRUCTURE ===');
     console.log('Target folder path:', props.listName);
 
@@ -87,7 +87,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       createDemoData();
     } finally {
-      setLoading(false);
+      //setLoading(false);
     }
   };
 
@@ -240,9 +240,9 @@ const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetF
       console.log(`✅ SUCCESS: Created ${foldersWithDocs.length} folder sections`);
       setFoldersWithDocuments(foldersWithDocs);
       
-      const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
-      setMessage(`✅ Successfully loaded ${totalDocs} documents from ${foldersWithDocs.length} folders in "${props.listName}"`);
-      setTimeout(() => setMessage(''), 5000);
+      //const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
+      //setMessage(`✅ Successfully loaded ${totalDocs} documents from ${foldersWithDocs.length} folders in "${props.listName}"`);
+     // setTimeout(() => setMessage(''), 5000);
     }
   };
 
@@ -742,15 +742,15 @@ const mapFileToDocument = (file: any): IDocument => {
     ];
   };
 
-  if (loading) {
-    return (
-      <div className={styles.documentLibrary}>
-        <div className={styles.loading}>
-          <Spinner label={`Loading documents from "${props.listName}"...`} />
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className={styles.documentLibrary}>
+  //       <div className={styles.loading}>
+  //         <Spinner label={`Loading documents from "${props.listName}"...`} />
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Table view when "View all" is clicked
   if (currentFolder) {

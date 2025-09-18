@@ -114,10 +114,10 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
           <Icon iconName="Mail" className={styles.contactIcon} />
           <span className={styles.contactText}>{employee.email}</span>
         </div>
-        <div className={styles.contactItem}>
+        {/* <div className={styles.contactItem}>
           <Icon iconName="Phone" className={styles.contactIcon} />
           <span className={styles.contactText}>{employee.phone}</span>
-        </div>
+        </div> */}
       </div>
       <div className={styles.actionSection}>
         <button 
@@ -145,7 +145,7 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
 
     return (
       <div key={title} className={styles.departmentSection}>
-        <h2 className={styles.departmentTitle}>{title.toUpperCase()}</h2>
+        <h2 className={styles.departmentTitle}>{title}</h2>
         <div className={styles.employeeGrid}>
           {currentEmployees.map(renderEmployeeCard)}
         </div>
