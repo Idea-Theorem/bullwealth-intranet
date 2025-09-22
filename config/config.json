@@ -113,6 +113,14 @@
           "manifest": "./src/extensions/bullWealthNavigation/BullWealthNavigationApplicationCustomizer.manifest.json"
         }
       ]
+    },
+    "messages-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/messagesWebPart/MessagesWebPart.js",
+          "manifest": "./src/webparts/messagesWebPart/MessagesWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -127,6 +135,7 @@
     "TwoColBoxContentWebPartStrings": "lib/webparts/2ColBoxContent/loc/{locale}.js",
     "EmployeeDirectoryWebPartStrings": "lib/webparts/employeeDirectory/loc/{locale}.js",
     "DocumentLibraryWebPartStrings": "lib/webparts/documentLibrary/loc/{locale}.js",
+    "MessagesWebPartStrings": "lib/webparts/messagesWebPart/loc/{locale}.js",
     "BullWealthNavigationApplicationCustomizerStrings": "lib/extensions/bullWealthNavigation/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }

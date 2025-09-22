@@ -7,7 +7,14 @@
     padding: 0px !important;
   }
 }
-
+//NEW: Published date styling
+.publishedDate {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  margin-bottom: 20px;
+  font-weight: 400;
+  color: #e0e0e0;
+}
 .videoBanner {
   //@include calibri-font;
   position: relative;
@@ -30,6 +37,11 @@
   // * {
   //   @include calibri-font;
   // }
+  .thumbnailWrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .overlay {
@@ -295,3 +307,53 @@
 .viewButton { background-color: #0078d4; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
 
 .viewButton:hover, .viewButton:focus { background-color: #005a9e; }
+
+// 🆕 NEW: Published date styles
+.publishedDate {
+  font-size: 14px;
+  color: rgb(0, 0, 0);
+  margin-bottom: 12px;
+  font-weight: 400;
+ // text-transform: uppercase;
+ // letter-spacing: 0.5px;
+  
+  &::before {
+    content: "📅 ";
+    margin-right: 6px;
+  }
+}
+
+// 🆕 NEW: Read More button styles
+.readMoreButton {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &:hover {
+    background-color: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+// Update existing text content to accommodate new elements
+
+

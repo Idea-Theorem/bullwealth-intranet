@@ -2,8 +2,9 @@ export interface IHRDocument {
   id: string;
   title: string;
   date: string;
-  iconData: string; // Base64 encoded icon or blob URL
-  iconType: 'word' | 'pdf' | 'custom';
+  author: string;
+  iconData: string;
+  iconType: 'word' | 'pdf' | 'video' | 'custom';
   documentUrl: string;
 }
 
@@ -12,10 +13,10 @@ export interface IHRDocumentsProps {
   documents: IHRDocument[];
   columnsPerRow: number;
   showDate: boolean;
-  allowUpload: boolean;
   isDarkTheme: boolean;
   environmentMessage: string;
   hasTeamsContext: boolean;
   userDisplayName: string;
+  context: any;
   onDocumentsUpdate: (documents: IHRDocument[]) => void;
 }

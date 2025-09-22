@@ -14,7 +14,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "Video Banner" },
     "description": { "default": "Display a video message with thumbnail and play button" },
-    "officeFabricIconFontName": "Video",
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "Message from Ceo",
       "message": "We wouldn't be where we are today without each and every one of you. Thank you for making us successful!",

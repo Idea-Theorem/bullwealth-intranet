@@ -14,7 +14,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "Company News & Updates" },
     "description": { "default": "Display company news and updates in a carousel format" },
-    "officeFabricIconFontName": "News",
+   "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "Company News & Updates",
       "itemsToShow": 4,
