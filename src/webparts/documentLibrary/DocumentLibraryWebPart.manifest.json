@@ -15,7 +15,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "Document Library" },
     "description": { "default": "Display documents from SharePoint with modern interface" },
-    "officeFabricIconFontName": "DocumentSet",
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "Compliance",
       "description": "Below are documents related to Compliance.",

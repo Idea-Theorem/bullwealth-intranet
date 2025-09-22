@@ -13,7 +13,8 @@
     "group": { "default": "Text, media, and content" },
     "title": { "default": "2 Col boxContent" },
     "description": { "default": "Dynamic two-column contact cards with switchable layout" },
-    "officeFabricIconFontName": "ContactCard",
+   
+   "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "columnLayout": "left-right",
       "containerBackgroundColor": "transparent",
