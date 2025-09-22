@@ -12,8 +12,14 @@
     "groupId": "cf066440-0614-43d6-98ae-0b31cf14c7c3",
     "group": { "default": "Text, media, and content" },
     "title": { "default": "Heading and Subheading" },
-    "description": { "default": "Display customizable heading and subheading content" },
-    "officeFabricIconFontName": "Header1",
+    "description": { "default": "Display custom heading and subheading content for section headers" },
+    
+   
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
+    
+    
+    "officeFabricIconFontName": "Header",
+    
     "properties": {
       "heading": "Human Resource",
       "subheading": "Below is various documents, training and material for HR"

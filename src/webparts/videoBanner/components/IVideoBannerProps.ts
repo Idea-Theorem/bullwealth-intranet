@@ -7,6 +7,10 @@ export interface IVideoBannerProps {
   backgroundImageUrl: string;
   autoPlay: boolean;
   showInModal: boolean;
+  // 🔧 NEW: Added missing properties
+  publishedDate?: string;
+  readMoreUrl?: string;
+  // Existing properties
   isDarkTheme: boolean;
   environmentMessage: string;
   hasTeamsContext: boolean;

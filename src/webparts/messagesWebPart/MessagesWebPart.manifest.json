@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "f47e3d8b-2a5c-4e18-9d4a-6f8b2c5e1a9f",
+  "alias": "MessagesWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart"],
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Other" },
+    "title": { "default": "Messages" },
+    "description": { "default": "Display messages with card and detail views" },
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
+    "properties": {
+      "description": "Messages",
+      "listName": "Messages",
+      "title": "Newsletters and Messages"
+    }
+  }]
+}

@@ -13,7 +13,7 @@
     "group": { "default": "Text, media, and content" },
     "title": { "default": "Box Content" },
     "description": { "default": "Dynamic content box with customizable title, description, and action button" },
-    "officeFabricIconFontName": "GridViewMedium",
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "HR Platform Introduction",
       "description": "Get started with our HR platform. HR Platform Introductory Call Recording",

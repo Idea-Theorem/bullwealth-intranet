@@ -14,7 +14,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "Compliance Policies" },
     "description": { "default": "Display compliance policies and documents with export and share functionality" },
-    "officeFabricIconFontName": "ComplianceAudit",
+   "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "sectionTitle": "Compliance",
       "categoryTitle": "Policies",

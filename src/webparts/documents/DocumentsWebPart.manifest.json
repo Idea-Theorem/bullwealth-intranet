@@ -14,7 +14,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "Documents" },
     "description": { "default": "Display document categories with links to document libraries" },
-    "officeFabricIconFontName": "Documentation",
+   "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "Documents",
       "columnsPerRow": 4,

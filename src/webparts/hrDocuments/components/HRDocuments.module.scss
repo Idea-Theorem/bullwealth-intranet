@@ -1,5 +1,17 @@
 @import '~@fluentui/react/dist/sass/References.scss';
+.wordIcon,
+.pdfIcon,
+.videoIcon,
+.defaultIcon,
+.customIcon {
+  width: 32px;
+  height: 32px;
+}
 
+.videoIcon {
+  width: 32px;
+  height: 32px;
+}
 .hrDocuments {
   padding: 20px;
   background: #ffffff;

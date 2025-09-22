@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styles from './VideoBanner.module.scss' ;
+import styles from './VideoBanner.module.scss';
 import { IVideoBannerProps } from './IVideoBannerProps';
 
 export interface IVideoBannerState {
@@ -23,14 +23,13 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
     const { videoUrl, showInModal } = this.props;
     
     if (!videoUrl) {
-      alert('No video URL configured. Please configure the video URL in the web part settings.');
+      console.log('No video URL provided');
       return;
     }
 
     if (showInModal) {
       this.setState({ showModal: true, isPlaying: true });
     } else {
-      // Handle inline video play or redirect
       if (this.isYouTubeUrl(videoUrl) || this.isStreamUrl(videoUrl)) {
         window.open(videoUrl, '_blank');
       } else {
@@ -39,22 +38,28 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
     }
   }
 
+  // 🔧 ENSURE: Read More button handler
+  private handleReadMore = (): void => {
+    const { readMoreUrl } = this.props;
+    console.log('🔗 Read More clicked:', readMoreUrl);
+    if (readMoreUrl) {
+      window.open(readMoreUrl, '_blank');
+    }
+  }
+
   private handleCloseModal = (): void => {
     this.setState({ showModal: false, isPlaying: false });
   }
 
-
   private isYouTubeUrl = (url: string): boolean => {
-  return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
-}
+    return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
+  }
 
-private isStreamUrl = (url: string): boolean => {
-  return url.indexOf('microsoftstream.com') !== -1 || url.indexOf('stream.microsoft.com') !== -1;
-}
-
+  private isStreamUrl = (url: string): boolean => {
+    return url.indexOf('microsoftstream.com') !== -1 || url.indexOf('stream.microsoft.com') !== -1;
+  }
 
   private getEmbedUrl = (url: string): string => {
-    // Convert YouTube URLs to embed format
     if (this.isYouTubeUrl(url)) {
       const videoId = this.extractYouTubeId(url);
       return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
@@ -68,24 +73,32 @@ private isStreamUrl = (url: string): boolean => {
   }
 
   private getDefaultThumbnail = (): string => {
-    // Return a default thumbnail if none provided
-    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"%3E%3Crect width="800" height="450" fill="%23f39c12"/%3E%3Ctext x="400" y="225" text-anchor="middle" fill="white" font-size="24" font-family="Arial"%3EVideo Thumbnail%3C/text%3E%3C/svg%3E';
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"%3E%3Crect width="800" height="450" fill="%2334495e"/%3E%3Ctext x="400" y="200" text-anchor="middle" fill="white" font-size="24" font-family="Arial"%3EVideo Preview%3C/text%3E%3Ctext x="400" y="250" text-anchor="middle" fill="white" font-size="16" font-family="Arial"%3EClick to Play%3C/text%3E%3C/svg%3E';
   }
 
   private getDefaultBackground = (): string => {
-    // Return a default background gradient if none provided
-    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"%3E%3Cdefs%3E%3ClinearGradient id="bg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%235dade2;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%2385c1e9;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="1920" height="1080" fill="url(%23bg)" /%3E%3C/svg%3E';
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"%3E%3Cdefs%3E%3ClinearGradient id="bg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234a90e2;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237b68ee;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="1920" height="1080" fill="url(%23bg)" /%3E%3C/svg%3E';
   }
 
   public render(): React.ReactElement<IVideoBannerProps> {
     const { 
       title, 
       message, 
+      buttonText,
       videoUrl, 
       thumbnailUrl, 
-      backgroundImageUrl 
+      backgroundImageUrl,
+      publishedDate,  // 🔧 ENSURE: Published date from props
+      readMoreUrl     // 🔧 ENSURE: Read more URL from props
     } = this.props;
     const { isPlaying, showModal } = this.state;
+
+    // 🔧 DEBUG: Log the props to check values
+    console.log('🎯 VideoBanner render props:', {
+      publishedDate,
+      readMoreUrl,
+      buttonText
+    });
 
     const backgroundStyle = {
       backgroundImage: `url(${backgroundImageUrl || this.getDefaultBackground()})`
@@ -96,15 +109,29 @@ private isStreamUrl = (url: string): boolean => {
         <div className={styles.overlay}>
           <div className={styles.contentWrapper}>
             <div className={styles.textContent}>
+              {/* Title */}
               <h2 className={styles.title}>{title}</h2>
+              
+              {/* 🔧 ENSURE: Published Date shows when available */}
+              {publishedDate && (
+                <p className={styles.publishedDate}>
+                  {publishedDate}
+                </p>
+              )}
+              
+              {/* Message */}
               <p className={styles.message}>{message}</p>
-              <p className={styles.message}>{message}</p>
-              {/* <button 
-                className={styles.readMoreButton}
-                onClick={this.handleReadMore}
-              >
-                {buttonText}
-              </button> */}
+              
+              {/* 🔧 ENSURE: Read More Button always shows if URL exists */}
+              {readMoreUrl && readMoreUrl.trim() !== '' && (
+                <button 
+                  className={styles.readMoreButton}
+                  onClick={this.handleReadMore}
+                  type="button"
+                >
+                  {buttonText || 'Read More'}
+                </button>
+              )}
             </div>
             
             <div className={styles.videoSection}>
@@ -115,21 +142,24 @@ private isStreamUrl = (url: string): boolean => {
                     alt="Video thumbnail"
                     className={styles.thumbnail}
                   />
-                  <button 
-                    className={styles.playButton}
-                    onClick={this.handlePlayClick}
-                    aria-label="Play video"
-                  >
-                    <svg 
-                      className={styles.playIcon} 
-                      viewBox="0 0 80 80" 
-                      fill="none" 
-                      xmlns="http://www.w3.org/2000/svg"
+                  {videoUrl && (
+                    <button 
+                      className={styles.playButton}
+                      onClick={this.handlePlayClick}
+                      aria-label="Play video"
+                      type="button"
                     >
-                      <circle cx="40" cy="40" r="40" fill="white" fillOpacity="0.95"/>
-                      <path d="M32 28L52 40L32 52V28Z" fill="#333333"/>
-                    </svg>
-                  </button>
+                      <svg 
+                        className={styles.playIcon} 
+                        viewBox="0 0 80 80" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle cx="40" cy="40" r="40" fill="white" fillOpacity="0.9"/>
+                        <path d="M32 28L52 40L32 52V28Z" fill="#333333"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <video 
@@ -146,7 +176,6 @@ private isStreamUrl = (url: string): boolean => {
           </div>
         </div>
 
-        {/* Video Modal */}
         {showModal && (
           <div className={styles.modal}>
             <div className={styles.modalContent}>
@@ -154,6 +183,7 @@ private isStreamUrl = (url: string): boolean => {
                 className={styles.closeButton}
                 onClick={this.handleCloseModal}
                 aria-label="Close video"
+                type="button"
               >
                 ×
               </button>
