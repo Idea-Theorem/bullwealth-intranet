@@ -31,10 +31,15 @@ export interface IDocumentsWebPartProps {
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
 
   protected onInit(): Promise<void> {
+<<<<<<< HEAD
     // Initialize Fluent UI icons - THIS IS THE RIGHT PLACE
     initializeIcons();
 
     // Set default values
+=======
+    initializeIcons();
+
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
     if (!this.properties.title) {
       this.properties.title = 'Documents';
     }
@@ -45,8 +50,11 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     return this._getEnvironmentMessage().then(message => {
       this._environmentMessage = message;
     });
+<<<<<<< HEAD
     
     return super.onInit();
+=======
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
   }
 
   private _isDarkTheme: boolean = false;

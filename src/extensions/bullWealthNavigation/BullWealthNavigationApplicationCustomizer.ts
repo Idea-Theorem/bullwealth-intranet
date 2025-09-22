@@ -50,7 +50,11 @@ export default class BullWealthNavigationApplicationCustomizer
       correctSiteUrl
     );
 
+<<<<<<< HEAD
     // Wait for placeholders to be available
+=======
+    // Wait for placeholders
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
     this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
     this._renderPlaceHolders();
 
@@ -94,8 +98,11 @@ export default class BullWealthNavigationApplicationCustomizer
       if (this._topPlaceholder.domElement) {
         this._navigationService.getNavigationItems()
           .then(navigationItems => {
+<<<<<<< HEAD
             console.log('📋 Navigation items fetched:', navigationItems);
             
+=======
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
             const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
               items: navigationItems,
               siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/'
@@ -103,6 +110,7 @@ export default class BullWealthNavigationApplicationCustomizer
 
             if (this._topPlaceholder && this._topPlaceholder.domElement) {
               ReactDom.render(element, this._topPlaceholder.domElement);
+<<<<<<< HEAD
               console.log('✅ Custom navigation rendered successfully with', navigationItems.length, 'items');
               
               // Force show and position your navigation after render
@@ -128,6 +136,13 @@ export default class BullWealthNavigationApplicationCustomizer
             console.error('❌ Error loading navigation items:', error);
             
             // Render with fallback navigation
+=======
+              console.log('✅ Navigation rendered');
+            }
+          })
+          .catch(error => {
+            console.error('❌ Navigation error:', error);
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
             const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
               items: [],
               siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/'

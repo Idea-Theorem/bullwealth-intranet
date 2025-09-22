@@ -26,7 +26,11 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
       { name: 'Home', url: '/', icon: 'Home' },
       { 
         name: 'BullWealth', 
+<<<<<<< HEAD
         url: '#', 
+=======
+        url: '/sites/BullWealthIntranet/bullwealth', // Make parent clickable
+>>>>>>> 2f7dae2e816621d1fc7e4c923f8efaabb60352a8
         icon: 'Building', 
         children: [
           { name: 'Compliance', url: '/sites/bullwealth/compliance' },
