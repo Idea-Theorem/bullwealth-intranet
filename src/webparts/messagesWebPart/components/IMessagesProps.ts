@@ -5,7 +5,7 @@ export interface IMessagesProps {
   context: WebPartContext;
   listName: string;
   title: string;
-  columnsPerRow: number; // New property for grid columns
+  columnsPerRow: number;
 }
 
 export interface IMessageItem {
@@ -17,7 +17,7 @@ export interface IMessageItem {
   Year: number;
   FeaturedImage?: {
     Url: string;
-    Description: string;
+    Description?: string; // Make Description optional
   };
   Author: {
     Title: string;

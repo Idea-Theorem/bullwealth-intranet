@@ -50,9 +50,6 @@ export interface IVideoBannerWebPartProps {
 
 export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBannerWebPartProps> {
 
-  private _isDarkTheme: boolean = false;
-  private _environmentMessage: string = '';
-
   public render(): void {
     const thumbnailUrl = this.properties.thumbnailFile?.fileAbsoluteUrl || this.properties.thumbnailUrl;
     const backgroundImageUrl = this.properties.backgroundImageFile?.fileAbsoluteUrl || this.properties.backgroundImageUrl;
@@ -88,12 +85,9 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
         backgroundImageUrl: backgroundImageUrl || '',
         autoPlay: this.properties.autoPlay || false,
         showInModal: this.properties.showInModal !== false,
-        publishedDate: formattedDate, // 🔧 FIXED: Pass formatted date string
-        readMoreUrl: this.properties.readMoreUrl, // 🔧 ENSURE: Read more URL is passed
-        isDarkTheme: this._isDarkTheme,
-        environmentMessage: this._environmentMessage,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName
+        publishedDate: formattedDate,
+        readMoreUrl: this.properties.readMoreUrl,
+        context: this.context
       }
     );
 
@@ -330,36 +324,12 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
 
   protected onInit(): Promise<void> {
     this.properties.lastUpdate = this.properties.lastUpdate || Date.now();
-    
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
-  }
-
-  private _getEnvironmentMessage(): Promise<string> {
-    if (!!this.context.sdks.microsoftTeams) {
-      return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
-        .then(context => {
-          let environmentMessage: string = '';
-          switch (context.app.host.name) {
-            case 'Office':
-              environmentMessage = 'Office';
-              break;
-            case 'Outlook':
-              environmentMessage = 'Outlook';
-              break;
-            default:
-              environmentMessage = 'SharePoint';
-          }
-          return environmentMessage;
-        });
-    }
-    return Promise.resolve('SharePoint');
+    return Promise.resolve();
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
     if (!currentTheme) return;
-    this._isDarkTheme = !!currentTheme.isInverted;
+    
     const { semanticColors } = currentTheme;
     if (semanticColors) {
       this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);

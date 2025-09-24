@@ -31,24 +31,24 @@
     margin-bottom: 50px;
   }
 
-//   .yearTitle {
-//     color: #000;
-//     margin-bottom: 25px;
-//     font-weight: 600;
-//     border-bottom: 3px solid #4CAF50;
-//     padding-bottom: 12px;
-//     position: relative;
+  .yearTitle {
+    color: #000;
+    margin-bottom: 25px;
+    font-weight: 600;
+    border-bottom: 3px solid #4CAF50;
+    padding-bottom: 12px;
+    position: relative;
     
-//     &::after {
-//       content: '';
-//       position: absolute;
-//       bottom: -3px;
-//       left: 0;
-//       width: 60px;
-//       height: 3px;
-//       background: linear-gradient(90deg, #4CAF50, #45a049);
-//     }
-//   }
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #4CAF50, #45a049);
+    }
+  }
 
   .cardsContainer {
     display: grid;

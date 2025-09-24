@@ -20,30 +20,41 @@ const CardView: React.FC<ICardViewProps> = ({
   columnsPerRow = 4 
 }) => {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getImageUrl = (item: any): string | null => {
-    console.log(`\n--- CardView getImageUrl for Item ${item.Id} ---`);
-    console.log('Item FeaturedImage:', item.FeaturedImage);
-    
     if (item.FeaturedImage && item.FeaturedImage.Url) {
-      console.log('Found image URL:', item.FeaturedImage.Url);
       return item.FeaturedImage.Url;
     }
-    
-    console.log('No image URL found');
     return null;
   };
 
   const getDefaultGradient = (): string => {
-    // Single default gradient since no categories
     return '#4CAF50';
   };
 
-  // Sort years in descending order
-  const sortedYears = Object.keys(groupedMessages).sort((a, b) => parseInt(b) - parseInt(a));
+  // Enhanced year sorting
+  const getSortedYears = (): string[] => {
+    return Object.keys(groupedMessages).sort((a, b) => parseInt(b) - parseInt(a));
+  };
 
-  console.log('CardView render - sortedYears:', sortedYears);
-  console.log('CardView render - groupedMessages:', groupedMessages);
+  // Fixed: Actually use this function in the render
+  const getYearLabel = (year: string): string => {
+    const currentYear = new Date().getFullYear();
+    const yearNum = parseInt(year);
+    
+    if (yearNum === currentYear) {
+      return `Newsletters and Message from CEO from ${year}`;
+    } else {
+      return `Newsletters and Message from CEO from Past ${year}`;
+    }
+  };
+
+  const sortedYears = getSortedYears();
+
+  console.log('🎯 CardView render:', {
+    totalYears: sortedYears.length,
+    years: sortedYears,
+    totalMessages: Object.values(groupedMessages).flat().length
+  });
 
   return (
     <div className={styles.cardView}>
@@ -53,9 +64,10 @@ const CardView: React.FC<ICardViewProps> = ({
 
       {sortedYears.map((year) => (
         <div key={year} className={styles.yearSection}>
-          {/* <Text variant="xLarge" className={styles.yearTitle}>
-            Messages from {year}
-          </Text> */}
+          {/* Fixed: Actually use getYearLabel function here */}
+           <Text variant="xLarge" className={styles.yearTitle}>
+            {getYearLabel(year)}
+          </Text>
           
           <div 
             className={styles.cardsContainer}
@@ -67,18 +79,12 @@ const CardView: React.FC<ICardViewProps> = ({
               const imageUrl = getImageUrl(message);
               const backgroundColor = getDefaultGradient();
               
-              console.log(`\n--- Rendering Card ${message.Id} ---`);
-              console.log('Title:', message.Title);
-              console.log('Image URL:', imageUrl);
-              console.log('Background color:', backgroundColor);
-              
               return (
                 <div 
                   key={message.Id}
                   className={styles.messageCard}
                 >
                   <div className={styles.cardContent}>
-                    {/* Card Image - No Category Badge */}
                     <div 
                       className={styles.cardImage}
                       style={{
@@ -95,29 +101,12 @@ const CardView: React.FC<ICardViewProps> = ({
                       {!imageUrl && (
                         <div className={styles.imagePlaceholder}>
                           <Text variant="large" className={styles.imageText}>
-                            Message
+                            Newsletter
                           </Text>
-                        </div>
-                      )}
-                      
-                      {/* Debug info - remove after testing */}
-                      {imageUrl && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '5px',
-                          left: '5px',
-                          background: 'rgba(0,0,0,0.7)',
-                          color: 'white',
-                          fontSize: '10px',
-                          padding: '2px 4px',
-                          borderRadius: '2px'
-                        }}>
-                          IMG: ✓
                         </div>
                       )}
                     </div>
 
-                    {/* Card Details */}
                     <div className={styles.cardDetails}>
                       <Text variant="mediumPlus" className={styles.cardTitle}>
                         {message.Title}
