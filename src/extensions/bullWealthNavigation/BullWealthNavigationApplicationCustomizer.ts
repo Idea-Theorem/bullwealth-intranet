@@ -1,3 +1,4 @@
+/* eslint-disable @microsoft/spfx/pair-react-dom-render-unmount */
 import { override } from '@microsoft/decorators';
 import { Log } from '@microsoft/sp-core-library';
 import {
@@ -68,7 +69,7 @@ export default class BullWealthNavigationApplicationCustomizer
     globalOverrideCSS.id = 'sharepoint-layout-override';
     globalOverrideCSS.innerHTML = `
       @media screen and (min-width: 1024px) {
-        .r_cJ1Dm_y298L:not(.f_XsZ2U_y298L) .s_ywkch_y298L {
+        .r_NLtZH_y298L:not(.f_bHim3_y298L) .s_wDEw-_y298L {
           max-width: 1440px !important;
         }
       }

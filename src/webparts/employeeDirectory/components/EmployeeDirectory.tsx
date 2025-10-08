@@ -35,16 +35,14 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
                 title: item.JobTitle || "Senior Tax Accountant",
                 email: item.Email || "employee@company.com",
                 phone: item.WorkPhone || "555-123-4567",
-                profileImage: item.PhotoUrl || `https://randomuser.me/api/portraits/${idx % 2 === 0 ? 'men' : 'women'}/${(idx + 20) % 100}.jpg`
+                profileImage: item.PhotoUrl || ''
               })) : [];
             } else {
-              // Fallback to demo data if no SharePoint data found
               newSectionData[section.title] = generateDemoEmployees(section.title, 8);
             }
             newPaginationState[section.title] = 0;
           } catch (error) {
             console.error(`Error fetching ${section.title}:`, error);
-            // Fallback to demo data
             newSectionData[section.title] = generateDemoEmployees(section.title, 8);
             newPaginationState[section.title] = 0;
           }
@@ -79,8 +77,38 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
       title: jobTitles[index % jobTitles.length],
       email: `${names[index % names.length].toLowerCase().replace(' ', '.')}@bullwealth.com`,
       phone: `555-123-45${60 + index}`,
-      profileImage: `https://randomuser.me/api/portraits/${index % 2 === 0 ? 'men' : 'women'}/${(index + 20) % 100}.jpg`
+      profileImage: ''
     }));
+  };
+
+  // ✅ NEW: Function to get initials from name
+  const getInitials = (name: string): string => {
+    const nameParts = name.trim().split(' ');
+    if (nameParts.length >= 2) {
+      return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    } else if (nameParts.length === 1) {
+      return nameParts[0].substring(0, 2).toUpperCase();
+    }
+    return 'NA';
+  };
+
+  // ✅ NEW: Function to generate color based on name
+  const getAvatarColor = (name: string): string => {
+    const colors = [
+      '#0078D4', // Blue
+      '#107C10', // Green
+      '#D83B01', // Orange
+      '#8764B8', // Purple
+      '#008272', // Teal
+      '#CA5010', // Dark Orange
+      '#00BCF2', // Light Blue
+      '#498205', // Olive Green
+      '#C239B3', // Magenta
+      '#0063B1'  // Dark Blue
+    ];
+    
+    const charCode = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[charCode % colors.length];
   };
 
   const handleContactClick = (email: string) => {
@@ -91,49 +119,58 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
     setCurrentPages(prev => ({ ...prev, [sectionTitle]: pageNum }));
   };
 
- const renderEmployeeCard = (employee: IEmployee) => {
-  return (
-    <div className={styles.employeeCard} key={employee.id}>
-      <div className={styles.profileSection}>
-        <img
-          className={styles.profileImage}
-          src={employee.profileImage}
-          alt={`${employee.name} profile`}
-          onError={(e) => {
-            const target = e.currentTarget;
-            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=E1E1E1&color=666666`;
-          }}
-        />
-        <div className={styles.employeeInfo}>
-          <h3 className={styles.employeeName}>{employee.name}</h3>
+  const renderEmployeeCard = (employee: IEmployee) => {
+    const initials = getInitials(employee.name);
+    const avatarColor = getAvatarColor(employee.name);
+
+    return (
+      <div className={styles.employeeCard} key={employee.id}>
+        <div className={styles.profileSection}>
+          {/* ✅ CHANGED: Show initials instead of image */}
+          {employee.profileImage ? (
+            <img
+              className={styles.profileImage}
+              src={employee.profileImage}
+              alt={`${employee.name} profile`}
+              onError={(e) => {
+                // If image fails to load, hide the image and show initials
+                const target = e.currentTarget;
+                target.style.display = 'none';
+              }}
+            />
+          ) : null}
+          
+          <div 
+            className={styles.initialsAvatar}
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initials}
+          </div>
+
+          <div className={styles.employeeInfo}>
+            <h3 className={styles.employeeName}>{employee.name}</h3>
+          </div>
+        </div>
+        <p className={styles.employeeTitle}>{employee.title}</p>
+        <div className={styles.contactInfo}>
+          <div className={styles.contactItem}>
+            <Icon iconName="Mail" className={styles.contactIcon} />
+            <span className={styles.contactText}>{employee.email}</span>
+          </div>
+        </div>
+        <div className={styles.actionSection}>
+          <button 
+            className={styles.contactButton} 
+            onClick={() => handleContactClick(employee.email)} 
+            type="button"
+          >
+            <Icon iconName="Mail" className={styles.buttonIcon} />
+            Contact
+          </button>
         </div>
       </div>
-      <p className={styles.employeeTitle}>{employee.title}</p>
-      <div className={styles.contactInfo}>
-        <div className={styles.contactItem}>
-          <Icon iconName="Mail" className={styles.contactIcon} />
-          <span className={styles.contactText}>{employee.email}</span>
-        </div>
-        {/* <div className={styles.contactItem}>
-          <Icon iconName="Phone" className={styles.contactIcon} />
-          <span className={styles.contactText}>{employee.phone}</span>
-        </div> */}
-      </div>
-      <div className={styles.actionSection}>
-        <button 
-          className={styles.contactButton} 
-          onClick={() => handleContactClick(employee.email)} 
-          type="button"
-        >
-          <Icon iconName="Mail" className={styles.buttonIcon} />
-          Contact
-        </button>
-      </div>
-    </div>
-  );
-};
-
-
+    );
+  };
 
   const renderSection = (title: string, employees: IEmployee[]) => {
     if (!employees || employees.length === 0) return null;
@@ -145,7 +182,6 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
 
     return (
       <div key={title} className={styles.departmentSection}>
-        <h2 className={styles.departmentTitle}>{title}</h2>
         <div className={styles.employeeGrid}>
           {currentEmployees.map(renderEmployeeCard)}
         </div>

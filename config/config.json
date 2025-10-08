@@ -121,6 +121,14 @@
           "manifest": "./src/webparts/messagesWebPart/MessagesWebPart.manifest.json"
         }
       ]
+    },
+    "carousel-cards-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/carouselCards/CarouselCardsWebPart.js",
+          "manifest": "./src/webparts/carouselCards/CarouselCardsWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -137,6 +145,7 @@
     "DocumentLibraryWebPartStrings": "lib/webparts/documentLibrary/loc/{locale}.js",
     "MessagesWebPartStrings": "lib/webparts/messagesWebPart/loc/{locale}.js",
     "BullWealthNavigationApplicationCustomizerStrings": "lib/extensions/bullWealthNavigation/loc/{locale}.js",
-    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js",
+    "CarouselCardsWebPartStrings": "lib/webparts/carouselCards/loc/{locale}.js"
   }
 }

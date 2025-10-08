@@ -1,0 +1,284 @@
+.carouselCards {
+      background-color: #f9f9f9;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 24px 24px 40px;
+    text-align: center;
+    width: 1300px;
+}
+// ✅ NAVIGATION BUTTON STYLES
+.navButton {
+  background-color: #ffffff;
+  border: 1px solid #d2d0ce;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  i {
+    font-size: 20px;
+    color: #605e5c;
+  }
+
+  &:hover {
+    background-color: #f3f2f1;
+    border-color: #a19f9d;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    i {
+      color: #323130;
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+// Header Section
+.headerSection {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+.mainTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+  //margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.subtitle {
+  font-size: 18px;
+  line-height: 28px;
+  color: #000;
+  margin: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// ✅ FIXED: Center the carousel container
+.carouselContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+// ✅ FIXED: Center the card wrapper
+.cardWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 950px;
+  overflow: hidden;
+  min-height: 600px;
+  margin: 0 auto; // Center horizontally
+}
+
+// ✅ FIXED: Center the card content
+.card {
+  position: absolute;
+  top: 0;
+  left: 50%; // Center horizontally
+  transform: translateX(-50%); // Offset by 50% to truly center
+  width: 100%;
+  max-width: 900px; // Match the cardWrapper width
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 48px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.5s ease-in-out;
+  box-sizing: border-box;
+
+  &.active {
+    z-index: 1;
+  }
+}
+
+.iconContainer {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  transition: transform 0.3s ease;
+  overflow: hidden;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.cardIcon {
+  font-size: 40px;
+  color: #323130;
+}
+
+.uploadedIcon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.cardTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 0px 0;
+  line-height: 1.5;
+}
+
+.cardDescription {
+  font-size: 16px;
+  line-height: 26px;
+  color: #000;
+  //margin: 0 0 28px 0;
+  text-align: left;
+}
+
+.bulletList {
+  //list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+  //max-width: 800px;
+}
+
+.bulletItem {
+  position: relative;
+  //padding-left: 24px;
+ // margin-bottom: 5px;
+  font-size: 16px;
+  line-height: 26px;
+  color: #000;
+}
+
+.dotsContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #d2d0ce;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+
+  &:hover {
+    background-color: #a19f9d;
+    transform: scale(1.2);
+  }
+
+  &.activeDot {
+    background-color: #42B574;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .carouselCards {
+    padding: 20px 10px;
+  }
+
+  .headerSection {
+    margin-bottom: 30px;
+  }
+
+  .mainTitle {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .card {
+    padding: 32px 24px;
+    min-height: auto;
+  }
+
+  .cardTitle {
+    font-size: 24px;
+  }
+
+  .cardDescription {
+    font-size: 14px;
+  }
+
+  .bulletItem {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .iconContainer {
+    width: 64px;
+    height: 64px;
+  }
+
+  .cardIcon {
+    font-size: 32px;
+  }
+
+  .uploadedIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cardWrapper {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 24px 16px;
+  }
+
+  .cardTitle {
+    font-size: 20px;
+  }
+
+  .mainTitle {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+}

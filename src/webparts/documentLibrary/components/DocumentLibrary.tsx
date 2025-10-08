@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import styles from './DocumentLibrary.module.scss';
 import { IDocumentLibraryProps, IDocument } from './IDocumentLibraryProps';
 import { SPHttpClient } from '@microsoft/sp-http';
 import { Icon } from '@fluentui/react/lib/Icon';
-//import { Spinner } from '@fluentui/react/lib/Spinner';
 import { IconButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { ContextualMenu, IContextualMenuItem } from '@fluentui/react/lib/ContextualMenu';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
@@ -20,16 +20,15 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [foldersWithDocuments, setFoldersWithDocuments] = useState<IFolderWithDocuments[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string>('');
   const [currentDocuments, setCurrentDocuments] = useState<IDocument[]>([]);
-  //const [setLoading] = useState<boolean>(true);
   const [selectedDocument, setSelectedDocument] = useState<IDocument | null>(null);
   const [contextMenuTarget, setContextMenuTarget] = useState<HTMLElement | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [selectAllChecked, setSelectAllChecked] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!currentFolder) {
-      // eslint-disable-next-line no-void, @typescript-eslint/no-use-before-define
       void loadFolderStructure();
     }
   }, [props.listName]);
@@ -41,9 +40,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   }, [currentFolder]);
 
-  // ✅ FIX 1: Correct date formatting that handles timezone properly
   const formatDate = (date: Date): string => {
-    // Ensure we get the local date representation
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short', 
@@ -51,24 +48,21 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }).format(date);
   };
 
-  // ✅ FIX 3: Enhanced sorting using raw timestamps for accuracy
   const sortDocumentsByModified = (documents: IDocument[]): IDocument[] => {
     return [...documents].sort((a, b) => {
       const timeA = (a as any).modifiedTimestamp || 0;
       const timeB = (b as any).modifiedTimestamp || 0;
-      return timeB - timeA; // Newest first
+      return timeB - timeA;
     });
   };
 
   const loadFolderStructure = async (): Promise<void> => {
-    //setLoading(true);
+    setIsLoading(true);
     console.log('=== LOADING FOLDER STRUCTURE ===');
     console.log('Target folder path:', props.listName);
 
     try {
       const baseUrl = props.context.pageContext.web.absoluteUrl;
-      
-      // Parse the folder path - Extract main library and target folder
       const pathParts = props.listName.split('/');
       const mainLibrary = pathParts[0];
       const targetFolder = pathParts.slice(1).join('/');
@@ -76,18 +70,15 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       console.log('Main library:', mainLibrary);
       console.log('Target folder:', targetFolder);
 
-      // Try multiple folder path formats
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       await tryFolderPaths(baseUrl, mainLibrary, targetFolder);
 
     } catch (error: any) {
       console.error('❌ Error loading folder structure:', error);
-      setMessage(`❌ Error loading folder "${props.listName}": ${error.message}. Using demo data.`);
+      setMessage(`❌ Error loading folder "${props.listName}": ${error.message}`);
       setTimeout(() => setMessage(''), 8000);
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      createDemoData();
+      setFoldersWithDocuments([]);
     } finally {
-      //setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -117,7 +108,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
         if (response.ok) {
           const data = await response.json();
           console.log(`✅ Success with path: ${folderPath}`);
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           await processFolderData(data, folderPath);
           return;
         }
@@ -127,12 +117,123 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       }
     }
 
-    // If all paths failed, use demo data
     console.error('❌ All folder paths failed');
-    setMessage(`❌ Could not find folder "${props.listName}". Using demo data.`);
+    setMessage(`⚠️ Could not find folder "${props.listName}"`);
     setTimeout(() => setMessage(''), 10000);
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    createDemoData();
+    setFoldersWithDocuments([]);
+  };
+
+  const getDocumentsWithRealUsers = async (files: any[], folderPath: string): Promise<IDocument[]> => {
+    const documents: IDocument[] = [];
+    
+    try {
+      const pathParts = props.listName.split('/');
+      let libraryName = pathParts[0] || 'Documents';
+      
+      if (libraryName.toLowerCase() === 'documents') {
+        libraryName = 'Documents';
+      }
+      
+      console.log(`🔍 Querying library: "${libraryName}" for ${files.length} files`);
+      
+      const listItemsUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(libraryName)}')/items?$select=Id,Title,FileLeafRef,FileRef,File_x0020_Type,Modified,Created,Author/Title,Author/Name,Editor/Title,Editor/Name,FileDirRef,EncodedAbsUrl&$expand=Author,Editor&$filter=FSObjType eq 0&$top=2000&$nocache=${Date.now()}`;
+      
+      const listResponse = await props.context.spHttpClient.get(listItemsUrl, SPHttpClient.configurations.v1);
+      
+      if (listResponse.ok) {
+        const listData = await listResponse.json();
+        const listItems = listData.value || [];
+        
+        console.log(`📋 Found ${listItems.length} list items in library`);
+        
+        for (const file of files) {
+          const fileName = file.Name || file.LeafName || 'Unknown';
+          
+          const matchingListItem = listItems.find((item: any) => 
+            item.FileLeafRef === fileName ||
+            item.FileRef === file.ServerRelativeUrl ||
+            (item.EncodedAbsUrl && item.EncodedAbsUrl.includes(fileName))
+          );
+          
+          let modifiedBy = 'System Account';
+          
+          if (matchingListItem) {
+            if (matchingListItem.Editor && matchingListItem.Editor.Title) {
+              modifiedBy = matchingListItem.Editor.Title;
+              console.log(`✅ Found REAL user for ${fileName}: ${modifiedBy}`);
+            } else if (matchingListItem.Author && matchingListItem.Author.Title) {
+              modifiedBy = matchingListItem.Author.Title;
+              console.log(`✅ Found REAL user (Author) for ${fileName}: ${modifiedBy}`);
+            }
+            
+            if (modifiedBy !== 'System Account') {
+              modifiedBy = modifiedBy.replace(/@.*$/, '');
+              
+              if (modifiedBy.toLowerCase().includes('system') || 
+                  modifiedBy.toLowerCase().includes('sharepoint') ||
+                  modifiedBy === '' ||
+                  modifiedBy.startsWith('i:0#') ||
+                  modifiedBy.includes('|membership|')) {
+                modifiedBy = 'System Account';
+              }
+            }
+          } else {
+            console.log(`⚠️ No list item found for: ${fileName} - trying file API fallback`);
+            
+            if (file.Editor && file.Editor.Title) {
+              modifiedBy = file.Editor.Title.replace(/@.*$/, '');
+            } else if (file.ModifiedBy && file.ModifiedBy.Title) {
+              modifiedBy = file.ModifiedBy.Title.replace(/@.*$/, '');
+            } else if (file.Author && file.Author.Title) {
+              modifiedBy = file.Author.Title.replace(/@.*$/, '');
+            }
+          }
+
+          const fileType = fileName.split('.').pop() || 'file';
+          const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+          const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+
+          let documentUrl = '#';
+          if (file.ServerRelativeUrl) {
+            documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
+          }
+
+          let description = '';
+          if (matchingListItem && matchingListItem.Title && matchingListItem.Title !== fileName) {
+            description = matchingListItem.Title;
+          } else if (file.Description) {
+            description = file.Description;
+          } else {
+            description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
+          }
+
+          console.log(`📄 Final: ${fileName} -> Modified by: ${modifiedBy}`);
+
+          documents.push({
+            id: file.UniqueId || Math.random(),
+            name: fileName.replace(/\.[^/.]+$/, ""),
+            fileType: fileType,
+            modified: formatDate(modifiedDate),
+            modifiedBy: modifiedBy,
+            serverRelativeUrl: documentUrl,
+            downloadUrl: file.ServerRelativeUrl || '#',
+            iconName: getFileIcon(fileType),
+            description: description,
+            createdDate: formatDate(createdDate),
+            modifiedTimestamp: modifiedDate.getTime(),
+            createdTimestamp: createdDate.getTime()
+          });
+        }
+      } else {
+        console.error(`❌ Failed to get list items. Status: ${listResponse.status}`);
+        return files.map((file: any) => mapFileToDocument(file));
+      }
+    } catch (error) {
+      console.error('❌ Error in getDocumentsWithRealUsers:', error);
+      return files.map((file: any) => mapFileToDocument(file));
+    }
+    
+    return documents;
   };
 
   const processFolderData = async (data: any, folderPath: string): Promise<void> => {
@@ -144,162 +245,153 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     console.log(`Found ${subfolders.length} subfolders and ${files.length} files`);
 
     if (subfolders.length === 0 && files.length === 0) {
-      setMessage(`⚠️ Folder "${props.listName}" is empty. Using demo data.`);
+      setMessage(`⚠️ Folder "${props.listName}" is empty`);
       setTimeout(() => setMessage(''), 8000);
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      createDemoData();
+      setFoldersWithDocuments([]);
       return;
     }
 
-    // Process folders and their contents
     const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string } } = {};
 
-    // Process files in the root folder (if any)
     if (files.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      const mappedDocuments = files.map((file: any) => mapFileToDocument(file));
+      const mappedDocuments = await getDocumentsWithRealUsers(files, folderPath);
       const sortedDocuments = sortDocumentsByModified(mappedDocuments);
       
-      folderGroups['Root'] = {
+      const pathSegments = folderPath.split('/').filter(segment => segment.length > 0);
+      let displayName = 'Documents';
+      
+      if (pathSegments.length > 0) {
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        if (lastSegment && !['sites', 'Shared Documents', 'Documents'].includes(lastSegment)) {
+          displayName = lastSegment;
+        } else if (pathSegments.length > 1) {
+          const secondLast = pathSegments[pathSegments.length - 2];
+          if (secondLast && !['sites', 'Shared Documents', 'Documents'].includes(secondLast)) {
+            displayName = secondLast;
+          }
+        }
+      }
+      
+      if (displayName === 'Documents' || displayName === 'sites') {
+        const propsParts = props.listName.split('/').filter(part => part.length > 0);
+        if (propsParts.length > 1) {
+          displayName = propsParts[propsParts.length - 1];
+        }
+      }
+      
+      console.log(`✅ Using display name: "${displayName}" for folder with ${files.length} files`);
+      
+      folderGroups[displayName] = {
         documents: sortedDocuments,
         folderPath: folderPath
       };
     }
 
-    // Process each subfolder
-    // Process each subfolder
-for (const subfolder of subfolders) {
-  const subfolderName = subfolder.Name;
-  const subfolderPath = subfolder.ServerRelativeUrl;
-  
-  console.log(`Processing subfolder: ${subfolderName} at ${subfolderPath}`);
-  
-  try {
-    // ✅ METHOD 1: Try direct Description field first
-    const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated,Modified,Created,Length,Description,ModifiedBy/Title,Author/Title&$expand=ModifiedBy,Author&$nocache=${Date.now()}`;
-    
-    let subfolderResponse = await props.context.spHttpClient.get(
-      subfolderUrl,
-      SPHttpClient.configurations.v1
-    );
-
-    // ✅ METHOD 2: If direct Description doesn't work, try ListItem approach
-    if (!subfolderResponse.ok) {
-      console.log('Trying ListItem approach for custom columns...');
-      // ✅ ENHANCED: Get files with custom columns using ListItem API
-const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated,ListItemAllFields/Description,ListItemAllFields/ID&$expand=ListItemAllFields`;
+    for (const subfolder of subfolders) {
+      const subfolderName = subfolder.Name;
+      const subfolderPath = subfolder.ServerRelativeUrl;
       
-      subfolderResponse = await props.context.spHttpClient.get(
-        subfolderUrl,
-        SPHttpClient.configurations.v1
-      );
-    }
-
-    if (subfolderResponse.ok) {
-      const subfolderData = await subfolderResponse.json();
-      const subfolderFiles = subfolderData.value || [];
+      console.log(`Processing subfolder: ${subfolderName} at ${subfolderPath}`);
       
-      console.log(`  → Found ${subfolderFiles.length} files in ${subfolderName}`);
-      
-      if (subfolderFiles.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        const mappedDocuments = subfolderFiles.map((file: any) => mapFileToDocument(file));
-        const sortedDocuments = sortDocumentsByModified(mappedDocuments);
+      try {
+        const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated&$nocache=${Date.now()}`;
         
-        folderGroups[subfolderName] = {
-          documents: sortedDocuments,
-          folderPath: subfolderPath
-        };
+        const subfolderResponse = await props.context.spHttpClient.get(
+          subfolderUrl,
+          SPHttpClient.configurations.v1
+        );
+
+        if (subfolderResponse.ok) {
+          const subfolderData = await subfolderResponse.json();
+          const subfolderFiles = subfolderData.value || [];
+          
+          console.log(`  → Found ${subfolderFiles.length} files in ${subfolderName}`);
+          
+          if (subfolderFiles.length > 0) {
+            const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, subfolderPath);
+            const sortedDocuments = sortDocumentsByModified(mappedDocuments);
+            
+            folderGroups[subfolderName] = {
+              documents: sortedDocuments,
+              folderPath: subfolderPath
+            };
+          }
+        }
+      } catch (subError) {
+        console.error(`❌ Error loading subfolder ${subfolderName}:`, subError);
       }
     }
-  } catch (subError) {
-    console.error(`❌ Error loading subfolder ${subfolderName}:`, subError);
-  }
-}
-
 
     console.log('Final folder groups:', Object.keys(folderGroups));
 
-    // Create display structure
     const foldersWithDocs: IFolderWithDocuments[] = [];
     
     for (const folderName of Object.keys(folderGroups)) {
       foldersWithDocs.push({
         name: folderName,
-        documents: folderGroups[folderName].documents.slice(0, 4), // Show top 4 newest documents
-        allDocuments: folderGroups[folderName].documents, // All documents (already sorted)
+        documents: folderGroups[folderName].documents.slice(0, 4),
+        allDocuments: folderGroups[folderName].documents,
         folderPath: folderGroups[folderName].folderPath
       });
     }
 
     if (foldersWithDocs.length === 0) {
       console.log('❌ No folders with documents found');
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      createDemoData();
+      setFoldersWithDocuments([]);
+      setMessage(`⚠️ No documents found in "${props.listName}"`);
+      setTimeout(() => setMessage(''), 8000);
     } else {
       console.log(`✅ SUCCESS: Created ${foldersWithDocs.length} folder sections`);
       setFoldersWithDocuments(foldersWithDocs);
-      
-      //const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
-      //setMessage(`✅ Successfully loaded ${totalDocs} documents from ${foldersWithDocs.length} folders in "${props.listName}"`);
-     // setTimeout(() => setMessage(''), 5000);
+      const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
+      setMessage(`✅ Loaded ${totalDocs} documents from ${foldersWithDocs.length} folders`);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
-  // ✅ FIX 2 & 4: Enhanced mapFileToDocument with correct date handling and timestamps
-  // ✅ FIXED: Map file to document with proper Description handling
-const mapFileToDocument = (file: any): IDocument => {
-  const fileName: string = file.Name || file.LeafName || 'Unknown';
-  const fileType: string = fileName.split('.').pop() || 'file';
-  
-  let modifiedBy = 'System Account';
-  if (file.ModifiedBy && file.ModifiedBy.Title) {
-    modifiedBy = file.ModifiedBy.Title;
-  } else if (file.Author && file.Author.Title) {
-    modifiedBy = file.Author.Title;
-  }
+  const mapFileToDocument = (file: any): IDocument => {
+    const fileName: string = file.Name || file.LeafName || 'Unknown';
+    const fileType: string = fileName.split('.').pop() || 'file';
+    
+    let modifiedBy = 'System Account';
+    if (file.ModifiedBy && file.ModifiedBy.Title) {
+      modifiedBy = file.ModifiedBy.Title.replace(/@.*$/, '');
+    } else if (file.Author && file.Author.Title) {
+      modifiedBy = file.Author.Title.replace(/@.*$/, '');
+    }
 
-  let documentUrl = '#';
-  if (file.ServerRelativeUrl) {
-    documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
-  }
+    let documentUrl = '#';
+    if (file.ServerRelativeUrl) {
+      documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
+    }
 
-  const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-  const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+    const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+    const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
 
-  // ✅ CRITICAL: Extract Description from the correct field
-  let description = '';
-  if (file.Description) {
-    // Direct Description field
-    description = file.Description;
-  } else if (file.ListItemAllFields && file.ListItemAllFields.Description) {
-    // Description from ListItem fields
-    description = file.ListItemAllFields.Description;
-  } else {
-    // Fallback to filename without extension
-    description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
-  }
+    let description = '';
+    if (file.Description) {
+      description = file.Description;
+    } else if (file.ListItemAllFields && file.ListItemAllFields.Description) {
+      description = file.ListItemAllFields.Description;
+    } else {
+      description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
+    }
 
-  console.log(`File: ${fileName}, Description: ${description}`);
-
-  return {
-    id: file.UniqueId || Math.random(),
-    name: fileName.replace(/\.[^/.]+$/, ""),
-    fileType: fileType,
-    modified: formatDate(modifiedDate),
-    modifiedBy: modifiedBy,
-    serverRelativeUrl: documentUrl,
-    downloadUrl: file.ServerRelativeUrl || '#',
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    iconName: getFileIcon(fileType),
-    // ✅ USE: Real Description from SharePoint column
-    description: description,
-    createdDate: formatDate(createdDate),
-    modifiedTimestamp: modifiedDate.getTime(),
-    createdTimestamp: createdDate.getTime()
+    return {
+      id: file.UniqueId || Math.random(),
+      name: fileName.replace(/\.[^/.]+$/, ""),
+      fileType: fileType,
+      modified: formatDate(modifiedDate),
+      modifiedBy: modifiedBy,
+      serverRelativeUrl: documentUrl,
+      downloadUrl: file.ServerRelativeUrl || '#',
+      iconName: getFileIcon(fileType),
+      description: description,
+      createdDate: formatDate(createdDate),
+      modifiedTimestamp: modifiedDate.getTime(),
+      createdTimestamp: createdDate.getTime()
+    };
   };
-};
-
 
   const handleDocumentClick = (doc: IDocument): void => {
     console.log('=== OPENING DOCUMENT ===');
@@ -320,223 +412,6 @@ const mapFileToDocument = (file: any): IDocument => {
       setMessage('❌ Unable to open document. Please check your permissions.');
       setTimeout(() => setMessage(''), 5000);
     }
-  };
-
-  const createDemoData = (): void => {
-    console.log('=== CREATING DEMO DATA ===');
-    
-    const baseUrl = props.context.pageContext.web.absoluteUrl;
-    
-    // ✅ REALISTIC DEMO DATA with correct dates and proper timestamps
-    const currentTime = new Date().getTime();
-    const oneDayMs = 24 * 60 * 60 * 1000; // One day in milliseconds
-
-    const policiesDocuments: IDocument[] = [
-      {
-        id: 1,
-        name: 'BCMI Cross Trade Policy',
-        fileType: 'pdf',
-        modified: formatDate(new Date(currentTime - (6 * oneDayMs))), // ✅ 6 days ago (matches your screenshot)
-        modifiedBy: 'Koteshwar Rao M',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B3550E012-FEF7-42B4-84D6-8DB73C3D4283%7D&file=BCMI%20Cross%20Trade%20Policy.pdf&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Policies/BCMI%20Cross%20Trade%20Policy.pdf`,
-        iconName: 'PDF',
-        description: 'BCMI Cross Trade Policy – October 18, 2023', // ✅ Real description from screenshot
-        createdDate: formatDate(new Date(currentTime - (6 * oneDayMs))),
-        modifiedTimestamp: currentTime - (6 * oneDayMs),
-        createdTimestamp: currentTime - (6 * oneDayMs)
-      },
-      {
-        id: 2,
-        name: 'BCMI Policies & Procedures Manual',
-        fileType: 'pdf',
-        modified: formatDate(new Date(currentTime - (1000))), // ✅ A few seconds ago
-        modifiedBy: 'Koteshwar Rao M',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B4661F123-GFG8-43C5-95E7-9EC84D4E5394%7D&file=BCMI%20Policies%20Procedures%20Manual.pdf&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Policies/BCMI%20Policies%20Procedures%20Manual.pdf`,
-        iconName: 'PDF',
-        description: 'BCMI Policies & Procedures Manual', // ✅ Real description from screenshot
-        createdDate: formatDate(new Date(currentTime - (1000))),
-        modifiedTimestamp: currentTime - (1000),
-        createdTimestamp: currentTime - (1000)
-      },
-      {
-        id: 3,
-        name: 'Compliance Manual Deck Document',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (2000))), // ✅ A few seconds ago
-        modifiedBy: 'Koteshwar Rao M',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B5772G234-HGH9-44D6-96F8-AED95E5F6405%7D&file=Compliance%20Manual%20Deck%20Document.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Policies/Compliance%20Manual%20Deck%20Document.docx`,
-        iconName: 'WordDocument',
-        description: 'Testing', // ✅ Real description from screenshot
-        createdDate: formatDate(new Date(currentTime - (2000))),
-        modifiedTimestamp: currentTime - (2000),
-        createdTimestamp: currentTime - (2000)
-      },
-      {
-        id: 4,
-        name: 'Cross Trade Policy',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (6 * oneDayMs))), // ✅ 6 days ago (matches screenshot)
-        modifiedBy: 'Koteshwar Rao M',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B6883H345-IHI0-55E7-A7G9-BFE06F6G7516%7D&file=Cross%20Trade%20Policy.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Policies/Cross%20Trade%20Policy.docx`,
-        iconName: 'WordDocument',
-        description: 'Cross Trade Policy Document',
-        createdDate: formatDate(new Date(currentTime - (6 * oneDayMs))),
-        modifiedTimestamp: currentTime - (6 * oneDayMs),
-        createdTimestamp: currentTime - (6 * oneDayMs)
-      }
-    ];
-
-    const processDocuments: IDocument[] = [
-      {
-        id: 5,
-        name: 'Process Policy Updated',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (oneDayMs))), // 1 day ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B7994I456-JIJ1-66F8-B8H0-CG17G7H8627%7D&file=Process%20Policy%20Updated.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Process/Process%20Policy%20Updated.docx`,
-        iconName: 'WordDocument',
-        description: 'Updated Process Policy Guidelines',
-        createdDate: formatDate(new Date(currentTime - (oneDayMs))),
-        modifiedTimestamp: currentTime - (oneDayMs),
-        createdTimestamp: currentTime - (oneDayMs)
-      },
-      {
-        id: 6,
-        name: 'Standard Operating Procedures',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (2 * oneDayMs))), // 2 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B8005J567-KJK2-77G9-C9I1-DH28H8I9738%7D&file=Standard%20Operating%20Procedures.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Process/Standard%20Operating%20Procedures.docx`,
-        iconName: 'WordDocument',
-        description: 'Standard Operating Procedures Manual',
-        createdDate: formatDate(new Date(currentTime - (2 * oneDayMs))),
-        modifiedTimestamp: currentTime - (2 * oneDayMs),
-        createdTimestamp: currentTime - (2 * oneDayMs)
-      },
-      {
-        id: 7,
-        name: 'Process Guidelines',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (3 * oneDayMs))), // 3 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B9116K678-LKL3-88H0-D0J2-EI39I9J0849%7D&file=Process%20Guidelines.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Process/Process%20Guidelines.docx`,
-        iconName: 'WordDocument',
-        description: 'Process Guidelines Documentation',
-        createdDate: formatDate(new Date(currentTime - (3 * oneDayMs))),
-        modifiedTimestamp: currentTime - (3 * oneDayMs),
-        createdTimestamp: currentTime - (3 * oneDayMs)
-      },
-      {
-        id: 8,
-        name: 'Process Review Checklist',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (4 * oneDayMs))), // 4 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B0227L789-MLM4-99I1-E1K3-FJ40J0K1950%7D&file=Process%20Review%20Checklist.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Process/Process%20Review%20Checklist.docx`,
-        iconName: 'WordDocument',
-        description: 'Process Review and Audit Checklist',
-        createdDate: formatDate(new Date(currentTime - (4 * oneDayMs))),
-        modifiedTimestamp: currentTime - (4 * oneDayMs),
-        createdTimestamp: currentTime - (4 * oneDayMs)
-      }
-    ];
-
-    const manualDocuments: IDocument[] = [
-      {
-        id: 9,
-        name: 'Training Manual Latest',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (500))), // Few seconds ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B1338M890-NMN5-00J2-F2L4-GK51K1L2061%7D&file=Training%20Manual%20Latest.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Manual/Training%20Manual%20Latest.docx`,
-        iconName: 'WordDocument',
-        description: 'Latest Training Manual Version',
-        createdDate: formatDate(new Date(currentTime - (500))),
-        modifiedTimestamp: currentTime - (500),
-        createdTimestamp: currentTime - (500)
-      },
-      {
-        id: 10,
-        name: 'User Guide Documentation',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (2 * oneDayMs))), // 2 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B2449N901-OPO6-11K3-G3M5-HL62L2M3172%7D&file=User%20Guide%20Documentation.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Manual/User%20Guide%20Documentation.docx`,
-        iconName: 'WordDocument',
-        description: 'Complete User Guide and Documentation',
-        createdDate: formatDate(new Date(currentTime - (2 * oneDayMs))),
-        modifiedTimestamp: currentTime - (2 * oneDayMs),
-        createdTimestamp: currentTime - (2 * oneDayMs)
-      },
-      {
-        id: 11,
-        name: 'Reference Manual',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (5 * oneDayMs))), // 5 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B3560O012-PQP7-22L4-H4N6-IM73M3N4283%7D&file=Reference%20Manual.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Manual/Reference%20Manual.docx`,
-        iconName: 'WordDocument',
-        description: 'Complete Reference Manual',
-        createdDate: formatDate(new Date(currentTime - (5 * oneDayMs))),
-        modifiedTimestamp: currentTime - (5 * oneDayMs),
-        createdTimestamp: currentTime - (5 * oneDayMs)
-      },
-      {
-        id: 12,
-        name: 'Quick Start Guide',
-        fileType: 'docx',
-        modified: formatDate(new Date(currentTime - (7 * oneDayMs))), // 7 days ago
-        modifiedBy: 'System Account',
-        serverRelativeUrl: `${baseUrl}/_layouts/15/Doc.aspx?sourcedoc=%7B4671P123-QRQ8-33M5-I5O7-JN84N4O5394%7D&file=Quick%20Start%20Guide.docx&action=default`,
-        downloadUrl: `${baseUrl}/${encodeURIComponent(props.listName)}/Manual/Quick%20Start%20Guide.docx`,
-        iconName: 'WordDocument',
-        description: 'Quick Start Guide for New Users',
-        createdDate: formatDate(new Date(currentTime - (7 * oneDayMs))),
-        modifiedTimestamp: currentTime - (7 * oneDayMs),
-        createdTimestamp: currentTime - (7 * oneDayMs)
-      }
-    ];
-
-    // ✅ Sort all demo data by modified timestamp (newest first)
-    const sortedPolicies = sortDocumentsByModified(policiesDocuments);
-    const sortedProcess = sortDocumentsByModified(processDocuments);
-    const sortedManual = sortDocumentsByModified(manualDocuments);
-
-    const demoFolders: IFolderWithDocuments[] = [
-      {
-        name: 'Policies',
-        documents: sortedPolicies.slice(0, 4), // Show top 4 newest
-        allDocuments: sortedPolicies, // All documents (already sorted)
-        folderPath: `${props.listName}/Policies`
-      },
-      {
-        name: 'Process',
-        documents: sortedProcess.slice(0, 4),
-        allDocuments: sortedProcess,
-        folderPath: `${props.listName}/Process`
-      },
-      {
-        name: 'Manual',
-        documents: sortedManual.slice(0, 4),
-        allDocuments: sortedManual,
-        folderPath: `${props.listName}/Manual`
-      }
-    ];
-
-    setFoldersWithDocuments(demoFolders);
-    setMessage(`📋 Loaded demo data for "${props.listName}" with correct dates and descriptions (sorted by newest first)`);
-    setTimeout(() => setMessage(''), 5000);
   };
 
   const getFileIcon = (fileType: string): string => {
@@ -591,11 +466,9 @@ const mapFileToDocument = (file: any): IDocument => {
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
         console.error('SharePoint sharing failed:', error);
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         fallbackShare(doc);
       }
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       fallbackShare(doc);
     }
   };
@@ -611,11 +484,9 @@ const mapFileToDocument = (file: any): IDocument => {
     if (navigator.share) {
       navigator.share(shareData).catch((error) => {
         console.error('Web Share API failed:', error);
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         copyToClipboard(shareUrl, doc.name);
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       copyToClipboard(shareUrl, doc.name);
     }
   };
@@ -742,15 +613,101 @@ const mapFileToDocument = (file: any): IDocument => {
     ];
   };
 
-  // if (loading) {
-  //   return (
-  //     <div className={styles.documentLibrary}>
-  //       <div className={styles.loading}>
-  //         <Spinner label={`Loading documents from "${props.listName}"...`} />
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // ✅ FIXED: Loading state with inline styles (no CSS class needed)
+  if (isLoading) {
+    return (
+      <div className={styles.documentLibrary}>
+        <div className={styles.mainHeader}>
+          <h2 className={styles.mainTitle}>{props.title}</h2>
+        </div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 20px',
+          textAlign: 'center'
+        }}>
+          <Icon 
+            iconName="DocumentSet" 
+            style={{
+              fontSize: '48px',
+              color: '#0078d4',
+              marginBottom: '16px',
+              opacity: 0.8
+            }}
+          />
+          <p style={{ fontSize: '16px', color: '#605e5c', margin: 0 }}>
+            Loading documents from "{props.listName}"...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ FIXED: Empty state with inline styles (no CSS class needed)
+  if (foldersWithDocuments.length === 0) {
+    return (
+      <div className={styles.documentLibrary}>
+        {message && (
+          <MessageBar 
+            messageBarType={message.includes('❌') ? MessageBarType.error : MessageBarType.warning} 
+            isMultiline={false}
+          >
+            {message}
+          </MessageBar>
+        )}
+        
+        <div className={styles.mainHeader}>
+          <h2 className={styles.mainTitle}>{props.title}</h2>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 20px',
+          textAlign: 'center'
+        }}>
+          <Icon 
+            iconName="DocumentSet" 
+            style={{
+              fontSize: '64px',
+              color: '#a19f9d',
+              marginBottom: '24px'
+            }}
+          />
+          <h3 style={{
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#323130',
+            margin: '0 0 16px 0'
+          }}>
+            No documents found
+          </h3>
+          <p style={{
+            fontSize: '16px',
+            color: '#605e5c',
+            margin: '8px 0',
+            maxWidth: '400px',
+            lineHeight: 1.5
+          }}>
+            There are no documents in "{props.listName}" folder.
+          </p>
+          <p style={{
+            fontSize: '16px',
+            color: '#605e5c',
+            margin: '8px 0',
+            maxWidth: '400px',
+            lineHeight: 1.5
+          }}>
+            Documents will appear here once they are uploaded to the SharePoint library.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Table view when "View all" is clicked
   if (currentFolder) {
@@ -915,7 +872,6 @@ const mapFileToDocument = (file: any): IDocument => {
                       Modified {doc.modified}
                     </p>
                     <p className={styles.documentDescription}>
-                      {/* ✅ FIXED: Display real description instead of placeholder */}
                       {doc.description}
                     </p>
                   </div>
