@@ -30,7 +30,7 @@
         "title": "IdeaTheorem Navigation Feature",
         "description": "Tenant-wide navigation deployment for IdeaTheorem Intranet",
         "id": "d3c0475b-59bb-4570-bfcc-0ce0c0426620",
-        "version": "1.0.0.0",
+        "version": "1.0.0.1",
         "assets": {
           "elementManifests": [
             "ClientSideInstance.xml"

@@ -6,11 +6,11 @@ export interface ICarouselCardsProps {
 
 export interface ICarouselCard {
   id: string;
-  icon: string; // This will store the uploaded image URL or Fluent UI icon name
-  iconType: 'upload' | 'fluent'; // Type of icon
+  icon: string;
+  iconType: 'upload' | 'fluent';
   iconColor: string;
   title: string;
   description: string;
-  bulletPoints: string[];
-  isVisible: boolean; // Show/Hide card
+  bulletPoints: string[]; // ✅ Keep this - it's still used
+  isVisible: boolean;
 }

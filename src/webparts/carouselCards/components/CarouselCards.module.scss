@@ -89,7 +89,7 @@
 .cardWrapper {
   position: relative;
   width: 100%;
-  max-width: 950px;
+  max-width: 1000px;
   overflow: hidden;
   min-height: 600px;
   margin: 0 auto; // Center horizontally
@@ -102,11 +102,11 @@
   left: 50%; // Center horizontally
   transform: translateX(-50%); // Offset by 50% to truly center
   width: 100%;
-  max-width: 900px; // Match the cardWrapper width
+  max-width: 1000px; // Match the cardWrapper width
   background: #ffffff;
   border-radius: 12px;
   padding: 48px;
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
   display: flex;
   flex-direction: column;
   align-items: center;

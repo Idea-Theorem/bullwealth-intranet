@@ -3,10 +3,12 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 export interface IDocumentCategory {
   id: string;
   title: string;
-  imageData: string; // Base64 encoded image
-  libraryUrl: string; // Main URL field
-  viewAllUrl?: string; // Optional: Alternative view URL
-  viewDocumentsText?: string; // NEW: Customizable link text
+  imageData: string;
+  libraryUrl: string;
+  viewAllUrl?: string;
+  viewDocumentsText?: string;
+  folderName?: string; // NEW: Actual folder name
+  pageUrl?: string; // NEW: Link to site page
 }
 
 export interface IDocumentsProps {
@@ -19,4 +21,9 @@ export interface IDocumentsProps {
   hasTeamsContext: boolean;
   userDisplayName: string;
   onCategoriesUpdate: (categories: IDocumentCategory[]) => void;
+  // NEW: Dynamic mode settings
+  isDynamicMode: boolean;
+  documentLibraryName: string;
+  folderPath: string;
+  sitePageBasePath: string;
 }

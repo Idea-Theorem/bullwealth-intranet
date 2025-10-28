@@ -394,9 +394,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   };
 
   const handleDocumentClick = (doc: IDocument): void => {
-    console.log('=== OPENING DOCUMENT ===');
-    console.log('Document name:', doc.name);
-    console.log('Document URL:', doc.serverRelativeUrl);
+    
 
     if (!doc.serverRelativeUrl || doc.serverRelativeUrl === '#') {
       setMessage('❌ Document URL not available');

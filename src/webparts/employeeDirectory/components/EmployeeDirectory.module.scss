@@ -7,6 +7,7 @@
       }
   }
 }
+
 .initialsAvatar {
   width: 50px;
   height: 50px;
@@ -25,6 +26,29 @@
     transform: scale(1.05);
   }
 }
+.departmentSection {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #323130;
+  border-bottom: 2px solid #0078d4;
+  padding-bottom: 10px;
+}
+
+.noEmployees {
+  padding: 40px;
+  text-align: center;
+  color: #605e5c;
+  font-size: 16px;
+  background: #f3f2f1;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
 .employeeDirectory {
   padding: 20px 25px;
   background: #F9F9F9;

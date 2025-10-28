@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import * as React from 'react';
 import styles from './Documents.module.scss';
 import { IDocumentsProps, IDocumentCategory } from './IDocumentsProps';
 import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
+import { Spinner } from '@fluentui/react/lib/Spinner';
 
 export interface IDocumentsState {
   categories: IDocumentCategory[];
   editMode: boolean;
-  uploadingFor?: string; // Track which category is uploading
+  uploadingFor?: string;
+  loading: boolean;
 }
 
 export default class Documents extends React.Component<IDocumentsProps, IDocumentsState> {
@@ -15,29 +18,185 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     this.state = {
       categories: props.categories,
       editMode: false,
-      uploadingFor: undefined
+      uploadingFor: undefined,
+      loading: props.isDynamicMode
     };
+  }
+
+  public componentDidMount(): void {
+    if (this.props.isDynamicMode) {
+      this.fetchFoldersFromLibrary();
+    }
   }
 
   public componentDidUpdate(prevProps: IDocumentsProps): void {
     if (JSON.stringify(prevProps.categories) !== JSON.stringify(this.props.categories)) {
       this.setState({ categories: this.props.categories });
     }
+    
+    // Reload if dynamic mode settings changed
+    if (prevProps.isDynamicMode !== this.props.isDynamicMode ||
+        prevProps.folderPath !== this.props.folderPath ||
+        prevProps.documentLibraryName !== this.props.documentLibraryName) {
+      if (this.props.isDynamicMode) {
+        this.fetchFoldersFromLibrary();
+      }
+    }
   }
+
+  // NEW: Fetch folders dynamically from SharePoint
+  private fetchFoldersFromLibrary = async (): Promise<void> => {
+  this.setState({ loading: true });
   
+  try {
+    const { context, documentLibraryName, folderPath, sitePageBasePath } = this.props;
+    const siteUrl = context.pageContext.web.absoluteUrl;
+    const sitePath = context.pageContext.web.serverRelativeUrl;
+    
+    const cleanLibraryName = documentLibraryName.trim();
+    const cleanFolderPath = folderPath.trim();
+    const fullPath = `${sitePath}/${cleanLibraryName}/${cleanFolderPath}`;
+    
+    console.log('=== FOLDER FETCH DEBUG ===');
+    console.log('Site URL:', siteUrl);
+    console.log('Site Path:', sitePath);
+    console.log('Full Path:', fullPath);
+    
+    const apiUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(@path)/Folders?@path='${encodeURIComponent(fullPath)}'&$select=Name,ServerRelativeUrl,ItemCount&$orderby=Name`;
+    
+    console.log('API URL:', apiUrl);
+    
+    const response: SPHttpClientResponse = await context.spHttpClient.get(
+      apiUrl,
+      SPHttpClient.configurations.v1
+    );
+
+    console.log('Response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Raw data:', data);
+      
+      if (data.value && Array.isArray(data.value) && data.value.length > 0) {
+        console.log(`Found ${data.value.length} folders`);
+        
+        const dynamicCategories: IDocumentCategory[] = await Promise.all(
+          data.value.map(async (folder: any) => {
+            const folderName = folder.Name;
+            console.log(`Processing folder: ${folderName}`);
+            
+            const imageUrl = await this.checkForCoverImage(folder.ServerRelativeUrl);
+            
+            // ✅ FIXED: Better URL-safe name conversion
+            const cleanFolderName = folderName
+              .replace(/\s+/g, '-')           // Replace spaces with hyphens
+              .replace(/&/g, 'and')            // Replace & with 'and'
+              .replace(/[^a-zA-Z0-9-]/g, '')   // Remove special characters
+              .replace(/--+/g, '-')            // Replace multiple hyphens with single
+              .replace(/^-|-$/g, '');          // Remove leading/trailing hyphens
+
+            // ✅ FIXED: Use sitePageBasePath as-is (it should already start with /)
+            // Remove leading slash from sitePageBasePath if it exists to avoid double slashes
+            const normalizedBasePath = sitePageBasePath.startsWith('/') 
+              ? sitePageBasePath 
+              : `/${sitePageBasePath}`;
+            
+            // Build page URL - DON'T add siteUrl if basePath already contains full path
+            const pageUrl = normalizedBasePath.startsWith('/sites/') 
+              ? `${siteUrl.split('/sites/')[0]}${normalizedBasePath}${cleanFolderName}.aspx`
+              : `${siteUrl}${normalizedBasePath}${cleanFolderName}.aspx`;
+
+            console.log(`Folder: "${folderName}" -> Page: "${pageUrl}"`);
+
+            return {
+              id: folderName,
+              title: folderName,
+              folderName: folderName,
+              imageData: imageUrl || '',
+              libraryUrl: `${siteUrl}/${cleanLibraryName}/Forms/AllItems.aspx?id=${encodeURIComponent(folder.ServerRelativeUrl)}`,
+              viewAllUrl: '',
+              pageUrl: pageUrl,
+              viewDocumentsText: 'View Documents'
+            };
+          })
+        );
+
+        console.log('Categories created:', dynamicCategories);
+        this.setState({ categories: dynamicCategories, loading: false });
+      } else {
+        console.warn('⚠️ No folders found');
+        this.setState({ categories: [], loading: false });
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('❌ API Error - Status:', response.status);
+      console.error('Error response:', errorText);
+      alert(`Failed to load folders.\nStatus: ${response.status}\n\nCheck browser console for details.`);
+      this.setState({ categories: [], loading: false });
+    }
+  } catch (error) {
+    console.error('❌ Exception:', error);
+    alert(`Error loading folders: ${error instanceof Error ? error.message : String(error)}`);
+    this.setState({ categories: [], loading: false });
+  }
+};
+
+
+
+
+  // Check for cover image in folder
+  private checkForCoverImage = async (folderUrl: string): Promise<string | null> => {
+  try {
+    const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    
+    console.log(`Checking for cover image in: ${folderUrl}`);
+    
+    for (const ext of imageExtensions) {
+      try {
+        const imageServerRelativeUrl = `${folderUrl}/cover.${ext}`;
+        const checkUrl = `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${imageServerRelativeUrl}')`;
+        
+        const response = await this.props.context.spHttpClient.get(
+          checkUrl, 
+          SPHttpClient.configurations.v1
+        );
+        
+        if (response.ok) {
+          console.log(`Found cover image: ${imageServerRelativeUrl}`);
+          return `${siteUrl}${imageServerRelativeUrl}`;
+        }
+      } catch (err) {
+        // Image doesn't exist, try next extension
+        continue;
+      }
+    }
+    
+    console.log(`No cover image found in: ${folderUrl}`);
+    return null;
+  } catch (error) {
+    console.error('Error checking for cover image:', error);
+    return null;
+  }
+};
+
+
   private handleCategoryClick = (category: IDocumentCategory): void => {
-    if (category.libraryUrl && category.libraryUrl !== '') {
+    // NEW: If dynamic mode and pageUrl exists, use that
+    if (this.props.isDynamicMode && category.pageUrl) {
+      window.location.href = category.pageUrl;
+    } else if (category.libraryUrl && category.libraryUrl !== '') {
       const url = this.formatUrl(category.libraryUrl);
       window.open(url, '_self');
     }
-  }
+  };
 
   private formatUrl = (url: string): string => {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return `https://${url}`;
     }
     return url;
-  }
+  };
 
   private isValidUrl = (url: string): boolean => {
     try {
@@ -47,13 +206,16 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     } catch {
       return false;
     }
-  }
+  };
 
   private handleViewDocuments = (category: IDocumentCategory, event: React.MouseEvent): void => {
     event.stopPropagation();
     event.preventDefault();
     
-    if (category.viewAllUrl && category.viewAllUrl !== '') {
+    // NEW: Priority to pageUrl in dynamic mode
+    if (this.props.isDynamicMode && category.pageUrl) {
+      window.location.href = category.pageUrl;
+    } else if (category.viewAllUrl && category.viewAllUrl !== '') {
       const url = this.formatUrl(category.viewAllUrl);
       window.open(url, '_self');
     } else if (category.libraryUrl && category.libraryUrl !== '') {
@@ -63,9 +225,8 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
       }
       window.open(url, '_self');
     }
-  }
+  };
 
-  // NEW: SharePoint native upload functionality
   private handleSharePointUpload = async (categoryId: string): Promise<void> => {
     this.setState({ uploadingFor: categoryId });
 
@@ -79,10 +240,8 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
       const file = target.files?.[0];
       if (file) {
         try {
-          // Upload to SharePoint
           const uploadedImageUrl = await this.uploadImageToSharePoint(file);
           
-          // Update category with SharePoint URL
           const updatedCategories = this.state.categories.map(cat =>
             cat.id === categoryId 
               ? { ...cat, imageData: uploadedImageUrl }
@@ -107,9 +266,8 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     };
 
     fileInput.click();
-  }
+  };
 
-  // Upload image to SharePoint Site Assets library
   private uploadImageToSharePoint = async (file: File): Promise<string> => {
     const fileName = `document-category-${Date.now()}-${file.name}`;
     const siteUrl = this.props.context.pageContext.web.absoluteUrl;
@@ -137,9 +295,8 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     } else {
       throw new Error(`Upload failed: ${response.statusText}`);
     }
-  }
+  };
 
-  // Fallback: Base64 upload (existing functionality)
   private handleImageUpload = (categoryId: string): void => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -163,7 +320,7 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
       }
     };
     fileInput.click();
-  }
+  };
 
   private handleDeleteCategory = (categoryId: string, event: React.MouseEvent): void => {
     event.stopPropagation();
@@ -172,7 +329,7 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
       this.setState({ categories: updatedCategories });
       this.props.onCategoriesUpdate(updatedCategories);
     }
-  }
+  };
 
   private getDefaultImage = (title: string): string => {
     const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22'];
@@ -180,13 +337,23 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     const color = colors[colorIndex];
     
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='${encodeURIComponent(color)}'/%3E%3Cg fill='white'%3E%3Crect x='150' y='80' width='100' height='80' rx='5' fill='none' stroke='white' stroke-width='3'/%3E%3Cpolyline points='170,100 170,140 230,140' fill='none' stroke='white' stroke-width='3'/%3E%3Cpolyline points='180,110 210,110' fill='none' stroke='white' stroke-width='2'/%3E%3Cpolyline points='180,120 220,120' fill='none' stroke='white' stroke-width='2'/%3E%3Cpolyline points='180,130 200,130' fill='none' stroke='white' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E`;
-  }
+  };
 
   public render(): React.ReactElement<IDocumentsProps> {
-    const { columnsPerRow } = this.props;
-    const { categories, editMode, uploadingFor } = this.state;
+    const { columnsPerRow, isDynamicMode } = this.props;
+    const { categories, editMode, uploadingFor, loading } = this.state;
     
     const gridClassName = (styles as any)[`columns${columnsPerRow}`] || styles.columns4;
+
+    if (loading) {
+      return (
+        <div className={styles.documents}>
+          <div>
+            <Spinner label="Loading resources..." />
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className={styles.documents}>
@@ -197,7 +364,7 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
               className={`${styles.categoryCard} ${!this.isValidUrl(category.libraryUrl) ? styles.invalidUrl : ''}`}
               onClick={() => !editMode && this.handleCategoryClick(category)}
             >
-              {editMode && (
+              {editMode && !isDynamicMode && (
                 <button
                   className={styles.deleteButton}
                   onClick={(e) => this.handleDeleteCategory(category.id, e)}
@@ -212,14 +379,13 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
                   alt={category.title}
                   className={styles.categoryImage}
                 />
-                {editMode && (
+                {editMode && !isDynamicMode && (
                   <div className={styles.editOverlay}>
                     <button 
                       className={styles.uploadButton}
                       onClick={(e) => {
                         e.stopPropagation();
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                        this.handleSharePointUpload(category.id);
+                        void this.handleSharePointUpload(category.id);
                       }}
                       disabled={uploadingFor === category.id}
                     >
@@ -245,7 +411,6 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
                   className={styles.viewAllLink}
                   onClick={(e) => this.handleViewDocuments(category, e)}
                 >
-                  {/* NEW: Use custom text or fallback to "View Documents" */}
                   {category.viewDocumentsText || 'View Documents'}
                 </a>
               </div>

@@ -7,12 +7,13 @@ import {
   PropertyPaneTextField,
   PropertyPaneSlider,
   PropertyPaneButton,
-  PropertyPaneButtonType
+  PropertyPaneButtonType,
+  PropertyPaneToggle
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 import Documents from './components/Documents';
-import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http'; // Make sure this import exists
+import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 
 export interface IDocumentCategory {
   id: string;
@@ -20,13 +21,20 @@ export interface IDocumentCategory {
   imageData: string;
   libraryUrl: string;
   viewAllUrl?: string;
-  viewDocumentsText?: string; // NEW: Custom link text
+  viewDocumentsText?: string;
+  folderName?: string;
+  pageUrl?: string;
 }
 
 export interface IDocumentsWebPartProps {
   title: string;
   columnsPerRow: number;
-  categories: string; // JSON string to store categories
+  categories: string;
+  // NEW: Dynamic mode properties
+  isDynamicMode: boolean;
+  documentLibraryName: string;
+  folderPath: string;
+  sitePageBasePath: string;
 }
 
 export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWebPartProps> {
@@ -40,6 +48,19 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     if (!this.properties.columnsPerRow) {
       this.properties.columnsPerRow = 4;
     }
+    // NEW: Set default dynamic mode values
+    if (this.properties.isDynamicMode === undefined) {
+      this.properties.isDynamicMode = false;
+    }
+    if (!this.properties.documentLibraryName) {
+      this.properties.documentLibraryName = 'Documents';
+    }
+    if (!this.properties.folderPath) {
+      this.properties.folderPath = 'BullWealth Documents';
+    }
+    if (!this.properties.sitePageBasePath) {
+      this.properties.sitePageBasePath = '/sites/MrkedCapitalIntranet/SitePages/';
+    }
 
     return this._getEnvironmentMessage().then(message => {
       this._environmentMessage = message;
@@ -52,10 +73,13 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
   public render(): void {
     let categories: IDocumentCategory[] = [];
     
-    try {
-      categories = this.properties.categories ? JSON.parse(this.properties.categories) : this.getDefaultCategories();
-    } catch {
-      categories = this.getDefaultCategories();
+    // Only load manual categories if NOT in dynamic mode
+    if (!this.properties.isDynamicMode) {
+      try {
+        categories = this.properties.categories ? JSON.parse(this.properties.categories) : this.getDefaultCategories();
+      } catch {
+        categories = this.getDefaultCategories();
+      }
     }
 
     const element = React.createElement(
@@ -69,6 +93,11 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
         userDisplayName: this.context.pageContext.user.displayName,
+        // NEW: Dynamic mode props
+        isDynamicMode: this.properties.isDynamicMode,
+        documentLibraryName: this.properties.documentLibraryName,
+        folderPath: this.properties.folderPath,
+        sitePageBasePath: this.properties.sitePageBasePath,
         onCategoriesUpdate: (updatedCategories: IDocumentCategory[]) => {
           this.properties.categories = JSON.stringify(updatedCategories);
           this.context.propertyPane.refresh();
@@ -89,7 +118,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
         imageData: '',
         libraryUrl: `${baseUrl}/Shared Documents/Compliance`,
         viewAllUrl: '',
-        viewDocumentsText: 'View Documents' // Default text
+        viewDocumentsText: 'View Documents'
       },
       {
         id: '2',
@@ -98,93 +127,61 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
         libraryUrl: `${baseUrl}/Shared Documents/Research`,
         viewAllUrl: '',
         viewDocumentsText: 'View Documents'
-      },
-      {
-        id: '3',
-        title: 'Advisory Group',
-        imageData: '',
-        libraryUrl: `${baseUrl}/Shared Documents/Advisory`,
-        viewAllUrl: '',
-        viewDocumentsText: 'View Documents'
-      },
-      {
-        id: '4',
-        title: 'Operations',
-        imageData: '',
-        libraryUrl: `${baseUrl}/Shared Documents/Operations`,
-        viewAllUrl: '',
-        viewDocumentsText: 'View Documents'
-      },
-      {
-        id: '5',
-        title: 'Business Development',
-        imageData: '',
-        libraryUrl: `${baseUrl}/Shared Documents/Business`,
-        viewAllUrl: '',
-        viewDocumentsText: 'View Documents'
-      },
-      {
-        id: '6',
-        title: 'Tax & Accounting',
-        imageData: '',
-        libraryUrl: `${baseUrl}/Shared Documents/Tax`,
-        viewAllUrl: '',
-        viewDocumentsText: 'View Documents'
       }
     ];
   }
 
   private _uploadImageToSharePoint = async (categoryIndex: number): Promise<void> => {
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'image/*';
-  fileInput.onchange = async (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) {
-      try {
-        const fileName = `document-category-${Date.now()}-${file.name}`;
-        const siteUrl = this.context.pageContext.web.absoluteUrl;
-        const uploadUrl = `${siteUrl}/_api/web/lists/getbytitle('Site Assets')/RootFolder/Files/Add(url='${fileName}',overwrite=true)`;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) {
+        try {
+          const fileName = `document-category-${Date.now()}-${file.name}`;
+          const siteUrl = this.context.pageContext.web.absoluteUrl;
+          const uploadUrl = `${siteUrl}/_api/web/lists/getbytitle('Site Assets')/RootFolder/Files/Add(url='${fileName}',overwrite=true)`;
 
-        const arrayBuffer = await file.arrayBuffer();
-        
-        const response: SPHttpClientResponse = await this.context.spHttpClient.post(
-          uploadUrl,
-          SPHttpClient.configurations.v1, // ✅ FIXED: Use static property
-          {
-            headers: {
-              'Accept': 'application/json;odata=verbose',
-              'Content-Type': 'application/json;odata=verbose'
-            },
-            body: arrayBuffer
+          const arrayBuffer = await file.arrayBuffer();
+          
+          const response: SPHttpClientResponse = await this.context.spHttpClient.post(
+            uploadUrl,
+            SPHttpClient.configurations.v1,
+            {
+              headers: {
+                'Accept': 'application/json;odata=verbose',
+                'Content-Type': 'application/json;odata=verbose'
+              },
+              body: arrayBuffer
+            }
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            const imageUrl = result.d.ServerRelativeUrl.startsWith('/') 
+              ? `${siteUrl}${result.d.ServerRelativeUrl}`
+              : result.d.ServerRelativeUrl;
+
+            const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
+            if (categories[categoryIndex]) {
+              categories[categoryIndex].imageData = imageUrl;
+              this.properties.categories = JSON.stringify(categories);
+              this.context.propertyPane.refresh();
+              this.render();
+            }
+          } else {
+            alert('Upload failed. Please try again.');
           }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          const imageUrl = result.d.ServerRelativeUrl.startsWith('/') 
-            ? `${siteUrl}${result.d.ServerRelativeUrl}`
-            : result.d.ServerRelativeUrl;
-
-          const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
-          if (categories[categoryIndex]) {
-            categories[categoryIndex].imageData = imageUrl;
-            this.properties.categories = JSON.stringify(categories);
-            this.context.propertyPane.refresh();
-            this.render();
-          }
-        } else {
+        } catch (error) {
+          console.error('Upload failed:', error);
           alert('Upload failed. Please try again.');
         }
-      } catch (error) {
-        console.error('Upload failed:', error);
-        alert('Upload failed. Please try again.');
       }
-    }
+    };
+    fileInput.click();
   };
-  fileInput.click();
-}
 
   private _uploadImage = (categoryIndex: number): void => {
     const fileInput = document.createElement('input');
@@ -208,7 +205,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
       }
     };
     fileInput.click();
-  }
+  };
 
   private _isValidUrl = (url: string): boolean => {
     try {
@@ -221,7 +218,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
     } catch {
       return false;
     }
-  }
+  };
 
   private _getEnvironmentMessage(): Promise<string> {
     if (!!this.context.sdks.microsoftTeams) {
@@ -267,7 +264,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     const categories: IDocumentCategory[] = JSON.parse(this.properties.categories || '[]');
     
-    const categoryGroups = categories.map((category, index) => ({
+    const manualCategoryGroups = !this.properties.isDynamicMode ? categories.map((category, index) => ({
       groupName: `Category: ${category.title}`,
       groupFields: [
         PropertyPaneTextField(`tempTitle_${index}`, {
@@ -294,7 +291,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
             this.render();
             
             if (value && !this._isValidUrl(value)) {
-              return 'Please enter a valid URL (e.g., https://yourtenant.sharepoint.com/sites/yoursite/DocumentLibrary)';
+              return 'Please enter a valid URL';
             }
             return '';
           }
@@ -316,7 +313,6 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
             return '';
           }
         }),
-        // NEW: Editable link text field
         PropertyPaneTextField(`tempViewDocumentsText_${index}`, {
           label: 'Link Text',
           value: category.viewDocumentsText || 'View Documents',
@@ -354,7 +350,7 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
           }
         })
       ]
-    }));
+    })) : [];
 
     return {
       pages: [
@@ -364,38 +360,72 @@ export default class DocumentsWebPart extends BaseClientSideWebPart<IDocumentsWe
           },
           groups: [
             {
-              groupName: 'Display Settings',
+              groupName: 'Mode Selection',
               groupFields: [
-                PropertyPaneSlider('columnsPerRow', {
-                  label: 'Columns per row',
-                  min: 2,
-                  max: 6,
-                  value: this.properties.columnsPerRow || 4,
-                  showValue: true,
-                  step: 1
-                }),
-                PropertyPaneButton('addCategory', {
-                  text: 'Add New Category',
-                  buttonType: PropertyPaneButtonType.Primary,
-                  onClick: () => {
-                    const cats = JSON.parse(this.properties.categories || '[]');
-                    const baseUrl = this.context.pageContext.web.absoluteUrl;
-                    cats.push({
-                      id: Date.now().toString(),
-                      title: 'New Category',
-                      imageData: '',
-                      libraryUrl: `${baseUrl}/Shared Documents`,
-                      viewAllUrl: '',
-                      viewDocumentsText: 'View Documents' // Default text
-                    });
-                    this.properties.categories = JSON.stringify(cats);
-                    this.context.propertyPane.refresh();
-                    this.render();
-                  }
+                PropertyPaneToggle('isDynamicMode', {
+                  label: 'Dynamic Mode',
+                  onText: 'Auto-load from folders',
+                  offText: 'Manual configuration',
+                  checked: this.properties.isDynamicMode
                 })
               ]
             },
-            ...categoryGroups
+            ...(this.properties.isDynamicMode ? [
+              {
+                groupName: 'Dynamic Mode Settings',
+                groupFields: [
+                  PropertyPaneTextField('documentLibraryName', {
+                    label: 'Document Library Name',
+                    value: this.properties.documentLibraryName,
+                    description: 'E.g., Documents'
+                  }),
+                  PropertyPaneTextField('folderPath', {
+                    label: 'Folder Path',
+                    value: this.properties.folderPath,
+                    description: 'E.g., BullWealth Documents'
+                  }),
+                  PropertyPaneTextField('sitePageBasePath', {
+                    label: 'Site Pages Base Path',
+                    value: this.properties.sitePageBasePath,
+                    description: 'E.g., /sites/MrkedCapitalIntranet/SitePages/'
+                  })
+                ]
+              }
+            ] : [
+              {
+                groupName: 'Display Settings',
+                groupFields: [
+                  PropertyPaneSlider('columnsPerRow', {
+                    label: 'Columns per row',
+                    min: 2,
+                    max: 6,
+                    value: this.properties.columnsPerRow || 4,
+                    showValue: true,
+                    step: 1
+                  }),
+                  PropertyPaneButton('addCategory', {
+                    text: 'Add New Category',
+                    buttonType: PropertyPaneButtonType.Primary,
+                    onClick: () => {
+                      const cats = JSON.parse(this.properties.categories || '[]');
+                      const baseUrl = this.context.pageContext.web.absoluteUrl;
+                      cats.push({
+                        id: Date.now().toString(),
+                        title: 'New Category',
+                        imageData: '',
+                        libraryUrl: `${baseUrl}/Shared Documents`,
+                        viewAllUrl: '',
+                        viewDocumentsText: 'View Documents'
+                      });
+                      this.properties.categories = JSON.stringify(cats);
+                      this.context.propertyPane.refresh();
+                      this.render();
+                    }
+                  })
+                ]
+              },
+              ...manualCategoryGroups
+            ])
           ]
         }
       ]

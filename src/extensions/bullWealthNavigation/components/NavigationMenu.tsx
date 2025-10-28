@@ -1,11 +1,39 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { INavigationMenuProps, INavigationItem } from './INavigationProps';
 import styles from './NavigationMenu.module.scss';
 
+
 const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
+
+  const isActive = (item: INavigationItem): boolean => {
+    const itemUrl = item.url.startsWith('http') ? item.url : `${siteUrl}${item.url}`;
+    const normalizedItemUrl = itemUrl.toLowerCase().replace(/\/$/, '');
+    const normalizedCurrentUrl = currentUrl.toLowerCase().replace(/\/$/, '');
+    
+    // Check if current URL matches this item
+    if (normalizedCurrentUrl === normalizedItemUrl) {
+      return true;
+    }
+    
+    // Check if any child matches
+    if (item.children) {
+      return item.children.some(child => {
+        const childUrl = child.url.startsWith('http') ? child.url : `${siteUrl}${child.url}`;
+        const normalizedChildUrl = childUrl.toLowerCase().replace(/\/$/, '');
+        return normalizedCurrentUrl === normalizedChildUrl || normalizedCurrentUrl.includes(normalizedChildUrl);
+      });
+    }
+    
+    return false;
+  };
 
   const handleLinkClick = (url: string, external?: boolean): void => {
     if (external) {
@@ -15,12 +43,13 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     }
   };
 
+
   const getFallbackNavigation = (): INavigationItem[] => {
     return [
       { name: 'Home', url: '/', icon: 'Home' },
       { 
         name: 'BullWealth', 
-        url: '/sites/BullWealthIntranet/bullwealth', // Make parent clickable
+        url: '/sites/BullWealthIntranet/bullwealth',
         icon: 'Building', 
         children: [
           { name: 'Compliance', url: '/sites/bullwealth/compliance' },
@@ -33,7 +62,9 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     ];
   };
 
+
   const navigationItems = (items && items.length > 0) ? items : getFallbackNavigation();
+
 
   return (
     <div className={styles.navigationWrapper}>
@@ -42,11 +73,12 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
           <a href="https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/SitePages/Home.aspx"><h1 className={styles.brandTitle}>Mrked Capital Intranet</h1></a>
         </div>
 
+
         <ul className={styles.navList}>
           {navigationItems.map((item, index) => (
             <li 
               key={index} 
-              className={`${styles.navItem} ${item.children ? styles.dropdown : ''} ${item.name === 'Home' ? styles.activeItem : ''}`}
+              className={`${styles.navItem} ${item.children ? styles.dropdown : ''} ${isActive(item) ? styles.activeItem : ''}`}
               onMouseEnter={() => item.children && setActiveDropdown(item.name)}
               onMouseLeave={() => item.children && setActiveDropdown(null)}
             >
@@ -56,23 +88,17 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
                 onClick={(e) => {
                   e.preventDefault();
                   
-                  // UPDATED: Handle parent item clicks
                   if (item.children) {
-                    // Parent has children - check if it should be clickable
                     if (item.url && item.url !== '#') {
-                      // Parent is clickable - navigate to its URL
                       console.log(`Navigating to parent: ${item.name} -> ${item.url}`);
                       handleLinkClick(item.url, item.external);
                     } else {
-                      // Parent is just a dropdown container - toggle dropdown
                       setActiveDropdown(activeDropdown === item.name ? null : item.name);
                     }
                   } else {
-                    // No children, just navigate
                     handleLinkClick(item.url, item.external);
                   }
                 }}
-                // Add title to show it's clickable
                 title={item.children && item.url && item.url !== '#' ? `Go to ${item.name} page` : undefined}
               >
                 {item.icon && (
@@ -83,6 +109,7 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
                   <Icon iconName="ChevronDown" className={styles.dropdownArrow} />
                 )}
               </a>
+
 
               {item.children && (
                 <div className={`${styles.dropdown} ${activeDropdown === item.name ? styles.show : ''}`}>
@@ -115,5 +142,6 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     </div>
   );
 };
+
 
 export default NavigationMenu;

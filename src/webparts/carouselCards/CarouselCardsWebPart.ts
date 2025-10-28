@@ -11,6 +11,9 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
+// Import PnP Color Picker
+import { PropertyFieldColorPicker, PropertyFieldColorPickerStyle } from '@pnp/spfx-property-controls/lib/PropertyFieldColorPicker';
+
 import CarouselCards from './components/CarouselCards';
 import { ICarouselCardsProps, ICarouselCard } from './components/ICarouselCardsProps';
 
@@ -64,8 +67,8 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
     const cardIconMatch = propertyPath.match(/^cardIcon(\d+)$/);
     const cardIconColorMatch = propertyPath.match(/^cardIconColor(\d+)$/);
     const cardDescriptionMatch = propertyPath.match(/^cardDescription(\d+)$/);
-    const cardBulletMatch = propertyPath.match(/^cardBullet(\d+)_(\d+)$/);
     const cardVisibilityMatch = propertyPath.match(/^cardVisible(\d+)$/);
+    const cardBulletPointsMatch = propertyPath.match(/^cardBulletPoints(\d+)$/);
 
     if (cardTitleMatch) {
       const cardIndex = parseInt(cardTitleMatch[1]);
@@ -79,10 +82,13 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
     } else if (cardDescriptionMatch) {
       const cardIndex = parseInt(cardDescriptionMatch[1]);
       this._updateCard(cardIndex, 'description', newValue);
-    } else if (cardBulletMatch) {
-      const cardIndex = parseInt(cardBulletMatch[1]);
-      const pointIndex = parseInt(cardBulletMatch[2]);
-      this._updateBulletPoint(cardIndex, pointIndex, newValue);
+    } else if (cardBulletPointsMatch) {
+      const cardIndex = parseInt(cardBulletPointsMatch[1]);
+      const pointsArray = newValue
+        .split('\n')
+        .map((line: string) => line.trim())
+        .filter((line: string) => line.length > 0);
+      this._updateCard(cardIndex, 'bulletPoints', pointsArray);
     } else if (cardVisibilityMatch) {
       const cardIndex = parseInt(cardVisibilityMatch[1]);
       this._updateCard(cardIndex, 'isVisible', newValue);
@@ -173,32 +179,6 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
     }
   }
 
-  private _updateBulletPoint(cardIndex: number, pointIndex: number, value: string): void {
-    if (this._cardsArray[cardIndex] && this._cardsArray[cardIndex].bulletPoints[pointIndex] !== undefined) {
-      this._cardsArray[cardIndex].bulletPoints[pointIndex] = value;
-      this.properties.cards = JSON.stringify(this._cardsArray);
-      this.render();
-    }
-  }
-
-  private _addBulletPoint(cardIndex: number): void {
-    if (this._cardsArray[cardIndex]) {
-      this._cardsArray[cardIndex].bulletPoints.push('New point');
-      this.properties.cards = JSON.stringify(this._cardsArray);
-      this.render();
-      this.context.propertyPane.refresh();
-    }
-  }
-
-  private _removeBulletPoint(cardIndex: number, pointIndex: number): void {
-    if (this._cardsArray[cardIndex]) {
-      this._cardsArray[cardIndex].bulletPoints.splice(pointIndex, 1);
-      this.properties.cards = JSON.stringify(this._cardsArray);
-      this.render();
-      this.context.propertyPane.refresh();
-    }
-  }
-
   private _deleteCard(index: number): void {
     this._cardsArray.splice(index, 1);
     this.properties.cards = JSON.stringify(this._cardsArray);
@@ -269,9 +249,7 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
         PropertyPaneButton(`card${cardIndex}Header`, {
           text: `Card ${cardIndex + 1}: ${card.title}`,
           buttonType: PropertyPaneButtonType.Hero,
-          onClick: (): void => {
-            // Header button
-          }
+          onClick: (): void => { /* Header */ }
         })
       );
 
@@ -338,11 +316,26 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
         );
       }
 
+      // Color Picker - FIXED
       fields.push(
-        PropertyPaneTextField(`cardIconColor${cardIndex}`, {
+        PropertyFieldColorPicker(`cardIconColor${cardIndex}`, {
           label: 'Icon Background Color',
-          value: card.iconColor,
-          description: 'Hex color code (e.g., #90EE90)'
+          selectedColor: card.iconColor,
+          onPropertyChange: (propertyPath: string, oldValue: any, newValue: any) => {
+            const match = propertyPath.match(/^cardIconColor(\d+)$/);
+            if (match) {
+              const idx = parseInt(match[1]);
+              this._updateCard(idx, 'iconColor', newValue);
+            }
+          },
+          properties: this.properties,
+          disabled: false,
+          debounce: 100,
+          isHidden: false,
+          alphaSliderHidden: false,
+          style: PropertyFieldColorPickerStyle.Full,
+          iconName: 'Color',
+          key: `colorPicker${cardIndex}`
         })
       );
 
@@ -355,34 +348,14 @@ export default class CarouselCardsWebPart extends BaseClientSideWebPart<ICarouse
         })
       );
 
-      card.bulletPoints.forEach((point, pointIndex) => {
-        fields.push(
-          PropertyPaneTextField(`cardBullet${cardIndex}_${pointIndex}`, {
-            label: `Bullet Point ${pointIndex + 1}`,
-            value: point,
-            multiline: true,
-            rows: 2
-          })
-        );
-
-        fields.push(
-          PropertyPaneButton(`removeBullet${cardIndex}_${pointIndex}`, {
-            text: 'Remove Point',
-            buttonType: PropertyPaneButtonType.Normal,
-            onClick: (): void => {
-              this._removeBulletPoint(cardIndex, pointIndex);
-            }
-          })
-        );
-      });
-
+      // Single text area for bullet points
       fields.push(
-        PropertyPaneButton(`addBullet${cardIndex}`, {
-          text: 'Add Bullet Point',
-          buttonType: PropertyPaneButtonType.Normal,
-          onClick: (): void => {
-            this._addBulletPoint(cardIndex);
-          }
+        PropertyPaneTextField(`cardBulletPoints${cardIndex}`, {
+          label: 'Bullet Points (one per line)',
+          value: card.bulletPoints.join('\n'),
+          multiline: true,
+          rows: 8,
+          description: 'Enter each bullet point on a new line'
         })
       );
 
