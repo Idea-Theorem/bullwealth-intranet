@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import * as React from 'react';
 import styles from './Documents.module.scss';
@@ -34,7 +35,6 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
       this.setState({ categories: this.props.categories });
     }
     
-    // Reload if dynamic mode settings changed
     if (prevProps.isDynamicMode !== this.props.isDynamicMode ||
         prevProps.folderPath !== this.props.folderPath ||
         prevProps.documentLibraryName !== this.props.documentLibraryName) {
@@ -44,118 +44,198 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     }
   }
 
-  // NEW: Fetch folders dynamically from SharePoint
   private fetchFoldersFromLibrary = async (): Promise<void> => {
-  this.setState({ loading: true });
-  
-  try {
-    const { context, documentLibraryName, folderPath, sitePageBasePath } = this.props;
-    const siteUrl = context.pageContext.web.absoluteUrl;
-    const sitePath = context.pageContext.web.serverRelativeUrl;
+    this.setState({ loading: true });
     
-    const cleanLibraryName = documentLibraryName.trim();
-    const cleanFolderPath = folderPath.trim();
-    const fullPath = `${sitePath}/${cleanLibraryName}/${cleanFolderPath}`;
-    
-    console.log('=== FOLDER FETCH DEBUG ===');
-    console.log('Site URL:', siteUrl);
-    console.log('Site Path:', sitePath);
-    console.log('Full Path:', fullPath);
-    
-    const apiUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(@path)/Folders?@path='${encodeURIComponent(fullPath)}'&$select=Name,ServerRelativeUrl,ItemCount&$orderby=Name`;
-    
-    console.log('API URL:', apiUrl);
-    
-    const response: SPHttpClientResponse = await context.spHttpClient.get(
-      apiUrl,
-      SPHttpClient.configurations.v1
-    );
-
-    console.log('Response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Raw data:', data);
+    try {
+      const { context, documentLibraryName, folderPath, sitePageBasePath } = this.props;
+      const siteUrl = context.pageContext.web.absoluteUrl;
+      const sitePath = context.pageContext.web.serverRelativeUrl;
       
-      if (data.value && Array.isArray(data.value) && data.value.length > 0) {
-        console.log(`Found ${data.value.length} folders`);
-        
-        const dynamicCategories: IDocumentCategory[] = await Promise.all(
-          data.value.map(async (folder: any) => {
-            const folderName = folder.Name;
-            console.log(`Processing folder: ${folderName}`);
-            
-            const imageUrl = await this.checkForCoverImage(folder.ServerRelativeUrl);
-            
-            // ✅ FIXED: Better URL-safe name conversion
-            const cleanFolderName = folderName
-              .replace(/\s+/g, '-')           // Replace spaces with hyphens
-              .replace(/&/g, 'and')            // Replace & with 'and'
-              .replace(/[^a-zA-Z0-9-]/g, '')   // Remove special characters
-              .replace(/--+/g, '-')            // Replace multiple hyphens with single
-              .replace(/^-|-$/g, '');          // Remove leading/trailing hyphens
+      const cleanLibraryName = documentLibraryName.trim();
+      const cleanFolderPath = folderPath.trim();
+      const fullPath = `${sitePath}/${cleanLibraryName}/${cleanFolderPath}`.replace(/\/+/g, '/');
+      
+      console.log('=== FOLDER FETCH DEBUG ===');
+      console.log('Site URL:', siteUrl);
+      console.log('Site Path:', sitePath);
+      console.log('Full Path:', fullPath);
+      
+      // ✅ STEP 1: Get all folders
+      const foldersApiUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(@path)/Folders?@path='${encodeURIComponent(fullPath)}'&$select=Name,ServerRelativeUrl,ItemCount`;
+      
+      console.log('Folders API URL:', foldersApiUrl);
+      
+      const foldersResponse: SPHttpClientResponse = await context.spHttpClient.get(
+        foldersApiUrl,
+        SPHttpClient.configurations.v1
+      );
 
-            // ✅ FIXED: Use sitePageBasePath as-is (it should already start with /)
-            // Remove leading slash from sitePageBasePath if it exists to avoid double slashes
-            const normalizedBasePath = sitePageBasePath.startsWith('/') 
-              ? sitePageBasePath 
-              : `/${sitePageBasePath}`;
-            
-            // Build page URL - DON'T add siteUrl if basePath already contains full path
-            const pageUrl = normalizedBasePath.startsWith('/sites/') 
-              ? `${siteUrl.split('/sites/')[0]}${normalizedBasePath}${cleanFolderName}.aspx`
-              : `${siteUrl}${normalizedBasePath}${cleanFolderName}.aspx`;
+      console.log('Folders Response status:', foldersResponse.status);
 
-            console.log(`Folder: "${folderName}" -> Page: "${pageUrl}"`);
+      if (!foldersResponse.ok) {
+        const errorText = await foldersResponse.text();
+        console.error('❌ API Error - Status:', foldersResponse.status);
+        console.error('Error response:', errorText);
+        alert(`Failed to load folders.\nStatus: ${foldersResponse.status}\n\nCheck browser console for details.`);
+        this.setState({ categories: [], loading: false });
+        return;
+      }
 
-            return {
-              id: folderName,
-              title: folderName,
-              folderName: folderName,
-              imageData: imageUrl || '',
-              libraryUrl: `${siteUrl}/${cleanLibraryName}/Forms/AllItems.aspx?id=${encodeURIComponent(folder.ServerRelativeUrl)}`,
-              viewAllUrl: '',
-              pageUrl: pageUrl,
-              viewDocumentsText: 'View Documents'
-            };
-          })
-        );
-
-        console.log('Categories created:', dynamicCategories);
-        this.setState({ categories: dynamicCategories, loading: false });
-      } else {
+      const foldersData = await foldersResponse.json();
+      console.log('Folders data:', foldersData);
+      
+      if (!foldersData.value || !Array.isArray(foldersData.value) || foldersData.value.length === 0) {
         console.warn('⚠️ No folders found');
         this.setState({ categories: [], loading: false });
+        return;
       }
-    } else {
-      const errorText = await response.text();
-      console.error('❌ API Error - Status:', response.status);
-      console.error('Error response:', errorText);
-      alert(`Failed to load folders.\nStatus: ${response.status}\n\nCheck browser console for details.`);
+
+      console.log(`Found ${foldersData.value.length} folders:`, foldersData.value.map((f: any) => f.Name));
+      
+      // ✅ STEP 2: Get Order By metadata for ALL folders - ENHANCED
+const parentFolderPath = fullPath.replace(/\/$/, ''); // Remove trailing slash
+console.log('📋 Parent folder path for matching:', parentFolderPath);
+
+// Get ALL folders first (no filter), then match in code
+const listItemsApiUrl = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(cleanLibraryName)}')/items?$select=FileLeafRef,FileDirRef,Order_x0020_By,FSObjType&$filter=FSObjType eq 1&$top=5000`;
+
+console.log('📋 List Items API URL:', listItemsApiUrl);
+
+const listItemsResponse = await context.spHttpClient.get(
+  listItemsApiUrl,
+  SPHttpClient.configurations.v1
+);
+
+let folderOrderMap: { [key: string]: number } = {};
+
+if (listItemsResponse.ok) {
+  const listItemsData = await listItemsResponse.json();
+  console.log(`📋 Total folders in library: ${listItemsData.value?.length || 0}`);
+  
+  if (listItemsData.value && Array.isArray(listItemsData.value)) {
+    // Log first 3 items to see what paths look like
+    console.log('📁 Sample folder items:', 
+      listItemsData.value.slice(0, 3).map((item: any) => ({
+        name: item.FileLeafRef,
+        path: item.FileDirRef,
+        orderBy: item.Order_x0020_By
+      }))
+    );
+    
+    // Match folders by checking if their parent path matches
+    listItemsData.value.forEach((item: any) => {
+      const folderName = item.FileLeafRef;
+      const folderPath = item.FileDirRef;
+      
+      // Try multiple matching strategies
+      const isMatch = 
+        folderPath === parentFolderPath ||                    // Exact match
+        folderPath.toLowerCase() === parentFolderPath.toLowerCase() ||  // Case insensitive
+        folderPath.endsWith('/' + cleanFolderPath) ||         // Ends with target folder
+        folderPath.endsWith(cleanFolderPath);                 // Without slash
+      
+      if (isMatch) {
+        const orderBy = item.Order_x0020_By;
+        if (orderBy !== null && orderBy !== undefined) {
+          folderOrderMap[folderName] = parseInt(orderBy, 10);
+          console.log(`✅ MATCHED: "${folderName}" at "${folderPath}" -> Order By: ${orderBy}`);
+        } else {
+          console.log(`⚠️ MATCHED but no Order By: "${folderName}" at "${folderPath}"`);
+        }
+      }
+    });
+    
+    console.log('📊 Final folder order map:', folderOrderMap);
+    
+    if (Object.keys(folderOrderMap).length === 0) {
+      console.warn('⚠️ WARNING: No folders matched! Expected path:', parentFolderPath);
+      console.warn('⚠️ Sample actual paths:', 
+        listItemsData.value.slice(0, 3).map((i: any) => i.FileDirRef)
+      );
+    }
+  }
+} else {
+  const errorText = await listItemsResponse.text();
+  console.error('❌ List items API failed:', listItemsResponse.status);
+  console.error('Error:', errorText);
+}
+
+
+      // ✅ STEP 3: Create categories with Order By values
+      const dynamicCategories: IDocumentCategory[] = await Promise.all(
+        foldersData.value.map(async (folder: any) => {
+          const folderName = folder.Name;
+          const folderServerRelativeUrl = folder.ServerRelativeUrl;
+          
+          let orderBy: number | undefined = undefined;
+          if (folderOrderMap.hasOwnProperty(folderName)) {
+            const mappedValue = folderOrderMap[folderName];
+            orderBy = mappedValue >= 0 ? mappedValue : undefined;
+          }
+          
+          console.log(`📂 Processing folder: "${folderName}", Order By: ${orderBy !== undefined ? orderBy : 'none'}, Path: ${folderServerRelativeUrl}`);
+          
+          const imageUrl = await this.checkForCoverImage(folderServerRelativeUrl);
+          
+          const cleanFolderName = folderName
+            .replace(/\s+/g, '-')
+            .replace(/&/g, 'and')
+            .replace(/[^a-zA-Z0-9-]/g, '')
+            .replace(/--+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          const normalizedBasePath = sitePageBasePath.startsWith('/') 
+            ? sitePageBasePath 
+            : `/${sitePageBasePath}`;
+          
+          const pageUrl = normalizedBasePath.startsWith('/sites/') 
+            ? `${siteUrl.split('/sites/')[0]}${normalizedBasePath}${cleanFolderName}.aspx`
+            : `${siteUrl}${normalizedBasePath}${cleanFolderName}.aspx`;
+
+          return {
+            id: folderName,
+            title: folderName,
+            folderName: folderName,
+            imageData: imageUrl || '',
+            libraryUrl: `${siteUrl}/${cleanLibraryName}/Forms/AllItems.aspx?id=${encodeURIComponent(folderServerRelativeUrl)}`,
+            viewAllUrl: '',
+            pageUrl: pageUrl,
+            viewDocumentsText: 'View Documents',
+            orderBy: orderBy
+          };
+        })
+      );
+
+      // ✅ STEP 4: Sort categories by Order By value
+      const sortedCategories = dynamicCategories.sort((a, b) => {
+        if (a.orderBy !== undefined && b.orderBy !== undefined) {
+          return a.orderBy - b.orderBy;
+        }
+        if (a.orderBy !== undefined) return -1;
+        if (b.orderBy !== undefined) return 1;
+        return a.title.localeCompare(b.title);
+      });
+
+      console.log('📂 Sorted categories:', sortedCategories.map(c => `${c.title} (Order: ${c.orderBy !== undefined ? c.orderBy : 'none'})`));
+      this.setState({ categories: sortedCategories, loading: false });
+
+    } catch (error) {
+      console.error('❌ Exception:', error);
+      alert(`Error loading folders: ${error instanceof Error ? error.message : String(error)}`);
       this.setState({ categories: [], loading: false });
     }
-  } catch (error) {
-    console.error('❌ Exception:', error);
-    alert(`Error loading folders: ${error instanceof Error ? error.message : String(error)}`);
-    this.setState({ categories: [], loading: false });
-  }
-};
+  };
 
-
-
-
-  // Check for cover image in folder
   private checkForCoverImage = async (folderUrl: string): Promise<string | null> => {
   try {
     const siteUrl = this.props.context.pageContext.web.absoluteUrl;
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
     
-    console.log(`Checking for cover image in: ${folderUrl}`);
-    
     for (const ext of imageExtensions) {
       try {
-        const imageServerRelativeUrl = `${folderUrl}/cover.${ext}`;
-        const checkUrl = `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${imageServerRelativeUrl}')`;
+        const imageServerRelativeUrl = folderUrl + '/cover.' + ext;
+        const checkUrl = siteUrl + '/_api/web/GetFileByServerRelativeUrl(\'' + imageServerRelativeUrl + '\')';
         
         const response = await this.props.context.spHttpClient.get(
           checkUrl, 
@@ -163,16 +243,12 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
         );
         
         if (response.ok) {
-          console.log(`Found cover image: ${imageServerRelativeUrl}`);
-          return `${siteUrl}${imageServerRelativeUrl}`;
+          return siteUrl + imageServerRelativeUrl;
         }
       } catch (err) {
-        // Image doesn't exist, try next extension
         continue;
       }
     }
-    
-    console.log(`No cover image found in: ${folderUrl}`);
     return null;
   } catch (error) {
     console.error('Error checking for cover image:', error);
@@ -180,16 +256,15 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
   }
 };
 
+private handleCategoryClick = (category: IDocumentCategory): void => {
+  if (this.props.isDynamicMode && category.pageUrl) {
+    window.location.href = category.pageUrl;
+  } else if (category.libraryUrl && category.libraryUrl !== '') {
+    const url = this.formatUrl(category.libraryUrl);
+    window.open(url, '_self');
+  }
+};
 
-  private handleCategoryClick = (category: IDocumentCategory): void => {
-    // NEW: If dynamic mode and pageUrl exists, use that
-    if (this.props.isDynamicMode && category.pageUrl) {
-      window.location.href = category.pageUrl;
-    } else if (category.libraryUrl && category.libraryUrl !== '') {
-      const url = this.formatUrl(category.libraryUrl);
-      window.open(url, '_self');
-    }
-  };
 
   private formatUrl = (url: string): string => {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -212,7 +287,6 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     event.stopPropagation();
     event.preventDefault();
     
-    // NEW: Priority to pageUrl in dynamic mode
     if (this.props.isDynamicMode && category.pageUrl) {
       window.location.href = category.pageUrl;
     } else if (category.viewAllUrl && category.viewAllUrl !== '') {

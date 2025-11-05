@@ -8,6 +8,56 @@
   }
 }
 
+// ✅ NEW: Filter section styling
+.filterSection {
+  margin: 20px 0 30px 0;
+  max-width: 300px;
+}
+
+.groupDropdown {
+  :global(.ms-Dropdown-title) {
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+}
+
+// ✅ CHANGED: Convert button to text link
+.orgChartLink {
+  color: #0078d4;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #106ebe;
+    text-decoration: underline;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+// ✅ CHANGED: Single employee grid (remove section-specific styles)
+.employeeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin: 30px 0;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+// ✅ Remove .departmentSection and .sectionTitle if they exist
+
+
 .initialsAvatar {
   width: 50px;
   height: 50px;

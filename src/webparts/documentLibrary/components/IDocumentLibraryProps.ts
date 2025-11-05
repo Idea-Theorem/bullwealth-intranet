@@ -12,6 +12,7 @@ export interface IDocument {
   // ✅ FIX 5: Add timestamp properties for accurate sorting
   modifiedTimestamp?: number;
   createdTimestamp?: number;
+  orderBy?: number;  // ✅ ADD THIS LINE
 }
 
 export interface IDocumentLibraryProps {

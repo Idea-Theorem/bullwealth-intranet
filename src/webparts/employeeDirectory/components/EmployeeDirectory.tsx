@@ -8,71 +8,69 @@ import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { Spinner } from '@fluentui/react/lib/Spinner';
 
-
 const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
-  const [sectionData, setSectionData] = useState<{ [key: string]: IEmployee[] }>({});
-  const [currentPages, setCurrentPages] = useState<{ [key: string]: number }>({});
+  const [employees, setEmployees] = useState<IEmployee[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   const cardsPerPage = props.maxEmployeesToShow || 5;
 
   useEffect(() => {
-    const fetchEmployeesForSections = async () => {
+    const fetchEmployees = async () => {
       setLoading(true);
-      const newSectionData: { [key: string]: IEmployee[] } = {};
-      const newPaginationState: { [key: string]: number } = {};
-
-      for (const section of props.sections) {
-        if (section && section.listName && section.title) {
-          try {
-            // ✅ FIXED: Updated to match your actual column names
-            const url = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(section.listName)}')/items?$select=Id,Title,Email,CompanyName,GroupName&$top=50`;
-            console.log(`Fetching data for ${section.title} from:`, url);
-            
-            const response: SPHttpClientResponse = await props.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
-            
-            console.log(`Response status for ${section.title}:`, response.status);
-            
-            if (response.ok) {
-              const data = await response.json();
-              console.log(`Data received for ${section.title}:`, data);
-              
-              // ✅ FIXED: Map CompanyName to job title
-              newSectionData[section.title] = Array.isArray(data.value) ? data.value.map((item: any, idx: number) => ({
-                id: item.Id || idx + 1,
-                name: item.Title || "Unknown Employee",
-                title: item.CompanyName || item.GroupName || "Employee", // Use CompanyName or GroupName as job title
-                email: item.Email || "employee@company.com",
-                phone: "",
-                profileImage: ''
-              })) : [];
-              
-              console.log(`Processed ${newSectionData[section.title].length} employees for ${section.title}`);
-            } else {
-              const errorText = await response.text();
-              console.error(`Error fetching ${section.title}:`, response.status, errorText);
-              newSectionData[section.title] = [];
-            }
-            newPaginationState[section.title] = 0;
-          } catch (error) {
-            console.error(`Exception fetching ${section.title}:`, error);
-            newSectionData[section.title] = [];
-            newPaginationState[section.title] = 0;
-          }
+      try {
+        // ✅ Build filter query based on selected company
+        let filterQuery = '';
+        if (props.selectedCompany && props.selectedCompany !== 'All') {
+          filterQuery = `&$filter=CompanyName eq '${props.selectedCompany.replace(/'/g, "''")}'`;
         }
-      }
 
-      setSectionData(newSectionData);
-      setCurrentPages(newPaginationState);
+        const url = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(props.listName)}')/items?$select=Id,Title,Email,CompanyName,GroupName&$top=1000${filterQuery}`;
+        console.log('Fetching employees from:', url);
+        
+        const response: SPHttpClientResponse = await props.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Data received:', data);
+          
+          // ✅ Map and sort alphabetically
+          const employeeList: IEmployee[] = Array.isArray(data.value) 
+            ? data.value
+                .map((item: any, idx: number) => ({
+                  id: item.Id || idx + 1,
+                  name: item.Title || "Unknown Employee",
+                  title: item.CompanyName || "Employee",
+                  email: item.Email || "employee@company.com",
+                  phone: "",
+                  profileImage: '',
+                  groupName: item.GroupName || "General"
+                }))
+                .sort((a: IEmployee, b: IEmployee) => a.name.localeCompare(b.name))
+            : [];
+          
+          console.log(`Processed ${employeeList.length} employees`);
+          setEmployees(employeeList);
+          
+        } else {
+          const errorText = await response.text();
+          console.error('Error fetching employees:', response.status, errorText);
+          setEmployees([]);
+        }
+      } catch (error) {
+        console.error('Exception fetching employees:', error);
+        setEmployees([]);
+      }
+      
       setLoading(false);
     };
 
-    if (props.sections && props.sections.length > 0) {
-      fetchEmployeesForSections();
+    if (props.listName) {
+      fetchEmployees();
     } else {
       setLoading(false);
     }
-  }, [props.sections, props.context]);
+  }, [props.listName, props.context, props.selectedCompany]);
 
   const getInitials = (name: string): string => {
     const nameParts = name.trim().split(' ');
@@ -97,8 +95,8 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
     window.open(`mailto:${email}`, "_blank");
   };
 
-  const handlePageChange = (sectionTitle: string, pageNum: number) => {
-    setCurrentPages(prev => ({ ...prev, [sectionTitle]: pageNum }));
+  const handlePageChange = (pageNum: number) => {
+    setCurrentPage(pageNum);
   };
 
   const renderEmployeeCard = (employee: IEmployee) => {
@@ -140,48 +138,6 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
     );
   };
 
-  const renderSection = (title: string, employees: IEmployee[]) => {
-    const currentPage = currentPages[title] || 0;
-    const pageCount = Math.ceil((employees?.length || 0) / cardsPerPage);
-    const startIdx = currentPage * cardsPerPage;
-    const currentEmployees = employees?.slice(startIdx, startIdx + cardsPerPage) || [];
-
-    return (
-      <div key={title} className={styles.departmentSection}>
-        {props.sections.length > 1 && (
-          <h2 className={styles.sectionTitle}>{title}</h2>
-        )}
-        
-        {currentEmployees.length > 0 ? (
-          <>
-            <div className={styles.employeeGrid}>
-              {currentEmployees.map(renderEmployeeCard)}
-            </div>
-            {pageCount > 1 && (
-              <div className={styles.pagination}>
-                {Array.from({ length: pageCount }).map((_, idx) => (
-                  <button
-                    key={idx}
-                    className={`${styles.paginationDot} ${idx === currentPage ? styles.active : ''}`}
-                    onClick={() => handlePageChange(title, idx)}
-                    type="button"
-                    aria-label={`Page ${idx + 1}`}
-                  >
-                    ●
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className={styles.noEmployees}>
-            No employees found in {title}.
-          </div>
-        )}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className={styles.loaderContainer}>
@@ -190,6 +146,11 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
     );
   }
 
+  // ✅ Calculate pagination
+  const pageCount = Math.ceil(employees.length / cardsPerPage);
+  const startIdx = currentPage * cardsPerPage;
+  const currentEmployees = employees.slice(startIdx, startIdx + cardsPerPage);
+
   return (
     <div className={styles.employeeDirectory}>
       <div className={styles.header}>
@@ -197,22 +158,44 @@ const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
         {props.orgChartLink && (
           <a 
             href={props.orgChartLink} 
-            className={styles.orgChartButton} 
+            className={styles.orgChartLink}
             target="_blank" 
             rel="noopener noreferrer"
           >
-            <Icon iconName="Org" />
-            Org Chart
+            View Organization Chart
           </a>
         )}
       </div>
-      {props.sections && props.sections.length > 0 ? (
-        props.sections.map(section =>
-          renderSection(section.title, sectionData[section.title] || [])
-        )
+
+      {/* ✅ REMOVED: Frontend filter dropdown */}
+
+      {currentEmployees.length > 0 ? (
+        <>
+          <div className={styles.employeeGrid}>
+            {currentEmployees.map(renderEmployeeCard)}
+          </div>
+          
+          {pageCount > 1 && (
+            <div className={styles.pagination}>
+              {Array.from({ length: pageCount }).map((_, idx: number) => (
+                <button
+                  key={idx}
+                  className={`${styles.paginationDot} ${idx === currentPage ? styles.active : ''}`}
+                  onClick={() => handlePageChange(idx)}
+                  type="button"
+                  aria-label={`Page ${idx + 1}`}
+                >
+                  ●
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <div className={styles.noSections}>
-          No sections configured. Please configure sections in the web part properties.
+        <div className={styles.noEmployees}>
+          {props.selectedCompany && props.selectedCompany !== 'All' 
+            ? `No employees found for ${props.selectedCompany}.` 
+            : 'No employees found.'}
         </div>
       )}
     </div>

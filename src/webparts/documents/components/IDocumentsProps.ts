@@ -9,6 +9,7 @@ export interface IDocumentCategory {
   viewDocumentsText?: string;
   folderName?: string; // NEW: Actual folder name
   pageUrl?: string; // NEW: Link to site page
+  orderBy?: number; // ✅ NEW
 }
 
 export interface IDocumentsProps {

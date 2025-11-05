@@ -9,12 +9,15 @@ import { IconButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { ContextualMenu, IContextualMenuItem } from '@fluentui/react/lib/ContextualMenu';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
 
+
 interface IFolderWithDocuments {
   name: string;
   documents: IDocument[];
   allDocuments: IDocument[];
   folderPath: string;
+  orderBy?: number;
 }
+
 
 const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [foldersWithDocuments, setFoldersWithDocuments] = useState<IFolderWithDocuments[]>([]);
@@ -27,11 +30,13 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+
   useEffect(() => {
     if (!currentFolder) {
       void loadFolderStructure();
     }
   }, [props.listName]);
+
 
   useEffect(() => {
     if (currentFolder) {
@@ -39,6 +44,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setSelectAllChecked(false);
     }
   }, [currentFolder]);
+
 
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
@@ -48,13 +54,38 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }).format(date);
   };
 
+
+  // ✅ Extract Order By from filename
+  const extractOrderFromFilename = (fileName: string): number | undefined => {
+    if (fileName.includes('Appendix F')) return 1;
+    if (fileName.includes('Appendix C')) return 2;
+    if (fileName.includes('Sick Leave')) return 3;
+    if (fileName.includes('Vacation')) return 4;
+    if (fileName.match(/\d{8}\.pdf$/)) return 5;
+    return undefined;
+  };
+
+
+  // ✅ Sort by Order By column ONLY
   const sortDocumentsByModified = (documents: IDocument[]): IDocument[] => {
     return [...documents].sort((a, b) => {
-      const timeA = (a as any).modifiedTimestamp || 0;
-      const timeB = (b as any).modifiedTimestamp || 0;
-      return timeB - timeA;
+      const aOrder = (a as any).orderBy;
+      const bOrder = (b as any).orderBy;
+      
+      if (aOrder !== undefined && aOrder !== null) {
+        if (bOrder !== undefined && bOrder !== null) {
+          return Number(aOrder) - Number(bOrder);
+        }
+        return -1;
+      }
+      if (bOrder !== undefined && bOrder !== null) {
+        return 1;
+      }
+      
+      return 0;
     });
   };
+
 
   const loadFolderStructure = async (): Promise<void> => {
     setIsLoading(true);
@@ -81,6 +112,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setIsLoading(false);
     }
   };
+
 
   const tryFolderPaths = async (baseUrl: string, mainLibrary: string, targetFolder: string): Promise<void> => {
     const siteName = baseUrl.split('/').pop();
@@ -122,6 +154,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setTimeout(() => setMessage(''), 10000);
     setFoldersWithDocuments([]);
   };
+
 
   const getDocumentsWithRealUsers = async (files: any[], folderPath: string): Promise<IDocument[]> => {
     const documents: IDocument[] = [];
@@ -178,7 +211,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
               }
             }
           } else {
-            console.log(`⚠️ No list item found for: ${fileName} - trying file API fallback`);
+            console.log(`⚠️ No list item found for: ${fileName}`);
             
             if (file.Editor && file.Editor.Title) {
               modifiedBy = file.Editor.Title.replace(/@.*$/, '');
@@ -221,7 +254,8 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
             description: description,
             createdDate: formatDate(createdDate),
             modifiedTimestamp: modifiedDate.getTime(),
-            createdTimestamp: createdDate.getTime()
+            createdTimestamp: createdDate.getTime(),
+            orderBy: extractOrderFromFilename(fileName)  // ✅ ADD ORDER BY
           });
         }
       } else {
@@ -235,6 +269,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     
     return documents;
   };
+
 
   const processFolderData = async (data: any, folderPath: string): Promise<void> => {
     console.log('=== PROCESSING FOLDER DATA ===');
@@ -251,7 +286,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       return;
     }
 
-    const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string } } = {};
+    const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string, orderBy?: number } } = {};
 
     if (files.length > 0) {
       const mappedDocuments = await getDocumentsWithRealUsers(files, folderPath);
@@ -311,9 +346,47 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
             const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, subfolderPath);
             const sortedDocuments = sortDocumentsByModified(mappedDocuments);
             
+            let folderOrderBy: number | undefined = undefined;
+            
+            try {
+              const folderPropsUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/ListItemAllFields`;
+              const folderPropsResponse = await props.context.spHttpClient.get(folderPropsUrl, SPHttpClient.configurations.v1);
+              
+              if (folderPropsResponse.ok) {
+                const folderProps = await folderPropsResponse.json();
+                console.log(`📊 Folder props for ${subfolderName}:`, folderProps);
+                
+                if (folderProps.Order_x0020_By !== null && folderProps.Order_x0020_By !== undefined) {
+                  folderOrderBy = parseInt(folderProps.Order_x0020_By, 10);
+                } else if (folderProps.OrderBy !== null && folderProps.OrderBy !== undefined) {
+                  folderOrderBy = parseInt(folderProps.OrderBy, 10);
+                } else if (folderProps.Order !== null && folderProps.Order !== undefined) {
+                  folderOrderBy = parseInt(folderProps.Order, 10);
+                }
+                
+                console.log(`📂 Folder "${subfolderName}" Order By: ${folderOrderBy}`);
+              } else {
+                console.log(`⚠️ Could not get ListItemAllFields for folder ${subfolderName}, status: ${folderPropsResponse.status}`);
+              }
+            } catch (err) {
+              console.error(`❌ Error getting Order By for folder ${subfolderName}:`, err);
+            }
+            
+            if (folderOrderBy === undefined) {
+              console.log(`⚠️ Using fallback order for ${subfolderName}`);
+              const orderMap: { [key: string]: number } = {
+                'Policies': 1,
+                'Templates': 2,
+                'Training Material': 3,
+                'Operational Procedures': 4
+              };
+              folderOrderBy = orderMap[subfolderName];
+            }
+            
             folderGroups[subfolderName] = {
               documents: sortedDocuments,
-              folderPath: subfolderPath
+              folderPath: subfolderPath,
+              orderBy: folderOrderBy
             };
           }
         }
@@ -325,15 +398,28 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     console.log('Final folder groups:', Object.keys(folderGroups));
 
     const foldersWithDocs: IFolderWithDocuments[] = [];
-    
+
     for (const folderName of Object.keys(folderGroups)) {
       foldersWithDocs.push({
         name: folderName,
         documents: folderGroups[folderName].documents.slice(0, 4),
         allDocuments: folderGroups[folderName].documents,
-        folderPath: folderGroups[folderName].folderPath
+        folderPath: folderGroups[folderName].folderPath,
+        orderBy: folderGroups[folderName].orderBy
       });
     }
+
+    foldersWithDocs.sort((a, b) => {
+      if (a.orderBy !== undefined && b.orderBy !== undefined) {
+        return a.orderBy - b.orderBy;
+      }
+      if (a.orderBy !== undefined) return -1;
+      if (b.orderBy !== undefined) return 1;
+      
+      return a.name.localeCompare(b.name);
+    });
+
+    console.log('📂 Folder display order:', foldersWithDocs.map(f => `${f.name} (Order: ${f.orderBy})`));
 
     if (foldersWithDocs.length === 0) {
       console.log('❌ No folders with documents found');
@@ -348,6 +434,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setTimeout(() => setMessage(''), 5000);
     }
   };
+
 
   const mapFileToDocument = (file: any): IDocument => {
     const fileName: string = file.Name || file.LeafName || 'Unknown';
@@ -389,13 +476,13 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       description: description,
       createdDate: formatDate(createdDate),
       modifiedTimestamp: modifiedDate.getTime(),
-      createdTimestamp: createdDate.getTime()
+      createdTimestamp: createdDate.getTime(),
+      orderBy: extractOrderFromFilename(fileName)  // ✅ ADD ORDER BY
     };
   };
 
-  const handleDocumentClick = (doc: IDocument): void => {
-    
 
+  const handleDocumentClick = (doc: IDocument): void => {
     if (!doc.serverRelativeUrl || doc.serverRelativeUrl === '#') {
       setMessage('❌ Document URL not available');
       setTimeout(() => setMessage(''), 3000);
@@ -412,6 +499,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
+
   const getFileIcon = (fileType: string): string => {
     const type = (fileType || '').toLowerCase();
     switch (type) {
@@ -425,6 +513,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       default: return 'Page';
     }
   };
+
 
   const handleDownloadDocument = (doc: IDocument): void => {
     if (doc.downloadUrl && doc.downloadUrl !== '#') {
@@ -446,6 +535,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setTimeout(() => setMessage(''), 3000);
     }
   };
+
 
   const handleShareDocument = (doc: IDocument): void => {
     if ((window as any).SP && (window as any).SP.UI && (window as any).SP.UI.ModalDialog) {
@@ -471,6 +561,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
+
   const fallbackShare = (doc: IDocument): void => {
     const shareUrl = doc.serverRelativeUrl || window.location.href;
     const shareData = {
@@ -488,6 +579,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       copyToClipboard(shareUrl, doc.name);
     }
   };
+
 
   const copyToClipboard = (url: string, documentName: string): void => {
     if (navigator.clipboard) {
@@ -517,6 +609,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
+
   const handleSelectAllChange = (): void => {
     const newSelectAll = !selectAllChecked;
     setSelectAllChecked(newSelectAll);
@@ -527,6 +620,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setCheckedItems(new Set());
     }
   };
+
 
   const handleCheckboxChange = (documentId: number): void => {
     const newCheckedItems = new Set(checkedItems);
@@ -539,6 +633,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setSelectAllChecked(newCheckedItems.size === currentDocuments.length && currentDocuments.length > 0);
   };
 
+
   const handleViewAll = (folderName: string): void => {
     const folder = foldersWithDocuments.find((f: IFolderWithDocuments) => f.name === folderName);
     if (folder && folder.allDocuments.length > 0) {
@@ -547,12 +642,14 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
+
   const handleBackClick = (): void => {
     setCurrentFolder('');
     setCurrentDocuments([]);
     setCheckedItems(new Set());
     setSelectAllChecked(false);
   };
+
 
   const handleDocumentActions = (event: React.MouseEvent<HTMLElement>, doc: IDocument): void => {
     event.preventDefault();
@@ -561,10 +658,12 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setContextMenuTarget(event.currentTarget as HTMLElement);
   };
 
+
   const dismissContextMenu = (): void => {
     setContextMenuTarget(null);
     setSelectedDocument(null);
   };
+
 
   const getContextMenuItems = (): IContextualMenuItem[] => {
     if (!selectedDocument) return [];
@@ -611,7 +710,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     ];
   };
 
-  // ✅ FIXED: Loading state with inline styles (no CSS class needed)
+
   if (isLoading) {
     return (
       <div className={styles.documentLibrary}>
@@ -643,7 +742,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     );
   }
 
-  // ✅ FIXED: Empty state with inline styles (no CSS class needed)
+
   if (foldersWithDocuments.length === 0) {
     return (
       <div className={styles.documentLibrary}>
@@ -707,7 +806,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     );
   }
 
-  // Table view when "View all" is clicked
+
   if (currentFolder) {
     return (
       <div className={styles.documentLibrary}>
@@ -827,7 +926,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     );
   }
 
-  // Card view - main library view
+
   return (
     <div className={styles.documentLibrary}>
       {message && (
@@ -899,5 +998,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     </div>
   );
 };
+
 
 export default DocumentLibrary;

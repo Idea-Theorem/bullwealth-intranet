@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import * as React from 'react';
 import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import styles from './VideoBanner.module.scss';
@@ -28,6 +29,147 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
     this.loadLatestMessage();
   }
 
+  private getImageUrl = async (itemId: number, imageFieldValue: any, siteUrl: string): Promise<string | null> => {
+    console.log(`🖼️ Getting image URL for item ${itemId}`);
+    console.log('Raw image field:', imageFieldValue);
+
+    if (!imageFieldValue) {
+      console.log('No image field value provided');
+      return null;
+    }
+
+    try {
+      let imageData: any;
+
+      // Parse JSON if string
+      if (typeof imageFieldValue === 'string') {
+        try {
+          imageData = JSON.parse(imageFieldValue);
+        } catch (parseError) {
+          console.log('Failed to parse image field as JSON');
+          return null;
+        }
+      } else {
+        imageData = imageFieldValue;
+      }
+
+      if (imageData && imageData.fileName) {
+        console.log('Found fileName:', imageData.fileName);
+
+        // Method 1: RenderListDataAsStream (most reliable)
+        try {
+          const renderApiUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/RenderListDataAsStream`;
+          
+          const renderResponse = await this.props.context.spHttpClient.post(
+            renderApiUrl,
+            SPHttpClient.configurations.v1,
+            {
+              headers: {
+                'Accept': 'application/json;odata=nometadata',
+                'Content-Type': 'application/json;odata=nometadata'
+              },
+              body: JSON.stringify({
+                parameters: {
+                  ViewXml: `<View><Query><Where><Eq><FieldRef Name='ID'/><Value Type='Number'>${itemId}</Value></Eq></Where></Query></View>`,
+                  RenderOptions: 1
+                }
+              })
+            }
+          );
+
+          if (renderResponse.ok) {
+            const renderData = await renderResponse.json();
+            console.log('🎨 RenderListDataAsStream success:', renderData);
+            
+            if (renderData.Row && renderData.Row.length > 0) {
+              const row = renderData.Row[0];
+              if (row.FeaturedImage) {
+                const imgMatch = row.FeaturedImage.match(/src="([^"]+)"/);
+                if (imgMatch) {
+                  const imageUrl = imgMatch[1];
+                  console.log('✅ Found rendered image URL:', imageUrl);
+                  return imageUrl;
+                }
+              }
+            }
+          }
+        } catch (renderError) {
+          console.log('⚠️ RenderListDataAsStream failed, trying alternatives');
+        }
+
+        // Method 2: FieldValuesAsHtml approach
+        try {
+          const fieldHtmlUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/items(${itemId})/FieldValuesAsHtml/FeaturedImage`;
+          
+          const fieldResponse = await this.props.context.spHttpClient.get(
+            fieldHtmlUrl,
+            SPHttpClient.configurations.v1
+          );
+
+          if (fieldResponse.ok) {
+            const fieldData = await fieldResponse.json();
+            console.log('📄 FieldValuesAsHtml response:', fieldData);
+            
+            if (fieldData.value) {
+              const imgMatch = fieldData.value.match(/src="([^"]+)"/);
+              if (imgMatch) {
+                console.log('✅ Found HTML field image URL:', imgMatch[1]);
+                return imgMatch[1];
+              }
+            }
+          }
+        } catch (fieldError) {
+          console.log('⚠️ FieldValuesAsHtml failed');
+        }
+
+        // Method 3: Direct URL construction with validation
+        const possibleUrls = [
+          `${siteUrl}/Lists/Archived-Messages/Attachments/${itemId}/${imageData.fileName}`,
+          `${siteUrl}/SiteAssets/${imageData.fileName}`,
+          `${siteUrl}/PublishingImages/${imageData.fileName}`,
+          `${siteUrl}/_layouts/15/getpreview.ashx?path=${siteUrl}/Lists/Archived-Messages/Attachments/${itemId}/${imageData.fileName}`
+        ];
+
+        for (const testUrl of possibleUrls) {
+          try {
+            // Test if URL is accessible
+            const response = await fetch(testUrl, { method: 'HEAD' });
+            if (response.ok) {
+              console.log('✅ Found working direct URL:', testUrl);
+              return testUrl;
+            }
+          } catch {
+            console.log(`❌ URL failed: ${testUrl}`);
+          }
+        }
+
+        // Method 4: Attachment API approach
+        try {
+          const attachmentUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/items(${itemId})/AttachmentFiles('${imageData.fileName}')/$value`;
+          
+          const attachmentResponse = await this.props.context.spHttpClient.get(
+            attachmentUrl,
+            SPHttpClient.configurations.v1
+          );
+
+          if (attachmentResponse.ok) {
+            console.log('✅ Found as attachment:', attachmentUrl);
+            return attachmentUrl;
+          }
+        } catch {
+          console.log('⚠️ Attachment API failed');
+        }
+      }
+
+      console.log('❌ No working image URL found for item', itemId);
+      return null;
+
+    } catch (error) {
+      console.error('💥 Error getting image URL:', error);
+      return null;
+    }
+  }
+
   private loadLatestMessage = async (): Promise<void> => {
     try {
       this.setState({ loading: true });
@@ -35,15 +177,18 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
       const siteUrl = this.props.context.pageContext.web.absoluteUrl;
       console.log('🔍 Loading latest published message from Archived-Messages...');
       
-      // Get current date for filtering
       const today = new Date();
       const todayISOString = today.toISOString();
       
       console.log('📅 Current date for filtering:', todayISOString);
       
-      // Enhanced query: Get messages where PublishedDate <= today, ordered by PublishedDate DESC
-      // This ensures we get the most recently published message that should be visible now
-      const apiUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/items?$expand=Author&$select=Id,Title,Content,PublishedDate,Created,FeaturedImage,NewsletterVideo,Author/Title&$filter=PublishedDate le datetime'${todayISOString}'&$orderby=PublishedDate desc&$top=1`;
+      // Query latest message
+      const apiUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/items?` +
+        `$expand=Author&` +
+        `$select=Id,Title,Content,PublishedDate,Created,FeaturedImage,NewsletterVideo,Author/Title&` +
+        `$filter=PublishedDate le datetime'${todayISOString}'&` +
+        `$orderby=PublishedDate desc&` +
+        `$top=1`;
       
       console.log('🔗 API URL:', apiUrl);
       
@@ -61,106 +206,43 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
           console.log('📄 Latest published item:', {
             Id: latestItem.Id,
             Title: latestItem.Title,
-            PublishedDate: latestItem.PublishedDate,
-            Created: latestItem.Created,
-            daysFromNow: this.getDaysFromNow(latestItem.PublishedDate)
+            PublishedDate: latestItem.PublishedDate
           });
           
-          // Enhanced featured image processing
+          // ✅ Get image URL using proven working method
           let featuredImageUrl: string | null = null;
           
           if (latestItem.FeaturedImage) {
             try {
-              let imageData;
-              if (typeof latestItem.FeaturedImage === 'string') {
-                imageData = JSON.parse(latestItem.FeaturedImage);
-              } else {
-                imageData = latestItem.FeaturedImage;
-              }
-              
-              console.log('🖼️ Processing image data:', imageData);
-              
-              if (imageData && imageData.fileName) {
-                // Try SharePoint RenderListDataAsStream for proper image URLs
-                try {
-                  const renderUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/RenderListDataAsStream`;
-                  
-                  const renderResponse = await this.props.context.spHttpClient.post(
-                    renderUrl,
-                    SPHttpClient.configurations.v1,
-                    {
-                      headers: {
-                        'Accept': 'application/json;odata=nometadata',
-                        'Content-Type': 'application/json;odata=nometadata'
-                      },
-                      body: JSON.stringify({
-                        parameters: {
-                          ViewXml: `<View><Query><Where><Eq><FieldRef Name='ID'/><Value Type='Number'>${latestItem.Id}</Value></Eq></Where></Query></View>`,
-                          RenderOptions: 1
-                        }
-                      })
-                    }
-                  );
-
-                  if (renderResponse.ok) {
-                    const renderData = await renderResponse.json();
-                    console.log('🎨 Render data:', renderData);
-                    
-                    if (renderData.Row && renderData.Row.length > 0) {
-                      const row = renderData.Row[0];
-                      if (row.FeaturedImage) {
-                        const imgMatch = row.FeaturedImage.match(/src="([^"]+)"/);
-                        if (imgMatch) {
-                          featuredImageUrl = imgMatch[1];
-                          console.log('✅ Found rendered image URL:', featuredImageUrl);
-                        }
-                      }
-                    }
-                  }
-                } catch (renderError) {
-                  console.log('⚠️ Render API failed, trying direct URLs');
-                  
-                  // Fallback to direct URL construction
-                  const directUrls = [
-                    `${siteUrl}/Lists/Archived-Messages/Attachments/${latestItem.Id}/${imageData.fileName}`,
-                    `${siteUrl}/SiteAssets/${imageData.fileName}`,
-                    `${siteUrl}/_layouts/15/getpreview.ashx?path=${siteUrl}/Lists/Archived-Messages/Attachments/${latestItem.Id}/${imageData.fileName}`
-                  ];
-
-                  for (const testUrl of directUrls) {
-                    try {
-                      const response = await fetch(testUrl, { method: 'HEAD' });
-                      if (response.ok) {
-                        featuredImageUrl = testUrl;
-                        console.log('✅ Found working direct URL:', featuredImageUrl);
-                        break;
-                      }
-                    } catch {
-                      continue;
-                    }
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('❌ Image processing error:', error);
+              featuredImageUrl = await this.getImageUrl(latestItem.Id, latestItem.FeaturedImage, siteUrl);
+            } catch (imageError) {
+              console.error(`❌ Image processing failed for item ${latestItem.Id}:`, imageError);
             }
           }
           
-          // Extract video URL
+          // ✅ Get video URL
           let videoUrl: string | null = null;
+          
           if (latestItem.NewsletterVideo) {
+            console.log('🎬 Raw video data:', latestItem.NewsletterVideo);
+            
             if (typeof latestItem.NewsletterVideo === 'string') {
               videoUrl = latestItem.NewsletterVideo.trim();
-            } else if (latestItem.NewsletterVideo.Url) {
-              videoUrl = latestItem.NewsletterVideo.Url;
+            } else if (typeof latestItem.NewsletterVideo === 'object') {
+              videoUrl = latestItem.NewsletterVideo.Url || latestItem.NewsletterVideo.url || null;
+              if (videoUrl && typeof videoUrl === 'string') {
+                videoUrl = videoUrl.trim();
+              }
             }
+            
+            console.log('✅ Extracted video URL:', videoUrl);
           }
           
-          console.log('🎬 Final processing result:', {
+          console.log('🎯 FINAL RESULT:', {
             featuredImageUrl,
             videoUrl,
-            publishedDate: latestItem.PublishedDate,
-            isCurrentlyPublished: new Date(latestItem.PublishedDate) <= new Date()
+            hasImage: !!featuredImageUrl,
+            hasVideo: !!videoUrl
           });
           
           this.setState({ 
@@ -171,36 +253,13 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
             }
           });
         } else {
-          console.log('⚠️ No published messages found for current date');
-          
-          // Fallback: Try to get the most recent message regardless of publish date
-          const fallbackUrl = `${siteUrl}/_api/web/lists/getbytitle('Archived-Messages')/items?$expand=Author&$select=Id,Title,Content,PublishedDate,Created,FeaturedImage,NewsletterVideo,Author/Title&$orderby=Created desc&$top=1`;
-          
-          console.log('🔄 Trying fallback query...');
-          
-          const fallbackResponse = await this.props.context.spHttpClient.get(
-            fallbackUrl,
-            SPHttpClient.configurations.v1
-          );
-          
-          if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json();
-            if (fallbackData.value && fallbackData.value.length > 0) {
-              const fallbackItem = fallbackData.value[0];
-              console.log('📄 Fallback item found:', fallbackItem.Title);
-              
-              this.setState({ 
-                latestMessage: {
-                  ...fallbackItem,
-                  FeaturedImageUrl: null,
-                  VideoUrl: null
-                }
-              });
-            }
-          }
+          console.log('⚠️ No published messages found');
+          this.setState({ latestMessage: null });
         }
       } else {
         console.error('❌ API Error - Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
       }
     } catch (error) {
       console.error('💥 Load error:', error);
@@ -209,18 +268,9 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
     }
   }
 
-  // Helper function to calculate days from now
-  private getDaysFromNow = (dateString: string): number => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  }
-
   private handlePlayClick = (): void => {
     const { latestMessage } = this.state;
-    const videoUrl: string | undefined = latestMessage?.VideoUrl || this.props.videoUrl;
+    const videoUrl: string | undefined = latestMessage?.VideoUrl;
     
     if (!videoUrl || videoUrl.trim() === '') {
       console.log('⚠️ No video URL available');
@@ -231,12 +281,12 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
   }
 
   private handleReadMore = (): void => {
-    console.log('📖 Opening detail view as separate page');
+    console.log('📖 Opening detail view');
     this.setState({ showDetailView: true });
   }
 
   private handleBackFromDetail = (): void => {
-    console.log('🏠 Back to home page');
+    console.log('🏠 Back to home');
     this.setState({ showDetailView: false });
   }
 
@@ -271,35 +321,29 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
   }
 
   private getDefaultThumbnail = (): string => {
-    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"%3E%3Crect width="800" height="450" fill="%23f0f0f0"/%3E%3Ctext x="400" y="200" text-anchor="middle" fill="%23666666" font-size="24" font-family="Arial"%3ELatest News%3C/text%3E%3Ctext x="400" y="250" text-anchor="middle" fill="%23666666" font-size="16" font-family="Arial"%3EImage Preview%3C/text%3E%3C/svg%3E';
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"%3E%3Crect width="800" height="450" fill="%23f0f0f0"/%3E%3Ctext x="400" y="200" text-anchor="middle" fill="%23999999" font-size="24" font-family="Arial"%3ELatest News%3C/text%3E%3Ctext x="400" y="250" text-anchor="middle" fill="%23999999" font-size="16" font-family="Arial"%3EImage Preview%3C/text%3E%3C/svg%3E';
   }
 
   private getDefaultBackground = (): string => {
     return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"%3E%3Cdefs%3E%3ClinearGradient id="bg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234a90e2;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237b68ee;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="1920" height="1080" fill="url(%23bg)" /%3E%3C/svg%3E';
   }
 
-  // Enhanced date formatting with current date awareness
   private formatDate = (dateString: string | null | undefined): string | null => {
     if (!dateString) {
-      console.log('⚠️ No date provided');
       return null;
     }
 
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        console.log('⚠️ Invalid date:', dateString);
         return null;
       }
 
-      const formatted = `Published ${date.toLocaleDateString('en-GB', {
+      return `Published ${date.toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
       })}`;
-
-      console.log('📅 Date formatted as:', formatted);
-      return formatted;
     } catch (error) {
       console.error('❌ Date error:', error);
       return null;
@@ -313,7 +357,6 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
     return div.textContent || div.innerText || '';
   }
 
-  // Increased content length to show more lines
   private truncateText = (text: string, maxLength: number = 280): string => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
@@ -321,10 +364,8 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
   }
 
   public render(): React.ReactElement<IVideoBannerProps> {
-    const { backgroundImageUrl } = this.props;
     const { showModal, showDetailView, latestMessage, loading } = this.state;
 
-    // Show DetailedView as separate page-like view
     if (showDetailView) {
       return (
         <DetailedView 
@@ -335,29 +376,18 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
       );
     }
 
-    // Main banner view
-    const displayTitle: string = latestMessage ? latestMessage.Title : (this.props.title || 'Latest News');
+    const displayTitle: string = latestMessage ? latestMessage.Title : 'Latest News';
     const displayMessage: string = latestMessage 
       ? this.truncateText(this.stripHtmlTags(latestMessage.Content))
-      : (this.props.message || 'Stay updated with our latest announcements and news.');
+      : 'Stay updated with our latest announcements and news.';
     
-    // Date processing with better fallback
     const displayDate: string | null = latestMessage 
       ? (this.formatDate(latestMessage.PublishedDate) || this.formatDate(latestMessage.Created))
       : null;
     
-    console.log('🎯 Final render values:', {
-      displayTitle,
-      displayDate,
-      messageLength: displayMessage.length,
-      hasImage: !!latestMessage?.FeaturedImageUrl,
-      publishedDate: latestMessage?.PublishedDate,
-      isPublished: latestMessage ? new Date(latestMessage.PublishedDate || latestMessage.Created) <= new Date() : false
-    });
-    
-    const displayBackground: string = backgroundImageUrl || this.getDefaultBackground();
-    const rightSideImage: string = latestMessage?.FeaturedImageUrl || this.props.thumbnailUrl || this.getDefaultThumbnail();
-    const videoUrl: string | undefined = latestMessage?.VideoUrl || this.props.videoUrl;
+    const displayBackground: string = this.getDefaultBackground();
+    const rightSideImage: string = latestMessage?.FeaturedImageUrl || this.getDefaultThumbnail();
+    const videoUrl: string | undefined = latestMessage?.VideoUrl;
     const hasVideo: boolean = !!(videoUrl && videoUrl.trim() !== '');
 
     const backgroundStyle = {
@@ -372,7 +402,7 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
               <div className={styles.textContent}>
                 <div className={styles.loadingSpinner}>
                   <div className={styles.spinner}></div>
-                  <p>Loading latest published news...</p>
+                  <p>Loading latest news...</p>
                 </div>
               </div>
             </div>
@@ -401,7 +431,7 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
                 onClick={this.handleReadMore}
                 type="button"
               >
-                {this.props.buttonText || 'READ MORE'}
+                READ MORE
               </button>
             </div>
             
@@ -412,6 +442,7 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
                   alt="Latest news featured image"
                   className={styles.thumbnail}
                   onError={(e) => {
+                    console.log('⚠️ Image load failed, using default');
                     (e.target as HTMLImageElement).src = this.getDefaultThumbnail();
                   }}
                 />
@@ -419,7 +450,7 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
                   <button 
                     className={styles.playButton}
                     onClick={this.handlePlayClick}
-                    aria-label="Play newsletter video"
+                    aria-label="Play video"
                     type="button"
                   >
                     <svg 
@@ -463,7 +494,7 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
                   <video 
                     className={styles.modalVideo}
                     controls
-                    autoPlay={this.props.autoPlay || false}
+                    autoPlay
                     src={videoUrl}
                   >
                     Your browser does not support the video tag.
