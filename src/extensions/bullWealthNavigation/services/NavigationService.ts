@@ -1,19 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
-import { INavigationItem } from '../components/INavigationProps';
-
-export interface INavigationListItem {
-  Title: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  URL: any; // SharePoint URL field can have different structures
-  // eslint-disable-next-line @rushstack/no-new-null
-  Icon: string | null;
-  // eslint-disable-next-line @rushstack/no-new-null
-  Parent: string | null;
-  Order0: number;
-  IsActive: boolean;
-  Id: number;
-}
+import { SPHttpClient } from "@microsoft/sp-http";
+import { INavigationItem } from "../components/INavigationProps";
 
 export class NavigationService {
   private spHttpClient: SPHttpClient;
@@ -22,145 +9,207 @@ export class NavigationService {
   constructor(spHttpClient: SPHttpClient, siteUrl: string) {
     this.spHttpClient = spHttpClient;
     this.siteUrl = siteUrl;
-    console.log('🏠 Navigation Service initialized with site URL:', this.siteUrl);
   }
 
+  // ✅ Main navigation fetcher (hybrid: static + dynamic)
   public async getNavigationItems(): Promise<INavigationItem[]> {
-  try {
-    // FIXED: Try different possible field names and remove problematic filter
-    const itemsUrl = `${this.siteUrl}/_api/web/lists/getbytitle('Navigation%20Items')/items?$select=Id,Title,URL,Icon,Parent,Order0,Order,IsActive&$orderby=Id asc`;
-    console.log('🔍 Fetching navigation items (no filter):', itemsUrl);
-    
-    const response: SPHttpClientResponse = await this.spHttpClient.get(
-      itemsUrl,
-      SPHttpClient.configurations.v1
-    );
+    try {
+      const navListUrl = `${this.siteUrl}/_api/web/lists/getbytitle('Navigation%20Items')/items?$select=Id,Title,URL,Icon,Parent,Order0,Order,IsActive&$orderby=Id asc`;
 
-    console.log('📡 Response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('📋 Raw SharePoint data:', data);
-      
-      const items = data.d?.results || data.value || [];
-      console.log('📋 All items (before filter):', items);
-      
-      // FIXED: Apply filter in code instead of OData
-      const activeItems = items.filter((item: any) => {
-        console.log(`🔍 Checking item: ${item.Title}, IsActive: ${item.IsActive} (${typeof item.IsActive})`);
-        return item.IsActive === true || item.IsActive === 'Yes' || item.IsActive === 1;
-      });
-      
-      console.log('📋 Active items (after filter):', activeItems);
-      
-      if (activeItems && activeItems.length > 0) {
-        const navigationTree = this.buildNavigationTree(activeItems);
-        console.log('🌳 Built navigation tree:', navigationTree);
-        return navigationTree;
-      } else {
-        console.warn('⚠️ No active items found, using fallback');
+      const response = await this.spHttpClient.get(navListUrl, SPHttpClient.configurations.v1);
+      if (!response.ok) {
         return this.getFallbackNavigation();
       }
-    } else {
-      const errorText = await response.text();
-      console.error('❌ HTTP Error:', response.status, response.statusText, errorText);
+
+      const data = await response.json();
+      const items = data.value || [];
+      const activeItems = items.filter(
+        (item: any) => item.IsActive === true || item.IsActive === "Yes" || item.IsActive === 1
+      );
+
+
+      const baseNavigation = this.buildNavigationTree(activeItems);
+
+      // ✅ Hybrid configuration for multiple libraries
+      const hybridConfigs = [
+        { name: "BullWealth", library: "BullWealth Documents" },
+        { name: "CAI", library: "Clover Documents" },
+       // { name: "HR & Finance", library: "HR & Finance" },
+        { name: "Mrked", library: "Mrked" },
+      ];
+
+      // Loop through each hybrid parent and attach its dynamic folders
+      for (const config of hybridConfigs) {
+        const parentNode = baseNavigation.find(
+          (n) => n.name.toLowerCase() === config.name.toLowerCase()
+        );
+
+        if (parentNode) {
+          const dynamicFolders = await this.getDynamicFoldersAndFiles(config.library);
+          if (dynamicFolders.length > 0) {
+
+            // Show dynamic folders first, then static ones (no separator)
+            parentNode.children = [
+              ...dynamicFolders.sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
+              ...(parentNode.children || []),
+            ];
+          }
+        }
+        else {
+          console.warn(`⚠️ Parent ${config.name} not found in Navigation Items list`);
+        }
+      }
+
+      return baseNavigation;
+    } catch (err) {
       return this.getFallbackNavigation();
     }
-  } catch (error) {
-    console.error('💥 Error fetching navigation items:', error);
-    return this.getFallbackNavigation();
   }
-}
+
+  // ✅ Reusable: fetch folders & files from any library
+  private async getDynamicFoldersAndFiles(libraryName: string): Promise<INavigationItem[]> {
+    try {
+      const siteUrl = this.siteUrl;
+      const webServerRelativeUrl = siteUrl.replace(/^https?:\/\/[^/]+/, ""); // e.g. /sites/MrkedCapitalIntranet
+      const fullPath = `${webServerRelativeUrl}/Shared Documents/${libraryName}`.replace(/\/+/g, "/");
 
 
-    private buildNavigationTree(items: any[]): INavigationItem[] {
-  console.log('🔨 Building navigation tree from', items.length, 'items');
-  
-  // Convert all items to proper format first
-  const convertedItems = items.map((item, index) => {
-    let urlValue = '#';
-    if (item.URL) {
-      if (typeof item.URL === 'string') {
-        urlValue = item.URL;
-      } else if (item.URL.Url) {
-        urlValue = item.URL.Url;
+      const foldersApi = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(
+        fullPath
+      )}')/Folders?$expand=Files&$select=Name,ServerRelativeUrl,Files/Name,Files/ServerRelativeUrl`;
+
+      const res = await this.spHttpClient.get(foldersApi, SPHttpClient.configurations.v1);
+      if (!res.ok) {
+        console.error(`❌ Failed to fetch folders for ${libraryName}:`, res.status);
+        return [];
       }
+
+      const data = await res.json();
+      const folders = data.value || [];
+      console.log(`📁 Found ${folders.length} folders in ${libraryName}`);
+
+      const folderItems: INavigationItem[] = [];
+
+      for (const folder of folders) {
+        const folderName = folder.Name;
+        const folderServerUrl = folder.ServerRelativeUrl;
+
+        // 🔹 Try to get "OrderBy" field for sorting
+        let orderBy = 999;
+        try {
+          const orderUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(
+            folderServerUrl
+          )}')/ListItemAllFields?$select=OrderBy`;
+          const orderRes = await this.spHttpClient.get(orderUrl, SPHttpClient.configurations.v1);
+          if (orderRes.ok) {
+            const orderData = await orderRes.json();
+            const parsed = parseInt(orderData.OrderBy, 10);
+            if (!isNaN(parsed)) orderBy = parsed;
+          }
+        } catch {
+          console.warn(`⚠️ No OrderBy found for folder: ${folderName}`);
+        }
+
+        // 🔹 Build view URL for DocumentLibrary.aspx
+        const encodedPath = encodeURIComponent(`Shared Documents/${libraryName}/${folderName}`);
+        const viewUrl = `${this.siteUrl}SitePages/DocumentLibrary.aspx?library=${encodedPath}`;
+
+        folderItems.push({
+          name: folderName,
+          url: viewUrl,
+          icon: "Folder",
+          order: orderBy,
+        });
+      }
+
+      folderItems.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      return folderItems;
+    } catch (err) {
+      return [];
     }
-    
-    const iconValue = item.Icon || 'Home';
-    const orderValue = item.Order0 || item.Order || index;
-    
-    return {
-      id: item.Id,
-      name: item.Title || 'Untitled',
-      url: urlValue,
-      icon: iconValue,
-      parent: item.Parent || null,
-      order: orderValue
-    };
-  });
-  
-  console.log('🔄 All converted items:', convertedItems);
-  
-  // FIXED: Separate parents and children
-  const parentItems = convertedItems.filter(item => !item.parent || item.parent === '');
-  const childItems = convertedItems.filter(item => item.parent && item.parent !== '');
-  
-  console.log('👨‍👦 Parent items:', parentItems);
-  console.log('👶 Child items:', childItems);
-  
-  // Build navigation tree with proper parent-child relationships
-  const navigationTree = parentItems.map(parent => {
-    // Find all children for this parent
-    const children = childItems
-      .filter(child => child.parent === parent.name)
-      .sort((a, b) => a.order - b.order)
-      .map(child => ({
-        name: child.name,
-        url: child.url
-      }));
-    
-    const navItem: INavigationItem = {
-      name: parent.name,
-      url: parent.url,
-      icon: parent.icon
-    };
-    
-    // Only add children if they exist
-    if (children.length > 0) {
-      navItem.children = children;
-    }
-    
-    console.log(`📄 Built nav item: ${parent.name}`, navItem);
-    return navItem;
-  }).sort((a, b) => {
-    const aOrder = convertedItems.find(item => item.name === a.name)?.order || 0;
-    const bOrder = convertedItems.find(item => item.name === b.name)?.order || 0;
-    return aOrder - bOrder;
-  });
-  
-  console.log('🌳 Final navigation tree:', navigationTree);
-  return navigationTree;
-}
+  }
 
+  // ✅ Builds base static parent-child structure
+  private buildNavigationTree(items: any[]): INavigationItem[] {
+    const convertedItems = items.map((item, index) => {
+      let urlValue = "#";
+      if (item.URL) {
+        if (typeof item.URL === "string") urlValue = item.URL;
+        else if (item.URL.Url) urlValue = item.URL.Url;
+      }
 
+      return {
+        id: item.Id,
+        name: item.Title || "Untitled",
+        url: urlValue,
+        icon: item.Icon || "Home",
+        parent: item.Parent || null,
+        order: item.Order0 || item.Order || index,
+      };
+    });
 
+    const parents = convertedItems.filter((i) => !i.parent);
+    const children = convertedItems.filter((i) => i.parent);
+
+    const navigationTree = parents
+      .map((parent) => {
+        const subItems = children
+          .filter((child) => child.parent === parent.name)
+          .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+          .map((child) => ({
+            name: child.name,
+            url: child.url,
+            order: child.order,
+          }));
+
+        const navItem: INavigationItem = {
+          name: parent.name,
+          url: parent.url,
+          icon: parent.icon,
+          order: parent.order ?? 999,
+        };
+
+        if (subItems.length > 0) navItem.children = subItems;
+        return navItem;
+      })
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
+    return navigationTree;
+  }
+
+  // ✅ Fallback static menu (used if list fails)
   private getFallbackNavigation(): INavigationItem[] {
-    console.log('🔄 Using fallback navigation');
     return [
-      { name: 'Home', url: '/', icon: 'Home' },
-      { 
-        name: 'BullWealth', 
-        url: '#', 
-        icon: 'Building', 
-        children: [
-          { name: 'Compliance', url: '/sites/bullwealth/compliance' },
-          { name: 'Research & Investment', url: '/sites/bullwealth/research' }
-        ]
+      { name: "Home", url: "/", icon: "Home", order: 0 },
+      {
+        name: "BullWealth",
+        url: "#",
+        icon: "Building",
+        children: [],
+        order: 0,
       },
-      { name: 'Human Resource', url: '/sites/hr', icon: 'People' },
-      { name: 'IT Policy', url: '/sites/it-policy', icon: 'Shield' },
-      { name: 'Help Centre', url: '/sites/help', icon: 'Help' }
+      {
+        name: "Clover",
+        url: "#",
+        icon: "Leaf",
+        children: [],
+        order: 1,
+      },
+      {
+        name: "HR & Finance",
+        url: "#",
+        icon: "People",
+        children: [],
+        order: 2,
+      },
+      {
+        name: "Mrked",
+        url: "#",
+        icon: "Globe",
+        children: [],
+        order: 3,
+      },
+      { name: "Help Centre", url: "/sites/help", icon: "Help", order: 4 },
     ];
   }
 }

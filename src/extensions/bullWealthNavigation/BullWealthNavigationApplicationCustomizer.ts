@@ -1,20 +1,23 @@
 /* eslint-disable @microsoft/spfx/pair-react-dom-render-unmount */
-import { override } from '@microsoft/decorators';
-import { Log } from '@microsoft/sp-core-library';
+import { override } from "@microsoft/decorators";
+import { Log } from "@microsoft/sp-core-library";
 import {
   BaseApplicationCustomizer,
   PlaceholderContent,
-  PlaceholderName
-} from '@microsoft/sp-application-base';
-import * as React from 'react';
-import * as ReactDom from 'react-dom';
-import NavigationMenu from './components/NavigationMenu';
-import { INavigationMenuProps } from './components/INavigationProps';
-import { SPComponentLoader } from '@microsoft/sp-loader';
-import { NavigationService } from './services/NavigationService';
-import { initializeIcons } from '@fluentui/react/lib/Icons';
+  PlaceholderName,
+} from "@microsoft/sp-application-base";
+import * as React from "react";
+import * as ReactDom from "react-dom";
 
-const LOG_SOURCE: string = 'BullWealthNavigationApplicationCustomizer';
+// ✅ Fixed: Use default import (no TS1192 error)
+import NavigationMenu from "./components/NavigationMenu";
+import { INavigationMenuProps } from "./components/INavigationProps";
+
+import { SPComponentLoader } from "@microsoft/sp-loader";
+import { NavigationService } from "./services/NavigationService";
+import { initializeIcons } from "@fluentui/react/lib/Icons";
+
+const LOG_SOURCE: string = "BullWealthNavigationApplicationCustomizer";
 
 export interface IBullWealthNavigationApplicationCustomizerProperties {
   homeUrl?: string;
@@ -25,48 +28,52 @@ export interface IBullWealthNavigationApplicationCustomizerProperties {
   helpUrl?: string;
 }
 
-export default class BullWealthNavigationApplicationCustomizer
-  extends BaseApplicationCustomizer<IBullWealthNavigationApplicationCustomizerProperties> {
-
+export default class BullWealthNavigationApplicationCustomizer extends BaseApplicationCustomizer<IBullWealthNavigationApplicationCustomizerProperties> {
   private _topPlaceholder: PlaceholderContent | undefined;
   private _navigationService: NavigationService;
 
   @override
-  public onInit(): Promise<void> {  
-    Log.info(LOG_SOURCE, `Initialized ${LOG_SOURCE}`);
+  public onInit(): Promise<void> {
+    Log.info(LOG_SOURCE, `✅ Initialized ${LOG_SOURCE}`);
 
-    // 🚨 THE 3-LINE FIX: ONLY SHOW ON MRKEDCAPITALINTRANET
+    // Restrict to specific site
     const currentSiteUrl = this.context.pageContext.web.absoluteUrl.toLowerCase();
-    if (!currentSiteUrl.includes('/sites/mrkedcapitalintranet')) {
-      return Promise.resolve(); // EXIT - Navigation won't show
+    if (!currentSiteUrl.includes("/sites/mrkedcapitalintranet")) {
+      console.log("ℹ️ Navigation disabled on non-target site:", currentSiteUrl);
+      return Promise.resolve();
     }
 
-    // Load Fabric icons first
-    this.loadFabricIconsImmediately();
+    // Load Fabric icons & CSS
+    this._loadFabricIconsImmediately();
 
-    // Initialize navigation service with correct URL
-    const correctSiteUrl = 'https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/';
+    // Initialize navigation service
+    const correctSiteUrl =
+      "https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/";
     this._navigationService = new NavigationService(
       this.context.spHttpClient,
       correctSiteUrl
     );
 
-    // Wait for placeholders
+    // Listen to placeholder changes
     this.context.placeholderProvider.changedEvent.add(this, this._renderPlaceHolders);
     this._renderPlaceHolders();
 
     return Promise.resolve();
   }
 
-  private loadFabricIconsImmediately(): void {
-    // ONLY load Fabric CSS - don't override fonts
-    SPComponentLoader.loadCss('https://res.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.0.0/css/fabric.min.css');
-    
-    // Initialize icons but DON'T override font-family
+  /**
+   * ✅ Load Fluent UI icons + Fabric CSS safely.
+   */
+  private _loadFabricIconsImmediately(): void {
+    SPComponentLoader.loadCss(
+      "https://res.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.0.0/css/fabric.min.css"
+    );
+
     initializeIcons();
 
-    const globalOverrideCSS = document.createElement('style');
-    globalOverrideCSS.id = 'sharepoint-layout-override';
+    // Layout override for SharePoint modern width container
+    const globalOverrideCSS = document.createElement("style");
+    globalOverrideCSS.id = "sharepoint-layout-override";
     globalOverrideCSS.innerHTML = `
       @media screen and (min-width: 1024px) {
         .r_NLtZH_y298L:not(.f_bHim3_y298L) .s_wDEw-_y298L {
@@ -74,55 +81,76 @@ export default class BullWealthNavigationApplicationCustomizer
         }
       }
     `;
-    
     document.head.appendChild(globalOverrideCSS);
-    
-    console.log('✅ Fabric icons loaded - letting SharePoint handle fonts');
+
+    console.log("✅ Fabric icons & layout styles applied");
   }
 
+  /**
+   * ✅ Render navigation into Top placeholder
+   */
   private _renderPlaceHolders(): void {
-    if (!this._topPlaceholder) {
-      this._topPlaceholder = this.context.placeholderProvider.tryCreateContent(
-        PlaceholderName.Top,
-        { onDispose: this._onDispose }
-      );
-
+    try {
+      // Create Top placeholder if missing
       if (!this._topPlaceholder) {
-        console.error('❌ Top placeholder not found');
-        return;
+        this._topPlaceholder = this.context.placeholderProvider.tryCreateContent(
+          PlaceholderName.Top,
+          { onDispose: this._onDispose }
+        );
+
+        if (!this._topPlaceholder) {
+          console.error("❌ Top placeholder not found");
+          return;
+        }
       }
 
-      if (this._topPlaceholder.domElement) {
-        this._navigationService.getNavigationItems()
-          .then(navigationItems => {
-            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
-              items: navigationItems,
-              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/'
-            });
+      // Render navigation inside the placeholder
+      if (this._topPlaceholder?.domElement) {
+        console.log("📦 Rendering navigation placeholder...");
 
-            if (this._topPlaceholder && this._topPlaceholder.domElement) {
-              ReactDom.render(element, this._topPlaceholder.domElement);
-              console.log('✅ Navigation rendered');
-            }
+        this._navigationService
+          .getNavigationItems()
+          .then((navigationItems) => {
+            const element: React.ReactElement<INavigationMenuProps> = React.createElement(
+              NavigationMenu,
+              {
+                items: navigationItems,
+                siteUrl:
+                  "https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/",
+              }
+            );
+
+            // ✅ Use non-null assertion to silence TS2532
+            ReactDom.render(element, this._topPlaceholder!.domElement);
+            console.log("✅ Navigation rendered successfully");
           })
-          .catch(error => {
-            console.error('❌ Navigation error:', error);
-            const element: React.ReactElement<INavigationMenuProps> = React.createElement(NavigationMenu, {
-              items: [],
-              siteUrl: 'https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/'
-            });
+          .catch((error) => {
+            console.error("❌ Error rendering navigation:", error);
 
-            if (this._topPlaceholder && this._topPlaceholder.domElement) {
-              ReactDom.render(element, this._topPlaceholder.domElement);
+            // Fallback: render an empty menu safely
+            const fallbackElement: React.ReactElement<INavigationMenuProps> =
+              React.createElement(NavigationMenu, {
+                items: [],
+                siteUrl:
+                  "https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/",
+              });
+
+            if (this._topPlaceholder?.domElement) {
+              ReactDom.render(fallbackElement, this._topPlaceholder!.domElement);
             }
           });
       }
+    } catch (err) {
+      console.error("💥 Render placeholder error:", err);
     }
   }
 
+  /**
+   * ✅ Clean up navigation when placeholder is removed
+   */
   private _onDispose(): void {
-    if (this._topPlaceholder && this._topPlaceholder.domElement) {
-      ReactDom.unmountComponentAtNode(this._topPlaceholder.domElement);
+    if (this._topPlaceholder?.domElement) {
+      ReactDom.unmountComponentAtNode(this._topPlaceholder!.domElement);
     }
   }
 }
