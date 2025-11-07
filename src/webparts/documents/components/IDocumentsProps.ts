@@ -10,6 +10,12 @@ export interface IDocumentCategory {
   folderName?: string; // NEW: Actual folder name
   pageUrl?: string; // NEW: Link to site page
   orderBy?: number; // ✅ NEW
+  documentOrderMap?: { [key: string]: number }; // ✅ NEW: Document order map
+  libraryParam?: string; // ✅ added field for folder navigation
+
+   /** 👇 Add these two lines */
+  modified?: string; // TimeLastModified (for Latest/Oldest sorting)
+  created?: string;  // TimeCreated (optional, if needed later)
 }
 
 export interface IDocumentsProps {

@@ -66,7 +66,6 @@ const CarouselCards: React.FC<ICarouselCardsProps> = (props) => {
       </div>
 
       <div className={styles.carouselContainer}>
-        {/* ✅ LEFT ARROW BUTTON */}
         {visibleCards.length > 1 && (
           <IconButton
             iconProps={{ iconName: 'ChevronLeft' }}
@@ -119,7 +118,6 @@ const CarouselCards: React.FC<ICarouselCardsProps> = (props) => {
           ))}
         </div>
 
-        {/* ✅ RIGHT ARROW BUTTON */}
         {visibleCards.length > 1 && (
           <IconButton
             iconProps={{ iconName: 'ChevronRight' }}
@@ -131,7 +129,6 @@ const CarouselCards: React.FC<ICarouselCardsProps> = (props) => {
         )}
       </div>
 
-      {/* Dots Navigation */}
       {visibleCards.length > 1 && (
         <div className={styles.dotsContainer}>
           {visibleCards.map((card, index) => (

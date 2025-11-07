@@ -1,5 +1,11 @@
+export interface IDocumentLibraryProps {
+  context: any;
+  title: string;
+  listName: string;
+}
+
 export interface IDocument {
-  id: number;
+  id: string | number;
   name: string;
   fileType: string;
   modified: string;
@@ -9,14 +15,6 @@ export interface IDocument {
   iconName: string;
   description: string;
   createdDate: string;
-  // ✅ FIX 5: Add timestamp properties for accurate sorting
-  modifiedTimestamp?: number;
-  createdTimestamp?: number;
-  orderBy?: number;  // ✅ ADD THIS LINE
-}
-
-export interface IDocumentLibraryProps {
-  title: string;
-  listName: string;
-  context: any;
+  modifiedTimestamp: number;
+  createdTimestamp: number;
 }

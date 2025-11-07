@@ -1,15 +1,15 @@
 .carouselCards {
-      background-color: #f9f9f9;
-    border: 1px solid #e1e1e1;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 24px 24px 40px;
-    text-align: center;
-    width: 1300px;
+  background-color: #f9f9f9;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px 24px 40px;
+  text-align: center;
+  width: 1300px;
 }
-// ✅ NAVIGATION BUTTON STYLES
+
 .navButton {
   background-color: #ffffff;
   border: 1px solid #d2d0ce;
@@ -51,7 +51,7 @@
     cursor: not-allowed;
   }
 }
-// Header Section
+
 .headerSection {
   text-align: center;
   margin-bottom: 30px;
@@ -62,7 +62,6 @@
   font-size: 24px;
   font-weight: 700;
   color: #000;
-  //margin: 0 0 10px 0;
   line-height: 1.5;
 }
 
@@ -75,7 +74,6 @@
   margin-right: auto;
 }
 
-// ✅ FIXED: Center the carousel container
 .carouselContainer {
   position: relative;
   display: flex;
@@ -85,24 +83,22 @@
   width: 100%;
 }
 
-// ✅ FIXED: Center the card wrapper
 .cardWrapper {
   position: relative;
   width: 100%;
   max-width: 1000px;
   overflow: hidden;
-  min-height: 600px;
-  margin: 0 auto; // Center horizontally
+  min-height: 300px;
+  margin: 0 auto;
 }
 
-// ✅ FIXED: Center the card content
 .card {
   position: absolute;
   top: 0;
-  left: 50%; // Center horizontally
-  transform: translateX(-50%); // Offset by 50% to truly center
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
-  max-width: 1000px; // Match the cardWrapper width
+  max-width: 1000px;
   background: #ffffff;
   border-radius: 12px;
   padding: 48px;
@@ -120,8 +116,8 @@
 }
 
 .iconContainer {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -158,23 +154,18 @@
   font-size: 16px;
   line-height: 26px;
   color: #000;
-  //margin: 0 0 28px 0;
   text-align: left;
 }
 
 .bulletList {
-  //list-style: none;
   padding: 0;
   margin: 0;
   text-align: left;
   width: 100%;
-  //max-width: 800px;
 }
 
 .bulletItem {
   position: relative;
-  //padding-left: 24px;
- // margin-bottom: 5px;
   font-size: 16px;
   line-height: 26px;
   color: #000;
@@ -210,7 +201,6 @@
   }
 }
 
-// Responsive Design
 @media (max-width: 768px) {
   .carouselCards {
     padding: 20px 10px;

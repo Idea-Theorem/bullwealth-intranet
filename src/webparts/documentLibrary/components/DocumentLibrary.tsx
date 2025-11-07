@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import styles from './DocumentLibrary.module.scss';
@@ -9,7 +11,6 @@ import { IconButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { ContextualMenu, IContextualMenuItem } from '@fluentui/react/lib/ContextualMenu';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
 
-
 interface IFolderWithDocuments {
   name: string;
   documents: IDocument[];
@@ -18,25 +19,32 @@ interface IFolderWithDocuments {
   orderBy?: number;
 }
 
-
 const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [foldersWithDocuments, setFoldersWithDocuments] = useState<IFolderWithDocuments[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string>('');
   const [currentDocuments, setCurrentDocuments] = useState<IDocument[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<IDocument | null>(null);
   const [contextMenuTarget, setContextMenuTarget] = useState<HTMLElement | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [selectAllChecked, setSelectAllChecked] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [pageTitle, setPageTitle] = useState<string>('Documents');
 
   useEffect(() => {
     if (!currentFolder) {
       void loadFolderStructure();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const libraryPath = urlParams.get('library');
+      if (libraryPath) {
+        const pathParts = decodeURIComponent(libraryPath).split('/');
+        const lastFolderName = pathParts[pathParts.length - 1];
+        setPageTitle(lastFolderName || 'Documents');
+        console.log('📄 Page Title from URL:', lastFolderName);
+      }
     }
   }, [props.listName]);
-
 
   useEffect(() => {
     if (currentFolder) {
@@ -44,7 +52,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setSelectAllChecked(false);
     }
   }, [currentFolder]);
-
 
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
@@ -54,38 +61,14 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }).format(date);
   };
 
-
-  // ✅ Extract Order By from filename
-  const extractOrderFromFilename = (fileName: string): number | undefined => {
-    if (fileName.includes('Appendix F')) return 1;
-    if (fileName.includes('Appendix C')) return 2;
-    if (fileName.includes('Sick Leave')) return 3;
-    if (fileName.includes('Vacation')) return 4;
-    if (fileName.match(/\d{8}\.pdf$/)) return 5;
-    return undefined;
-  };
-
-
-  // ✅ Sort by Order By column ONLY
-  const sortDocumentsByModified = (documents: IDocument[]): IDocument[] => {
+  // ✅ ONLY SORT: By OrderBy number
+  const sortDocumentsByOrderOnly = (documents: IDocument[]): IDocument[] => {
     return [...documents].sort((a, b) => {
-      const aOrder = (a as any).orderBy;
-      const bOrder = (b as any).orderBy;
-      
-      if (aOrder !== undefined && aOrder !== null) {
-        if (bOrder !== undefined && bOrder !== null) {
-          return Number(aOrder) - Number(bOrder);
-        }
-        return -1;
-      }
-      if (bOrder !== undefined && bOrder !== null) {
-        return 1;
-      }
-      
-      return 0;
+      const aOrder = (a as any).orderBy !== undefined ? (a as any).orderBy : 999;
+      const bOrder = (b as any).orderBy !== undefined ? (b as any).orderBy : 999;
+      return aOrder - bOrder;
     });
   };
-
 
   const loadFolderStructure = async (): Promise<void> => {
     setIsLoading(true);
@@ -102,7 +85,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       console.log('Target folder:', targetFolder);
 
       await tryFolderPaths(baseUrl, mainLibrary, targetFolder);
-
     } catch (error: any) {
       console.error('❌ Error loading folder structure:', error);
       setMessage(`❌ Error loading folder "${props.listName}": ${error.message}`);
@@ -112,7 +94,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setIsLoading(false);
     }
   };
-
 
   const tryFolderPaths = async (baseUrl: string, mainLibrary: string, targetFolder: string): Promise<void> => {
     const siteName = baseUrl.split('/').pop();
@@ -155,120 +136,88 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setFoldersWithDocuments([]);
   };
 
+  // ✅ CORRECTED: Get OrderBy from BOTH files and folders
+  // ✅ NOW files have OrderBy values - restore the query!
+// ✅ FIXED FUNCTION: Works for all files in any subfolder, retrieves OrderBy safely
+const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libraryName: string): Promise<IDocument[]> => {
+  const documents: IDocument[] = [];
+  const baseUrl = props.context.pageContext.web.absoluteUrl;
 
-  const getDocumentsWithRealUsers = async (files: any[], folderPath: string): Promise<IDocument[]> => {
-    const documents: IDocument[] = [];
-    
-    try {
-      const pathParts = props.listName.split('/');
-      let libraryName = pathParts[0] || 'Documents';
-      
-      if (libraryName.toLowerCase() === 'documents') {
-        libraryName = 'Documents';
-      }
-      
-      console.log(`🔍 Querying library: "${libraryName}" for ${files.length} files`);
-      
-      const listItemsUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(libraryName)}')/items?$select=Id,Title,FileLeafRef,FileRef,File_x0020_Type,Modified,Created,Author/Title,Author/Name,Editor/Title,Editor/Name,FileDirRef,EncodedAbsUrl&$expand=Author,Editor&$filter=FSObjType eq 0&$top=2000&$nocache=${Date.now()}`;
-      
-      const listResponse = await props.context.spHttpClient.get(listItemsUrl, SPHttpClient.configurations.v1);
-      
-      if (listResponse.ok) {
-        const listData = await listResponse.json();
-        const listItems = listData.value || [];
-        
-        console.log(`📋 Found ${listItems.length} list items in library`);
-        
-        for (const file of files) {
-          const fileName = file.Name || file.LeafName || 'Unknown';
-          
-          const matchingListItem = listItems.find((item: any) => 
-            item.FileLeafRef === fileName ||
-            item.FileRef === file.ServerRelativeUrl ||
-            (item.EncodedAbsUrl && item.EncodedAbsUrl.includes(fileName))
-          );
-          
-          let modifiedBy = 'System Account';
-          
-          if (matchingListItem) {
-            if (matchingListItem.Editor && matchingListItem.Editor.Title) {
-              modifiedBy = matchingListItem.Editor.Title;
-              console.log(`✅ Found REAL user for ${fileName}: ${modifiedBy}`);
-            } else if (matchingListItem.Author && matchingListItem.Author.Title) {
-              modifiedBy = matchingListItem.Author.Title;
-              console.log(`✅ Found REAL user (Author) for ${fileName}: ${modifiedBy}`);
-            }
-            
-            if (modifiedBy !== 'System Account') {
-              modifiedBy = modifiedBy.replace(/@.*$/, '');
-              
-              if (modifiedBy.toLowerCase().includes('system') || 
-                  modifiedBy.toLowerCase().includes('sharepoint') ||
-                  modifiedBy === '' ||
-                  modifiedBy.startsWith('i:0#') ||
-                  modifiedBy.includes('|membership|')) {
-                modifiedBy = 'System Account';
-              }
-            }
-          } else {
-            console.log(`⚠️ No list item found for: ${fileName}`);
-            
-            if (file.Editor && file.Editor.Title) {
-              modifiedBy = file.Editor.Title.replace(/@.*$/, '');
-            } else if (file.ModifiedBy && file.ModifiedBy.Title) {
-              modifiedBy = file.ModifiedBy.Title.replace(/@.*$/, '');
-            } else if (file.Author && file.Author.Title) {
-              modifiedBy = file.Author.Title.replace(/@.*$/, '');
-            }
+  try {
+    console.log(`🔍 Processing ${files.length} files from library: "${libraryName}"`);
+
+    for (const file of files) {
+      const fileName = file.Name || file.FileLeafRef || 'Unknown';
+      const fileServerUrl = file.ServerRelativeUrl || '';
+
+      let modifiedBy = 'Unknown';
+      let orderBy: number = 999;
+
+      try {
+        // ✅ Use one REST call to get both ModifiedBy and OrderBy
+        const filePropsUrl = `${baseUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(fileServerUrl)}')/ListItemAllFields?$select=OrderBy,ModifiedBy/Title&$expand=ModifiedBy`;
+
+        const fileResponse = await props.context.spHttpClient.get(filePropsUrl, SPHttpClient.configurations.v1);
+
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+
+          // Get ModifiedBy (if available)
+          if (fileData.ModifiedBy && fileData.ModifiedBy.Title) {
+            modifiedBy = fileData.ModifiedBy.Title.trim();
           }
 
-          const fileType = fileName.split('.').pop() || 'file';
-          const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-          const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
-
-          let documentUrl = '#';
-          if (file.ServerRelativeUrl) {
-            documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
+          // Get OrderBy (custom field)
+          if (fileData.OrderBy !== undefined && fileData.OrderBy !== null && fileData.OrderBy !== '') {
+            const parsed = parseInt(fileData.OrderBy, 10);
+            if (!isNaN(parsed)) {
+              orderBy = parsed;
+              console.log(`✅ OrderBy (${orderBy}) for "${fileName}"`);
+            }
           }
-
-          let description = '';
-          if (matchingListItem && matchingListItem.Title && matchingListItem.Title !== fileName) {
-            description = matchingListItem.Title;
-          } else if (file.Description) {
-            description = file.Description;
-          } else {
-            description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
-          }
-
-          console.log(`📄 Final: ${fileName} -> Modified by: ${modifiedBy}`);
-
-          documents.push({
-            id: file.UniqueId || Math.random(),
-            name: fileName.replace(/\.[^/.]+$/, ""),
-            fileType: fileType,
-            modified: formatDate(modifiedDate),
-            modifiedBy: modifiedBy,
-            serverRelativeUrl: documentUrl,
-            downloadUrl: file.ServerRelativeUrl || '#',
-            iconName: getFileIcon(fileType),
-            description: description,
-            createdDate: formatDate(createdDate),
-            modifiedTimestamp: modifiedDate.getTime(),
-            createdTimestamp: createdDate.getTime(),
-            orderBy: extractOrderFromFilename(fileName)  // ✅ ADD ORDER BY
-          });
+        } else {
+          console.warn(`⚠️ Could not fetch metadata for ${fileName} (HTTP ${fileResponse.status})`);
         }
-      } else {
-        console.error(`❌ Failed to get list items. Status: ${listResponse.status}`);
-        return files.map((file: any) => mapFileToDocument(file));
+      } catch (err) {
+        console.warn(`⚠️ Metadata fetch failed for "${fileName}"`, err);
       }
-    } catch (error) {
-      console.error('❌ Error in getDocumentsWithRealUsers:', error);
-      return files.map((file: any) => mapFileToDocument(file));
+
+      // Clean ModifiedBy username
+      if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
+        modifiedBy = modifiedBy.split('@')[0];
+      }
+
+      const fileType = fileName.split('.').pop() || 'file';
+      const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+      const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+
+      const documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
+      const description = fileName.replace(/\.[^/.]+$/, '') || 'No description';
+
+      documents.push({
+        id: file.UniqueId || Math.random().toString(),
+        name: fileName.replace(/\.[^/.]+$/, ''),
+        fileType: fileType,
+        modified: formatDate(modifiedDate),
+        modifiedBy: modifiedBy,
+        serverRelativeUrl: documentUrl,
+        downloadUrl: file.ServerRelativeUrl,
+        iconName: getFileIcon(fileType),
+        description: description,
+        createdDate: formatDate(createdDate),
+        modifiedTimestamp: modifiedDate.getTime(),
+        createdTimestamp: createdDate.getTime(),
+        orderBy: orderBy // ✅ Sorting key
+      } as any);
     }
-    
-    return documents;
-  };
+  } catch (error) {
+    console.error('❌ Error in getDocumentsWithRealUsers:', error);
+    return files.map((file: any) => mapFileToDocument(file));
+  }
+
+  return documents;
+};
+
 
 
   const processFolderData = async (data: any, folderPath: string): Promise<void> => {
@@ -286,11 +235,16 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       return;
     }
 
+    const pathParts = props.listName.split('/');
+    let libraryName = pathParts[0] || 'Documents';
+
+    console.log(`📂 Library: "${libraryName}"`);
+
     const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string, orderBy?: number } } = {};
 
     if (files.length > 0) {
-      const mappedDocuments = await getDocumentsWithRealUsers(files, folderPath);
-      const sortedDocuments = sortDocumentsByModified(mappedDocuments);
+      const mappedDocuments = await getDocumentsWithRealUsers(files, folderPath, libraryName);
+      const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
       
       const pathSegments = folderPath.split('/').filter(segment => segment.length > 0);
       let displayName = 'Documents';
@@ -343,44 +297,36 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
           console.log(`  → Found ${subfolderFiles.length} files in ${subfolderName}`);
           
           if (subfolderFiles.length > 0) {
-            const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, subfolderPath);
-            const sortedDocuments = sortDocumentsByModified(mappedDocuments);
+            const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, subfolderPath, libraryName);
+            const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
             
             let folderOrderBy: number | undefined = undefined;
             
+            // ✅ GET OrderBy FROM THE FOLDER ITEM (FOLDERS also have OrderBy)
             try {
               const folderPropsUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/ListItemAllFields`;
               const folderPropsResponse = await props.context.spHttpClient.get(folderPropsUrl, SPHttpClient.configurations.v1);
               
               if (folderPropsResponse.ok) {
                 const folderProps = await folderPropsResponse.json();
-                console.log(`📊 Folder props for ${subfolderName}:`, folderProps);
+                console.log(`📊 Folder "${subfolderName}" properties:`, folderProps);
                 
-                if (folderProps.Order_x0020_By !== null && folderProps.Order_x0020_By !== undefined) {
-                  folderOrderBy = parseInt(folderProps.Order_x0020_By, 10);
-                } else if (folderProps.OrderBy !== null && folderProps.OrderBy !== undefined) {
+                // Try different field names
+                if (folderProps.OrderBy !== null && folderProps.OrderBy !== undefined) {
                   folderOrderBy = parseInt(folderProps.OrderBy, 10);
+                  console.log(`✅ Folder OrderBy: ${folderOrderBy}`);
+                } else if (folderProps.Order_x0020_By !== null && folderProps.Order_x0020_By !== undefined) {
+                  folderOrderBy = parseInt(folderProps.Order_x0020_By, 10);
+                  console.log(`✅ Folder OrderBy (x0020): ${folderOrderBy}`);
                 } else if (folderProps.Order !== null && folderProps.Order !== undefined) {
                   folderOrderBy = parseInt(folderProps.Order, 10);
+                  console.log(`✅ Folder Order: ${folderOrderBy}`);
+                } else {
+                  console.log(`⚠️ OrderBy field not found. Available:`, Object.keys(folderProps).filter(k => k.includes('Order')));
                 }
-                
-                console.log(`📂 Folder "${subfolderName}" Order By: ${folderOrderBy}`);
-              } else {
-                console.log(`⚠️ Could not get ListItemAllFields for folder ${subfolderName}, status: ${folderPropsResponse.status}`);
               }
             } catch (err) {
-              console.error(`❌ Error getting Order By for folder ${subfolderName}:`, err);
-            }
-            
-            if (folderOrderBy === undefined) {
-              console.log(`⚠️ Using fallback order for ${subfolderName}`);
-              const orderMap: { [key: string]: number } = {
-                'Policies': 1,
-                'Templates': 2,
-                'Training Material': 3,
-                'Operational Procedures': 4
-              };
-              folderOrderBy = orderMap[subfolderName];
+              console.error(`❌ Error getting folder OrderBy:`, err);
             }
             
             folderGroups[subfolderName] = {
@@ -400,34 +346,31 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     const foldersWithDocs: IFolderWithDocuments[] = [];
 
     for (const folderName of Object.keys(folderGroups)) {
+      const sortedDocs = sortDocumentsByOrderOnly(folderGroups[folderName].documents);
       foldersWithDocs.push({
         name: folderName,
-        documents: folderGroups[folderName].documents.slice(0, 4),
-        allDocuments: folderGroups[folderName].documents,
+        documents: sortedDocs.slice(0, 4),
+        allDocuments: sortedDocs,
         folderPath: folderGroups[folderName].folderPath,
         orderBy: folderGroups[folderName].orderBy
       });
     }
 
     foldersWithDocs.sort((a, b) => {
-      if (a.orderBy !== undefined && b.orderBy !== undefined) {
-        return a.orderBy - b.orderBy;
-      }
-      if (a.orderBy !== undefined) return -1;
-      if (b.orderBy !== undefined) return 1;
-      
-      return a.name.localeCompare(b.name);
+      const aOrder = a.orderBy !== undefined ? a.orderBy : 999;
+      const bOrder = b.orderBy !== undefined ? b.orderBy : 999;
+      return aOrder - bOrder;
     });
 
-    console.log('📂 Folder display order:', foldersWithDocs.map(f => `${f.name} (Order: ${f.orderBy})`));
+    console.log('📂 Folders in order:', foldersWithDocs.map(f => `${f.name} (Order: ${f.orderBy})`));
 
     if (foldersWithDocs.length === 0) {
-      console.log('❌ No folders with documents found');
+      console.log('❌ No folders found');
       setFoldersWithDocuments([]);
-      setMessage(`⚠️ No documents found in "${props.listName}"`);
+      setMessage(`⚠️ No documents found`);
       setTimeout(() => setMessage(''), 8000);
     } else {
-      console.log(`✅ SUCCESS: Created ${foldersWithDocs.length} folder sections`);
+      console.log(`✅ SUCCESS: ${foldersWithDocs.length} folders loaded`);
       setFoldersWithDocuments(foldersWithDocs);
       const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
       setMessage(`✅ Loaded ${totalDocs} documents from ${foldersWithDocs.length} folders`);
@@ -435,16 +378,30 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
-
   const mapFileToDocument = (file: any): IDocument => {
-    const fileName: string = file.Name || file.LeafName || 'Unknown';
+    const fileName: string = file.Name || file.LeafRef || 'Unknown';
     const fileType: string = fileName.split('.').pop() || 'file';
     
-    let modifiedBy = 'System Account';
+    let modifiedBy = 'Unknown';
+    let orderBy: number = 999;
+    
     if (file.ModifiedBy && file.ModifiedBy.Title) {
-      modifiedBy = file.ModifiedBy.Title.replace(/@.*$/, '');
+      modifiedBy = file.ModifiedBy.Title.trim();
     } else if (file.Author && file.Author.Title) {
-      modifiedBy = file.Author.Title.replace(/@.*$/, '');
+      modifiedBy = file.Author.Title.trim();
+    }
+
+    if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
+      modifiedBy = modifiedBy.split('@')[0];
+    }
+    
+    // ✅ Get OrderBy from file (now we know it exists)
+    if (file.OrderBy !== null && file.OrderBy !== undefined) {
+      const parsed = parseInt(file.OrderBy, 10);
+      if (!isNaN(parsed)) {
+        orderBy = parsed;
+        console.log(`✅ OrderBy from file object: ${orderBy}`);
+      }
     }
 
     let documentUrl = '#';
@@ -455,17 +412,10 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
     const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
 
-    let description = '';
-    if (file.Description) {
-      description = file.Description;
-    } else if (file.ListItemAllFields && file.ListItemAllFields.Description) {
-      description = file.ListItemAllFields.Description;
-    } else {
-      description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
-    }
+    let description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
 
     return {
-      id: file.UniqueId || Math.random(),
+      id: file.UniqueId || Math.random().toString(),
       name: fileName.replace(/\.[^/.]+$/, ""),
       fileType: fileType,
       modified: formatDate(modifiedDate),
@@ -477,10 +427,9 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       createdDate: formatDate(createdDate),
       modifiedTimestamp: modifiedDate.getTime(),
       createdTimestamp: createdDate.getTime(),
-      orderBy: extractOrderFromFilename(fileName)  // ✅ ADD ORDER BY
-    };
+      orderBy: orderBy
+    } as any;
   };
-
 
   const handleDocumentClick = (doc: IDocument): void => {
     if (!doc.serverRelativeUrl || doc.serverRelativeUrl === '#') {
@@ -499,7 +448,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
-
   const getFileIcon = (fileType: string): string => {
     const type = (fileType || '').toLowerCase();
     switch (type) {
@@ -513,7 +461,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       default: return 'Page';
     }
   };
-
 
   const handleDownloadDocument = (doc: IDocument): void => {
     if (doc.downloadUrl && doc.downloadUrl !== '#') {
@@ -535,7 +482,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       setTimeout(() => setMessage(''), 3000);
     }
   };
-
 
   const handleShareDocument = (doc: IDocument): void => {
     if ((window as any).SP && (window as any).SP.UI && (window as any).SP.UI.ModalDialog) {
@@ -561,7 +507,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
-
   const fallbackShare = (doc: IDocument): void => {
     const shareUrl = doc.serverRelativeUrl || window.location.href;
     const shareData = {
@@ -579,7 +524,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       copyToClipboard(shareUrl, doc.name);
     }
   };
-
 
   const copyToClipboard = (url: string, documentName: string): void => {
     if (navigator.clipboard) {
@@ -609,20 +553,18 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
-
   const handleSelectAllChange = (): void => {
     const newSelectAll = !selectAllChecked;
     setSelectAllChecked(newSelectAll);
     
     if (newSelectAll) {
-      setCheckedItems(new Set(currentDocuments.map((doc: IDocument) => doc.id)));
+      setCheckedItems(new Set(currentDocuments.map((doc: IDocument) => String(doc.id))));
     } else {
       setCheckedItems(new Set());
     }
   };
 
-
-  const handleCheckboxChange = (documentId: number): void => {
+  const handleCheckboxChange = (documentId: string): void => {
     const newCheckedItems = new Set(checkedItems);
     if (checkedItems.has(documentId)) {
       newCheckedItems.delete(documentId);
@@ -633,7 +575,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setSelectAllChecked(newCheckedItems.size === currentDocuments.length && currentDocuments.length > 0);
   };
 
-
   const handleViewAll = (folderName: string): void => {
     const folder = foldersWithDocuments.find((f: IFolderWithDocuments) => f.name === folderName);
     if (folder && folder.allDocuments.length > 0) {
@@ -642,14 +583,12 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     }
   };
 
-
   const handleBackClick = (): void => {
     setCurrentFolder('');
     setCurrentDocuments([]);
     setCheckedItems(new Set());
     setSelectAllChecked(false);
   };
-
 
   const handleDocumentActions = (event: React.MouseEvent<HTMLElement>, doc: IDocument): void => {
     event.preventDefault();
@@ -658,12 +597,10 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setContextMenuTarget(event.currentTarget as HTMLElement);
   };
 
-
   const dismissContextMenu = (): void => {
     setContextMenuTarget(null);
     setSelectedDocument(null);
   };
-
 
   const getContextMenuItems = (): IContextualMenuItem[] => {
     if (!selectedDocument) return [];
@@ -710,12 +647,11 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     ];
   };
 
-
   if (isLoading) {
     return (
       <div className={styles.documentLibrary}>
         <div className={styles.mainHeader}>
-          <h2 className={styles.mainTitle}>{props.title}</h2>
+          <h2 className={styles.mainTitle}>{pageTitle}</h2>
         </div>
         <div style={{
           display: 'flex',
@@ -735,13 +671,12 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
             }}
           />
           <p style={{ fontSize: '16px', color: '#605e5c', margin: 0 }}>
-            Loading documents from "{props.listName}"...
+            Loading documents...
           </p>
         </div>
       </div>
     );
   }
-
 
   if (foldersWithDocuments.length === 0) {
     return (
@@ -756,7 +691,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
         )}
         
         <div className={styles.mainHeader}>
-          <h2 className={styles.mainTitle}>{props.title}</h2>
+          <h2 className={styles.mainTitle}>{pageTitle}</h2>
         </div>
 
         <div style={{
@@ -790,22 +725,12 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
             maxWidth: '400px',
             lineHeight: 1.5
           }}>
-            There are no documents in "{props.listName}" folder.
-          </p>
-          <p style={{
-            fontSize: '16px',
-            color: '#605e5c',
-            margin: '8px 0',
-            maxWidth: '400px',
-            lineHeight: 1.5
-          }}>
-            Documents will appear here once they are uploaded to the SharePoint library.
+            There are no documents in this folder.
           </p>
         </div>
       </div>
     );
   }
-
 
   if (currentFolder) {
     return (
@@ -822,13 +747,17 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
               iconName="ChevronLeft" 
               className={styles.backIcon}
               onClick={handleBackClick}
+              style={{ cursor: 'pointer', marginRight: '12px' }}
             />
-            <h2 className={styles.mainTitle}>{props.title}</h2>
+            <h2 className={styles.mainTitle}>{pageTitle}</h2>
           </div>
         </div>
 
         <div className={styles.documentsSection}>
           <h3 className={styles.sectionTitle}>{currentFolder}</h3>
+          <p style={{ color: '#666', marginBottom: '20px', fontSize: '16px' }}>
+            Below are documents related to {currentFolder}.
+          </p>
           
           {currentDocuments.length === 0 ? (
             <div className={styles.noDocuments}>
@@ -836,81 +765,83 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
               <p>No documents found in {currentFolder} folder.</p>
             </div>
           ) : (
-            <div className={styles.documentsTable}>
-              <div className={styles.tableHeader}>
-                <div className={styles.headerCell}>
-                  <div 
-                    className={styles.checkbox}
-                    onClick={handleSelectAllChange}
-                    role="checkbox"
-                    tabIndex={0}
-                    aria-checked={selectAllChecked}
-                    aria-label="Select all documents"
-                  >
-                    {selectAllChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
-                  </div>
-                  <span>Name</span>
-                  <Icon iconName="ChevronDown" className={styles.sortIcon} />
-                </div>
-                <div className={styles.headerCell}>
-                  <span>Modified</span>
-                  <Icon iconName="ChevronDown" className={styles.sortIcon} />
-                </div>
-                <div className={styles.headerCell}>
-                  <span>Modified By</span>
-                  <Icon iconName="ChevronDown" className={styles.sortIcon} />
-                </div>
-                <div className={styles.headerCell}>
-                  <span>Actions</span>
-                </div>
-              </div>
-
-              <div className={styles.tableBody}>
-                {currentDocuments.map((doc: IDocument) => {
-                  const isChecked = checkedItems.has(doc.id);
-                  return (
+            <>
+              <div className={styles.documentsTable}>
+                <div className={styles.tableHeader}>
+                  <div className={styles.headerCell}>
                     <div 
-                      key={doc.id} 
-                      className={`${styles.tableRow} ${isChecked ? styles.selected : ''}`}
+                      className={styles.checkbox}
+                      onClick={handleSelectAllChange}
+                      role="checkbox"
+                      tabIndex={0}
+                      aria-checked={selectAllChecked}
+                      aria-label="Select all documents"
                     >
-                      <div className={styles.nameCell}>
-                        <div 
-                          className={styles.checkbox}
-                          onClick={() => handleCheckboxChange(doc.id)}
-                          role="checkbox"
-                          tabIndex={0}
-                          aria-checked={isChecked}
-                        >
-                          {isChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
-                        </div>
-                        <Icon iconName={doc.iconName} className={styles.fileIcon} />
-                        <span 
-                          className={styles.fileName}
-                          onClick={() => handleDocumentClick(doc)}
-                          style={{ cursor: 'pointer', color: '#000' }}
-                        >
-                          {doc.name}
-                        </span>
-                      </div>
-                      <div className={styles.dataCell}>
-                        {doc.modified}
-                      </div>
-                      <div className={styles.dataCell}>
-                        {doc.modifiedBy}
-                      </div>
-                      <div className={styles.actionsCell}>
-                        <IconButton
-                          iconProps={{ iconName: 'MoreVertical' }}
-                          className={styles.moreButton}
-                          onClick={(event: React.MouseEvent<HTMLButtonElement>) => handleDocumentActions(event, doc)}
-                          ariaLabel={`More actions for ${doc.name}`}
-                        />
-                      </div>
+                      {selectAllChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
                     </div>
-                  );
-                })}
+                    <span>Name</span>
+                    <Icon iconName="ChevronDown" className={styles.sortIcon} />
+                  </div>
+                  <div className={styles.headerCell}>
+                    <span>Modified</span>
+                    <Icon iconName="ChevronDown" className={styles.sortIcon} />
+                  </div>
+                  <div className={styles.headerCell}>
+                    <span>Modified By</span>
+                    <Icon iconName="ChevronDown" className={styles.sortIcon} />
+                  </div>
+                  <div className={styles.headerCell}>
+                    <span>Actions</span>
+                  </div>
+                </div>
+
+                <div className={styles.tableBody}>
+                  {sortDocumentsByOrderOnly(currentDocuments).map((doc: IDocument) => {
+                    const isChecked = checkedItems.has(String(doc.id));
+                    return (
+                      <div 
+                        key={String(doc.id)}
+                        className={`${styles.tableRow} ${isChecked ? styles.selected : ''}`}
+                      >
+                        <div className={styles.nameCell}>
+                          <div 
+                            className={styles.checkbox}
+                            onClick={() => handleCheckboxChange(String(doc.id))}
+                            role="checkbox"
+                            tabIndex={0}
+                            aria-checked={isChecked}
+                          >
+                            {isChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
+                          </div>
+                          <Icon iconName={doc.iconName} className={styles.fileIcon} />
+                          <span 
+                            className={styles.fileName}
+                            onClick={() => handleDocumentClick(doc)}
+                            style={{ cursor: 'pointer', color: '#000' }}
+                          >
+                            {doc.name}
+                          </span>
+                        </div>
+                        <div className={styles.dataCell}>
+                          {doc.modified}
+                        </div>
+                        <div className={styles.dataCell}>
+                          {doc.modifiedBy}
+                        </div>
+                        <div className={styles.actionsCell}>
+                          <IconButton
+                            iconProps={{ iconName: 'MoreVertical' }}
+                            className={styles.moreButton}
+                            onClick={(event: React.MouseEvent<HTMLButtonElement>) => handleDocumentActions(event, doc)}
+                            ariaLabel={`More actions for ${doc.name}`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -926,7 +857,6 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     );
   }
 
-
   return (
     <div className={styles.documentLibrary}>
       {message && (
@@ -939,7 +869,11 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
       )}
       
       <div className={styles.mainHeader}>
-        <h2 className={styles.mainTitle}>{props.title}</h2>
+        <h2 className={styles.mainTitle}>{pageTitle}</h2>
+      </div>
+
+      <div style={{ fontSize: '16px', color: '#0', marginBottom: '30px' }}>
+        <p>Below are documents related to {pageTitle}.</p>
       </div>
 
       <div className={styles.foldersContainer}>
@@ -955,42 +889,49 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
             </div>
             
             <div className={styles.documentsGrid}>
-              {folder.documents.map((doc: IDocument) => (
-                <div key={doc.id} className={styles.documentCard}>
-                  <div className={styles.cardContent}>
-                    <h4 
-                      className={styles.documentTitle}
-                      onClick={() => handleDocumentClick(doc)}
-                      style={{ cursor: 'pointer', color: '#000' }}
-                    >
-                      {doc.name}
-                    </h4>
-                    <p className={styles.documentMeta}>
-                      Modified {doc.modified}
-                    </p>
-                    <p className={styles.documentDescription}>
-                      {doc.description}
-                    </p>
+              {/* ✅ Documents sorted by OrderBy */}
+              {folder.documents
+                .sort((a, b) => {
+                  const aOrder = (a as any).orderBy !== undefined ? (a as any).orderBy : 999;
+                  const bOrder = (b as any).orderBy !== undefined ? (b as any).orderBy : 999;
+                  return aOrder - bOrder;
+                })
+                .map((doc: IDocument) => (
+                  <div key={String(doc.id)} className={styles.documentCard}>
+                    <div className={styles.cardContent}>
+                      <h4 
+                        className={styles.documentTitle}
+                        onClick={() => handleDocumentClick(doc)}
+                        style={{ cursor: 'pointer', color: '#000' }}
+                      >
+                        {doc.name}
+                      </h4>
+                      <p className={styles.documentMeta}>
+                        Modified {doc.modified}
+                      </p>
+                      <p className={styles.documentDescription}>
+                        {doc.description}
+                      </p>
+                    </div>
+                    
+                    <div className={styles.cardActions}>
+                      <button
+                        className={styles.cardActionButton}
+                        onClick={() => handleDownloadDocument(doc)}
+                      >
+                        <Icon iconName="Download" className={styles.actionIcon} />
+                        Export
+                      </button>
+                      <button
+                        className={styles.cardActionButton}
+                        onClick={() => handleShareDocument(doc)}
+                      >
+                        <Icon iconName="Share" className={styles.actionIcon} />
+                        Share
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className={styles.cardActions}>
-                    <button
-                      className={styles.cardActionButton}
-                      onClick={() => handleDownloadDocument(doc)}
-                    >
-                      <Icon iconName="Download" className={styles.actionIcon} />
-                      Export
-                    </button>
-                    <button
-                      className={styles.cardActionButton}
-                      onClick={() => handleShareDocument(doc)}
-                    >
-                      <Icon iconName="Share" className={styles.actionIcon} />
-                      Share
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         ))}
@@ -998,6 +939,5 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     </div>
   );
 };
-
 
 export default DocumentLibrary;

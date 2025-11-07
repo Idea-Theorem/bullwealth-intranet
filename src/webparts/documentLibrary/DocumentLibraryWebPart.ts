@@ -1,73 +1,43 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-// Import global styles - ADD THIS LINE
-import '../../styles/main.scss';
-
 import { Version } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
-  PropertyPaneTextField,
-  PropertyPaneSlider
+  PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
-
-import * as strings from 'DocumentLibraryWebPartStrings';
 import DocumentLibrary from './components/DocumentLibrary';
-import { IDocumentLibraryProps } from './components/IDocumentLibraryProps';
 
 export interface IDocumentLibraryWebPartProps {
   title: string;
   description: string;
   listName: string;
-  itemsPerPage: number;
 }
 
 export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocumentLibraryWebPartProps> {
-
-
   public render(): void {
-  const element: React.ReactElement<IDocumentLibraryProps> = React.createElement(
-    DocumentLibrary,
-    {
+    // ✅ FIXED: Read library parameter from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const libraryPath = urlParams.get('library');
+
+    // Use URL parameter OR default
+    let listName = libraryPath || this.properties.listName || 'Documents';
+
+    if (libraryPath) {
+      listName = decodeURIComponent(libraryPath);
+      console.log('✅ DocumentLibrary WebPart - Using library from URL:', listName);
+    } else {
+      console.log('📋 DocumentLibrary WebPart - Using default listName:', listName);
+    }
+
+    const element: React.ReactElement = React.createElement(DocumentLibrary, {
+      context: this.context,
       title: this.properties.title || 'Document Library',
-      listName: this.properties.listName || 'Documents/Compliance',
-      context: this.context
-    }
-  );
-
-  ReactDom.render(element, this.domElement);
-}
-
-  protected onInit(): Promise<void> {
-    return this._getEnvironmentMessage().then(message => {
+      listName: listName
     });
-  }
 
-  private _getEnvironmentMessage(): Promise<string> {
-    if (!!this.context.sdks.microsoftTeams) {
-      return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
-        .then(context => {
-          let environmentMessage: string = '';
-          switch (context.app.host.name) {
-            case 'Office':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOffice : strings.AppOfficeEnvironment;
-              break;
-            case 'Outlook':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOutlook : strings.AppOutlookEnvironment;
-              break;
-            case 'Teams':
-            case 'TeamsModern':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentTeams : strings.AppTeamsTabEnvironment;
-              break;
-            default:
-              environmentMessage = strings.UnknownEnvironment;
-          }
-          return environmentMessage;
-        });
-    }
-
-    return Promise.resolve(this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentSharePoint : strings.AppSharePointEnvironment);
+    ReactDom.render(element, this.domElement);
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
@@ -76,20 +46,14 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
     }
 
     const { semanticColors } = currentTheme;
-
     if (semanticColors) {
       this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
       this.domElement.style.setProperty('--link', semanticColors.link || null);
-      this.domElement.style.setProperty('--linkHovered', semanticColors.linkHovered || null);
     }
   }
 
-  protected onDispose(): void {
-    ReactDom.unmountComponentAtNode(this.domElement);
-  }
-
   protected get dataVersion(): Version {
-    return Version.parse('1.0');
+    return Version.parse('1.0.0');
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
@@ -97,32 +61,25 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
       pages: [
         {
           header: {
-            description: strings.PropertyPaneDescription
+            description: 'Configure Document Library WebPart'
           },
           groups: [
             {
-              groupName: strings.BasicGroupName,
+              groupName: 'Settings',
               groupFields: [
                 PropertyPaneTextField('title', {
                   label: 'Web Part Title',
-                  value: 'Compliance'
+                  value: this.properties.title || 'Document Library'
+                }),
+                PropertyPaneTextField('listName', {
+                  label: 'Default Library Path',
+                  value: this.properties.listName || 'Documents',
+                  description: 'Used if no ?library= URL parameter is provided'
                 }),
                 PropertyPaneTextField('description', {
                   label: 'Description',
-                  value: 'Below are documents related to Compliance.'
-                }),
-                PropertyPaneTextField('listName', {
-                  label: 'Document Library Name',
-                  value: 'Documents',
-                  description: 'Enter the name of the SharePoint document library'
-                }),
-                PropertyPaneSlider('itemsPerPage', {
-                  label: 'Items per page',
-                  min: 5,
-                  max: 50,
-                  value: 10,
-                  showValue: true,
-                  step: 5
+                  value: this.properties.description || '',
+                  description: 'Optional description'
                 })
               ]
             }
