@@ -9,7 +9,7 @@ export interface IDetailedViewProps {
 }
 
 export default class DetailedView extends React.Component<IDetailedViewProps, {}> {
-  
+
   private formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
@@ -17,7 +17,25 @@ export default class DetailedView extends React.Component<IDetailedViewProps, {}
       month: 'long',
       year: 'numeric'
     });
-  }
+  };
+
+  private handleViewAttachment = (): void => {
+    const { messageData } = this.props;
+
+    if (messageData.AttachmentUrl && typeof messageData.AttachmentUrl === 'string') {
+      window.open(messageData.AttachmentUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (messageData.AttachmentServerRelativeUrl && typeof messageData.AttachmentServerRelativeUrl === 'string') {
+      const fullUrl =
+        `${window.location.protocol}//${window.location.host}${messageData.AttachmentServerRelativeUrl}`;
+      window.open(fullUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    alert('No attachment available for this message.');
+  };
 
   public render(): React.ReactElement<IDetailedViewProps> {
     const { messageData, onBack } = this.props;
@@ -28,7 +46,11 @@ export default class DetailedView extends React.Component<IDetailedViewProps, {}
           <div className={styles.container}>
             <div className={styles.error}>
               <h2>Message not found</h2>
-              <button className={styles.backHomeButton} onClick={onBack}>
+              <button
+                className={styles.backHomeButton}
+                onClick={onBack}
+                type="button"
+              >
                 ← Back to Home
               </button>
             </div>
@@ -37,50 +59,64 @@ export default class DetailedView extends React.Component<IDetailedViewProps, {}
       );
     }
 
+    const publishedDate = messageData.PublishedDate || messageData.Created;
+
+    const hasAttachment =
+      !!messageData.AttachmentUrl ||
+      !!messageData.AttachmentServerRelativeUrl;
+
     return (
       <div className={styles.detailPage}>
         <div className={styles.container}>
-          {/* Header with Back to Home Button */}
           <div className={styles.header}>
-            <button className={styles.backHomeButton} onClick={onBack}>
+            <button
+              className={styles.backHomeButton}
+              onClick={onBack}
+              type="button"
+            >
               ← Back to Home
             </button>
           </div>
 
-          {/* Content Area */}
           <div className={styles.content}>
-            {/* Published Badge */}
-            <div className={styles.publishedBadge}>
-              PUBLISHED ON {this.formatDate(messageData.PublishedDate || messageData.Created).toUpperCase()}
-            </div>
+            {publishedDate && (
+              <div className={styles.publishedBadge}>
+                PUBLISHED ON {this.formatDate(publishedDate).toUpperCase()}
+              </div>
+            )}
 
-            {/* Title */}
             <h1 className={styles.title}>
               {messageData.Title}
             </h1>
 
-            {/* Featured Image */}
             {messageData.FeaturedImageUrl && (
               <div className={styles.imageContainer}>
-                <img 
+                <img
                   src={messageData.FeaturedImageUrl}
                   alt="Featured image"
                   className={styles.featuredImage}
                   onError={(e) => {
-                    console.log('Detail view image failed to load');
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               </div>
             )}
-            
-            {/* Message Content */}
-            <div 
+
+            <div
               className={styles.messageContent}
               dangerouslySetInnerHTML={{ __html: messageData.Content }}
             />
 
-            {/* Author Information */}
+            {hasAttachment && (
+              <button
+                className={styles.viewAttachmentButton}
+                onClick={this.handleViewAttachment}
+                type="button"
+              >
+                View Attachment
+              </button>
+            )}
+
             <div className={styles.authorInfo}>
               <strong>Published by:</strong>
               <span className={styles.authorName}>
