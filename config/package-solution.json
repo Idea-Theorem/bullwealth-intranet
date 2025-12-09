@@ -4,8 +4,8 @@
     "name": "IdeaTheorem Intranet Theme",
     "id": "e1a45c8f-413c-4de9-abc8-3611caa22b12",
     "version": "1.0.0.2",
-    "includeClientSideAssets": false,
-    "skipFeatureDeployment": true,
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": false,
     "isDomainIsolated": false,
     "developer": {
       "name": "IdeaTheorem",
@@ -32,10 +32,7 @@
         "id": "d3c0475b-59bb-4570-bfcc-0ce0c0426620",
         "version": "1.0.0.2",
         "assets": {
-          "elementManifests": [
-            "feature.xml",
-            "ClientSideInstance.xml"
-          ]
+          "elementManifests": [ "ClientSideInstance.xml" ]
         }
       }
     ]
