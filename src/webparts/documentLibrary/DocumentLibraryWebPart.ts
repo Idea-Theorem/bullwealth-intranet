@@ -16,12 +16,11 @@ export interface IDocumentLibraryWebPartProps {
 }
 
 export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocumentLibraryWebPartProps> {
+  // ✅ FIXED: Added error handling wrapper
   public render(): void {
-    // ✅ FIXED: Read library parameter from URL
     const urlParams = new URLSearchParams(window.location.search);
     const libraryPath = urlParams.get('library');
 
-    // Use URL parameter OR default
     let listName = libraryPath || this.properties.listName || 'Documents';
 
     if (libraryPath) {
@@ -31,13 +30,33 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
       console.log('📋 DocumentLibrary WebPart - Using default listName:', listName);
     }
 
-    const element: React.ReactElement = React.createElement(DocumentLibrary, {
-      context: this.context,
-      title: this.properties.title || 'Document Library',
-      listName: listName
-    });
+    try {
+      const element: React.ReactElement = React.createElement(DocumentLibrary, {
+        context: this.context,
+        title: this.properties.title || 'Document Library',
+        listName: listName
+      });
 
-    ReactDom.render(element, this.domElement);
+      ReactDom.render(element, this.domElement);
+    } catch (error) {
+      console.error('Error rendering DocumentLibrary:', error);
+      this.domElement.innerHTML = `
+        <div style="padding: 20px; color: #d13438; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+          <h3 style="margin: 0 0 12px 0; font-size: 20px;">Something went wrong</h3>
+          <p style="margin: 8px 0; font-size: 14px; color: #605e5c;">Please refresh the page. If the problem persists, contact the site administrator.</p>
+          <button 
+            onclick="window.location.reload()" 
+            style="padding: 8px 16px; margin-top: 16px; cursor: pointer; background: #0078d4; color: white; border: none; border-radius: 2px; font-size: 14px;"
+          >
+            Refresh Page
+          </button>
+          <div style="margin-top: 20px; padding: 12px; background: #f3f2f1; border-radius: 2px; font-size: 12px; color: #605e5c; text-align: left;">
+            <strong>Technical Details:</strong><br/>
+            ${error instanceof Error ? error.message : String(error)}
+          </div>
+        </div>
+      `;
+    }
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
@@ -53,7 +72,7 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
   }
 
   protected get dataVersion(): Version {
-    return Version.parse('1.0.0');
+    return Version.parse('1.0');
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {

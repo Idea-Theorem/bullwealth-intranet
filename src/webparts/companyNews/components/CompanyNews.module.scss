@@ -1,4 +1,5 @@
-@import '~@fluentui/react/dist/sass/References.scss';
+@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+//@import '~@fluentui/react/dist/sass/References.scss';
 //@import '../../../styles/fonts';
 
 :global {
@@ -49,7 +50,7 @@
   .newsGrid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 40px;
     transition: transform 0.3s ease-in-out;
     
     @media (max-width: 1200px) {

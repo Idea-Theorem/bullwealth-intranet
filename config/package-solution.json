@@ -4,7 +4,7 @@
     "name": "IdeaTheorem Intranet Theme",
     "id": "e1a45c8f-413c-4de9-abc8-3611caa22b12",
     "version": "1.0.0.2",
-    "includeClientSideAssets": true,
+    "includeClientSideAssets": false,
     "skipFeatureDeployment": false,
     "isDomainIsolated": false,
     "developer": {

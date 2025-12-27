@@ -33,18 +33,22 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
   useEffect(() => {
     if (!currentFolder) {
-      void loadFolderStructure();
-      
+      loadFolderStructure().catch((error) => {
+        console.error('Failed to load folder structure:', error);
+        setMessage(`❌ Error: ${error.message || 'Failed to load documents'}`);
+        setIsLoading(false);
+      });
+
       const urlParams = new URLSearchParams(window.location.search);
       const libraryPath = urlParams.get('library');
       if (libraryPath) {
         const pathParts = decodeURIComponent(libraryPath).split('/');
         const lastFolderName = pathParts[pathParts.length - 1];
         setPageTitle(lastFolderName || 'Documents');
-        console.log('📄 Page Title from URL:', lastFolderName);
       }
     }
-  }, [props.listName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.listName, currentFolder]);
 
   useEffect(() => {
     if (currentFolder) {
@@ -56,12 +60,11 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
-      month: 'short', 
+      month: 'short',
       day: 'numeric'
     }).format(date);
   };
 
-  // ✅ ONLY SORT: By OrderBy number
   const sortDocumentsByOrderOnly = (documents: IDocument[]): IDocument[] => {
     return [...documents].sort((a, b) => {
       const aOrder = (a as any).orderBy !== undefined ? (a as any).orderBy : 999;
@@ -72,22 +75,16 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
   const loadFolderStructure = async (): Promise<void> => {
     setIsLoading(true);
-    console.log('=== LOADING FOLDER STRUCTURE ===');
-    console.log('Target folder path:', props.listName);
-
     try {
       const baseUrl = props.context.pageContext.web.absoluteUrl;
       const pathParts = props.listName.split('/');
       const mainLibrary = pathParts[0];
       const targetFolder = pathParts.slice(1).join('/');
-      
-      console.log('Main library:', mainLibrary);
-      console.log('Target folder:', targetFolder);
 
       await tryFolderPaths(baseUrl, mainLibrary, targetFolder);
     } catch (error: any) {
-      console.error('❌ Error loading folder structure:', error);
-      setMessage(`❌ Error loading folder "${props.listName}": ${error.message}`);
+      console.error('Error in loadFolderStructure:', error);
+      setMessage(`❌ Error loading folder "${props.listName}": ${error.message || 'Unknown error'}`);
       setTimeout(() => setMessage(''), 8000);
       setFoldersWithDocuments([]);
     } finally {
@@ -97,7 +94,7 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
   const tryFolderPaths = async (baseUrl: string, mainLibrary: string, targetFolder: string): Promise<void> => {
     const siteName = baseUrl.split('/').pop();
-    
+
     const folderPaths = [
       `/sites/${siteName}/${mainLibrary}/${targetFolder}`,
       `/${mainLibrary}/${targetFolder}`,
@@ -109,10 +106,8 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
     for (const folderPath of folderPaths) {
       try {
-        console.log(`Trying folder path: ${folderPath}`);
-        
         const folderUrl = `${baseUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderPath)}')?$expand=Folders,Files`;
-        
+
         const response = await props.context.spHttpClient.get(
           folderUrl,
           SPHttpClient.configurations.v1
@@ -120,99 +115,184 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`✅ Success with path: ${folderPath}`);
-          await processFolderData(data, folderPath);
-          return;
+          if (data && typeof data === 'object') {
+            await processFolderData(data, folderPath);
+            return;
+          }
         }
       } catch (error) {
-        console.log(`❌ Path failed: ${folderPath}`, error);
+        console.error(`Failed to load folder path: ${folderPath}`, error);
         continue;
       }
     }
 
-    console.error('❌ All folder paths failed');
     setMessage(`⚠️ Could not find folder "${props.listName}"`);
     setTimeout(() => setMessage(''), 10000);
     setFoldersWithDocuments([]);
   };
 
-  // ✅ CORRECTED: Get OrderBy from BOTH files and folders
-  // ✅ NOW files have OrderBy values - restore the query!
-// ✅ FIXED FUNCTION: Works for all files in any subfolder, retrieves OrderBy safely
-const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libraryName: string): Promise<IDocument[]> => {
-  const documents: IDocument[] = [];
+  // const getLibraryTitleFromProps = (): string => {
+  //   const parts = props.listName.split('/').filter(p => p.length > 0);
+  //   return parts[0] || 'Documents';
+  // };
+
+  // ✅ FINAL FIX: Extract library name from actual folder path
+const getAllFolderMetadata = async (folderPath: string): Promise<Record<string, any>> => {
   const baseUrl = props.context.pageContext.web.absoluteUrl;
+  
+  // ✅ Extract library name from the folder path
+  // Example path: /sites/MrkedCapitalIntranet/BullWealth Documents/Advisory Group/...
+  const pathParts = folderPath.split('/').filter(p => p.length > 0);
+  
+  let libraryTitle = 'Documents';
+  
+  // Find the library name (usually 3rd segment after /sites/sitename/)
+  if (pathParts.length >= 3) {
+    // Skip 'sites' and site name, get library
+    libraryTitle = pathParts[2];
+  } else if (pathParts.length >= 1) {
+    libraryTitle = pathParts[0];
+  }
+
+  console.log('📡 Folder path:', folderPath);
+  console.log('📡 Extracted library name:', libraryTitle);
 
   try {
-    console.log(`🔍 Processing ${files.length} files from library: "${libraryName}"`);
+    const itemsUrl =
+      `${baseUrl}/_api/web/lists/getbytitle('${encodeURIComponent(libraryTitle)}')/items?` +
+      `$select=FileRef,FileLeafRef,OrderBy,Editor/Title,Author/Title,FSObjType&` +
+      `$expand=Editor,Author&` +
+      `$filter=FSObjType eq 0&` +
+      `$top=5000`;
 
-    for (const file of files) {
-      const fileName = file.Name || file.FileLeafRef || 'Unknown';
-      const fileServerUrl = file.ServerRelativeUrl || '';
-
-      let modifiedBy = 'Unknown';
-      let orderBy: number = 999;
-
-      try {
-        // ✅ Use one REST call to get both ModifiedBy and OrderBy
-        const filePropsUrl = `${baseUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(fileServerUrl)}')/ListItemAllFields?$select=OrderBy,ModifiedBy/Title&$expand=ModifiedBy`;
-
-        const fileResponse = await props.context.spHttpClient.get(filePropsUrl, SPHttpClient.configurations.v1);
-
-        if (fileResponse.ok) {
-          const fileData = await fileResponse.json();
-
-          // Get ModifiedBy (if available)
-          if (fileData.ModifiedBy && fileData.ModifiedBy.Title) {
-            modifiedBy = fileData.ModifiedBy.Title.trim();
-          }
-
-          // Get OrderBy (custom field)
-          if (fileData.OrderBy !== undefined && fileData.OrderBy !== null && fileData.OrderBy !== '') {
-            const parsed = parseInt(fileData.OrderBy, 10);
-            if (!isNaN(parsed)) {
-              orderBy = parsed;
-              console.log(`✅ OrderBy (${orderBy}) for "${fileName}"`);
-            }
-          }
-        } else {
-          console.warn(`⚠️ Could not fetch metadata for ${fileName} (HTTP ${fileResponse.status})`);
-        }
-      } catch (err) {
-        console.warn(`⚠️ Metadata fetch failed for "${fileName}"`, err);
-      }
-
-      // Clean ModifiedBy username
-      if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
-        modifiedBy = modifiedBy.split('@')[0];
-      }
-
-      const fileType = fileName.split('.').pop() || 'file';
-      const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-      const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
-
-      const documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
-      const description = fileName.replace(/\.[^/.]+$/, '') || 'No description';
-
-      documents.push({
-        id: file.UniqueId || Math.random().toString(),
-        name: fileName.replace(/\.[^/.]+$/, ''),
-        fileType: fileType,
-        modified: formatDate(modifiedDate),
-        modifiedBy: modifiedBy,
-        serverRelativeUrl: documentUrl,
-        downloadUrl: file.ServerRelativeUrl,
-        iconName: getFileIcon(fileType),
-        description: description,
-        createdDate: formatDate(createdDate),
-        modifiedTimestamp: modifiedDate.getTime(),
-        createdTimestamp: createdDate.getTime(),
-        orderBy: orderBy // ✅ Sorting key
-      } as any);
+    console.log('📡 Fetching from:', itemsUrl);
+    
+    const res = await props.context.spHttpClient.get(itemsUrl, SPHttpClient.configurations.v1);
+    
+    if (!res.ok) {
+      console.error('❌ Metadata fetch failed:', res.status, res.statusText);
+      const errorText = await res.text();
+      console.error('❌ Response:', errorText);
+      return {};
     }
+
+    const data = await res.json();
+    const lookup: Record<string, any> = {};
+    
+    console.log('📥 Total items received:', data.value.length);
+    
+    if (data.value.length === 0) {
+      console.warn('⚠️ No items found in library!');
+      return {};
+    }
+    
+    for (const item of data.value) {
+      if (!item.FileRef) continue;
+      
+      let editorName = 'Unknown';
+      if (item.Editor && item.Editor.Title) {
+        editorName = item.Editor.Title;
+      } else if (item.Author && item.Author.Title) {
+        editorName = item.Author.Title;
+      }
+      
+      // Clean username
+      if (editorName.includes('@')) {
+        editorName = editorName.split('@')[0];
+      }
+      if (editorName.includes('|')) {
+        const parts = editorName.split('|');
+        editorName = parts[parts.length - 1].split('@')[0];
+      }
+      
+      let orderByValue = 999;
+      if (item.OrderBy !== null && item.OrderBy !== undefined && item.OrderBy !== '') {
+        const parsed = parseInt(String(item.OrderBy), 10);
+        if (!isNaN(parsed)) {
+          orderByValue = parsed;
+        }
+      }
+      
+      const metadata = {
+        OrderBy: orderByValue,
+        EditorTitle: editorName,
+        FileRef: item.FileRef
+      };
+      
+      // ✅ Store with lowercase key
+      const key = item.FileRef.toLowerCase();
+      lookup[key] = metadata;
+      
+      // Log first 5 items
+      if (Object.keys(lookup).length <= 5) {
+        console.log(`📄 Key: ${key}`);
+        console.log(`   OrderBy: ${orderByValue}, ModifiedBy: ${editorName}`);
+      }
+    }
+    
+    console.log(`✅ Created ${Object.keys(lookup).length} lookup entries`);
+    console.log(`✅ Sample keys:`, Object.keys(lookup).slice(0, 3));
+    
+    return lookup;
   } catch (error) {
-    console.error('❌ Error in getDocumentsWithRealUsers:', error);
-    return files.map((file: any) => mapFileToDocument(file));
+    console.error('❌ Error fetching metadata:', error);
+    return {};
+  }
+};
+
+
+// ✅ FIXED: Match by ServerRelativeUrl
+const getDocumentsWithRealUsers = async (
+  files: any[],
+  metadataLookup: Record<string, any>
+): Promise<IDocument[]> => {
+  const documents: IDocument[] = [];
+
+  console.log(`🔍 Processing ${files.length} files with ${Object.keys(metadataLookup).length} metadata keys`);
+
+  for (const file of files) {
+    const fileName = file.Name || 'Unknown';
+    const serverRelativeUrl = file.ServerRelativeUrl || '';
+    
+    // ✅ Match using lowercase ServerRelativeUrl (which is the FileRef)
+    const lookupKey = serverRelativeUrl.toLowerCase();
+    const itemMeta = metadataLookup[lookupKey];
+
+    let modifiedBy = 'Unknown';
+    let orderBy: number = 999;
+
+    if (itemMeta) {
+      modifiedBy = itemMeta.EditorTitle || 'Unknown';
+      orderBy = itemMeta.OrderBy !== undefined ? itemMeta.OrderBy : 999;
+      
+      console.log(`✅ ${fileName}: OrderBy=${orderBy}, ModifiedBy=${modifiedBy}`);
+    } else {
+      console.warn(`⚠️ No metadata for: ${fileName}`);
+      console.warn(`   Looking for key: ${lookupKey}`);
+    }
+
+    const fileType = fileName.split('.').pop() || 'file';
+    const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+    const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+
+    const documentUrl = `${window.location.protocol}//${window.location.host}${serverRelativeUrl}`;
+    const description = fileName.replace(/\.[^/.]+$/, '') || 'No description';
+
+    documents.push({
+      id: file.UniqueId || Math.random().toString(),
+      name: fileName.replace(/\.[^/.]+$/, ''),
+      fileType,
+      modified: formatDate(modifiedDate),
+      modifiedBy,
+      serverRelativeUrl: documentUrl,
+      downloadUrl: serverRelativeUrl,
+      iconName: getFileIcon(fileType),
+      description,
+      createdDate: formatDate(createdDate),
+      modifiedTimestamp: modifiedDate.getTime(),
+      createdTimestamp: createdDate.getTime(),
+      orderBy
+    } as any);
   }
 
   return documents;
@@ -220,216 +300,206 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
 
 
 
+
+  // ✅ OPTIMIZED: Single metadata fetch for entire folder structure
   const processFolderData = async (data: any, folderPath: string): Promise<void> => {
-    console.log('=== PROCESSING FOLDER DATA ===');
-    
-    const subfolders = data.Folders || [];
-    const files = data.Files || [];
-    
-    console.log(`Found ${subfolders.length} subfolders and ${files.length} files`);
+    try {
+      const subfolders = data.Folders || [];
+      const files = data.Files || [];
 
-    if (subfolders.length === 0 && files.length === 0) {
-      setMessage(`⚠️ Folder "${props.listName}" is empty`);
-      setTimeout(() => setMessage(''), 8000);
-      setFoldersWithDocuments([]);
-      return;
-    }
-
-    const pathParts = props.listName.split('/');
-    let libraryName = pathParts[0] || 'Documents';
-
-    console.log(`📂 Library: "${libraryName}"`);
-
-    const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string, orderBy?: number } } = {};
-
-    if (files.length > 0) {
-      const mappedDocuments = await getDocumentsWithRealUsers(files, folderPath, libraryName);
-      const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
-      
-      const pathSegments = folderPath.split('/').filter(segment => segment.length > 0);
-      let displayName = 'Documents';
-      
-      if (pathSegments.length > 0) {
-        const lastSegment = pathSegments[pathSegments.length - 1];
-        if (lastSegment && !['sites', 'Shared Documents', 'Documents'].includes(lastSegment)) {
-          displayName = lastSegment;
-        } else if (pathSegments.length > 1) {
-          const secondLast = pathSegments[pathSegments.length - 2];
-          if (secondLast && !['sites', 'Shared Documents', 'Documents'].includes(secondLast)) {
-            displayName = secondLast;
-          }
-        }
+      if (subfolders.length === 0 && files.length === 0) {
+        setMessage(`⚠️ Folder "${props.listName}" is empty`);
+        setTimeout(() => setMessage(''), 8000);
+        setFoldersWithDocuments([]);
+        return;
       }
-      
-      if (displayName === 'Documents' || displayName === 'sites') {
-        const propsParts = props.listName.split('/').filter(part => part.length > 0);
-        if (propsParts.length > 1) {
-          displayName = propsParts[propsParts.length - 1];
-        }
-      }
-      
-      console.log(`✅ Using display name: "${displayName}" for folder with ${files.length} files`);
-      
-      folderGroups[displayName] = {
-        documents: sortedDocuments,
-        folderPath: folderPath
-      };
-    }
 
-    for (const subfolder of subfolders) {
-      const subfolderName = subfolder.Name;
-      const subfolderPath = subfolder.ServerRelativeUrl;
-      
-      console.log(`Processing subfolder: ${subfolderName} at ${subfolderPath}`);
-      
-      try {
-        const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated&$nocache=${Date.now()}`;
-        
-        const subfolderResponse = await props.context.spHttpClient.get(
-          subfolderUrl,
-          SPHttpClient.configurations.v1
-        );
+      // ✅ PERFORMANCE: Get ALL metadata in ONE API call
+      const allMetadata = await getAllFolderMetadata(folderPath);
 
-        if (subfolderResponse.ok) {
-          const subfolderData = await subfolderResponse.json();
-          const subfolderFiles = subfolderData.value || [];
-          
-          console.log(`  → Found ${subfolderFiles.length} files in ${subfolderName}`);
-          
-          if (subfolderFiles.length > 0) {
-            const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, subfolderPath, libraryName);
-            const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
-            
-            let folderOrderBy: number | undefined = undefined;
-            
-            // ✅ GET OrderBy FROM THE FOLDER ITEM (FOLDERS also have OrderBy)
-            try {
-              const folderPropsUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/ListItemAllFields`;
-              const folderPropsResponse = await props.context.spHttpClient.get(folderPropsUrl, SPHttpClient.configurations.v1);
-              
-              if (folderPropsResponse.ok) {
-                const folderProps = await folderPropsResponse.json();
-                console.log(`📊 Folder "${subfolderName}" properties:`, folderProps);
-                
-                // Try different field names
-                if (folderProps.OrderBy !== null && folderProps.OrderBy !== undefined) {
-                  folderOrderBy = parseInt(folderProps.OrderBy, 10);
-                  console.log(`✅ Folder OrderBy: ${folderOrderBy}`);
-                } else if (folderProps.Order_x0020_By !== null && folderProps.Order_x0020_By !== undefined) {
-                  folderOrderBy = parseInt(folderProps.Order_x0020_By, 10);
-                  console.log(`✅ Folder OrderBy (x0020): ${folderOrderBy}`);
-                } else if (folderProps.Order !== null && folderProps.Order !== undefined) {
-                  folderOrderBy = parseInt(folderProps.Order, 10);
-                  console.log(`✅ Folder Order: ${folderOrderBy}`);
-                } else {
-                  console.log(`⚠️ OrderBy field not found. Available:`, Object.keys(folderProps).filter(k => k.includes('Order')));
-                }
-              }
-            } catch (err) {
-              console.error(`❌ Error getting folder OrderBy:`, err);
+     // const pathParts = props.listName.split('/');
+      //let libraryName = pathParts[0] || 'Documents';
+
+      const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string, orderBy?: number } } = {};
+
+      // Process root files
+      if (files.length > 0) {
+        const mappedDocuments = await getDocumentsWithRealUsers(files, allMetadata);
+        const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
+
+        const pathSegments = folderPath.split('/').filter(segment => segment.length > 0);
+        let displayName = 'Documents';
+
+        if (pathSegments.length > 0) {
+          const lastSegment = pathSegments[pathSegments.length - 1];
+          if (lastSegment && !['sites', 'Shared Documents', 'Documents'].includes(lastSegment)) {
+            displayName = lastSegment;
+          } else if (pathSegments.length > 1) {
+            const secondLast = pathSegments[pathSegments.length - 2];
+            if (secondLast && !['sites', 'Shared Documents', 'Documents'].includes(secondLast)) {
+              displayName = secondLast;
             }
-            
-            folderGroups[subfolderName] = {
-              documents: sortedDocuments,
-              folderPath: subfolderPath,
-              orderBy: folderOrderBy
-            };
           }
         }
-      } catch (subError) {
-        console.error(`❌ Error loading subfolder ${subfolderName}:`, subError);
+
+        if (displayName === 'Documents' || displayName === 'sites') {
+          const propsParts = props.listName.split('/').filter(part => part.length > 0);
+          if (propsParts.length > 1) {
+            displayName = propsParts[propsParts.length - 1];
+          }
+        }
+
+        folderGroups[displayName] = {
+          documents: sortedDocuments,
+          folderPath: folderPath
+        };
       }
-    }
 
-    console.log('Final folder groups:', Object.keys(folderGroups));
+      // ✅ OPTIMIZED: Process subfolders in parallel
+      const subfolderPromises = subfolders.map(async (subfolder: any) => {
+        const subfolderName = subfolder.Name;
+        const subfolderPath = subfolder.ServerRelativeUrl;
 
-    const foldersWithDocs: IFolderWithDocuments[] = [];
+        try {
+          //const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated`;
+          const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated,FileLeafRef`;
 
-    for (const folderName of Object.keys(folderGroups)) {
-      const sortedDocs = sortDocumentsByOrderOnly(folderGroups[folderName].documents);
-      foldersWithDocs.push({
-        name: folderName,
-        documents: sortedDocs.slice(0, 4),
-        allDocuments: sortedDocs,
-        folderPath: folderGroups[folderName].folderPath,
-        orderBy: folderGroups[folderName].orderBy
+          const subfolderResponse = await props.context.spHttpClient.get(
+            subfolderUrl,
+            SPHttpClient.configurations.v1
+          );
+
+          if (subfolderResponse.ok) {
+            const subfolderData = await subfolderResponse.json();
+            const subfolderFiles = subfolderData.value || [];
+
+            if (subfolderFiles.length > 0) {
+              // ✅ Use pre-fetched metadata (already includes subfolders)
+              const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, allMetadata);
+              const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
+
+              // Get folder OrderBy from metadata
+              let folderOrderBy: number | undefined = undefined;
+              const folderKey = subfolderPath.toLowerCase();
+              if (allMetadata[folderKey] && allMetadata[folderKey].OrderBy !== undefined) {
+                folderOrderBy = parseInt(String(allMetadata[folderKey].OrderBy), 10);
+              }
+
+              return {
+                name: subfolderName,
+                documents: sortedDocuments,
+                folderPath: subfolderPath,
+                orderBy: folderOrderBy
+              };
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing subfolder ${subfolderName}:`, error);
+        }
+        return null;
       });
-    }
 
-    foldersWithDocs.sort((a, b) => {
-      const aOrder = a.orderBy !== undefined ? a.orderBy : 999;
-      const bOrder = b.orderBy !== undefined ? b.orderBy : 999;
-      return aOrder - bOrder;
-    });
+      // ✅ Wait for all subfolders in parallel
+      const resolvedSubfolders = await Promise.all(subfolderPromises);
 
-    console.log('📂 Folders in order:', foldersWithDocs.map(f => `${f.name} (Order: ${f.orderBy})`));
+      // Add valid subfolders to groups
+      resolvedSubfolders.forEach(subfolder => {
+        if (subfolder && subfolder.documents.length > 0) {
+          folderGroups[subfolder.name] = {
+            documents: subfolder.documents,
+            folderPath: subfolder.folderPath,
+            orderBy: subfolder.orderBy
+          };
+        }
+      });
 
-    if (foldersWithDocs.length === 0) {
-      console.log('❌ No folders found');
-      setFoldersWithDocuments([]);
-      setMessage(`⚠️ No documents found`);
-      setTimeout(() => setMessage(''), 8000);
-    } else {
-      console.log(`✅ SUCCESS: ${foldersWithDocs.length} folders loaded`);
-      setFoldersWithDocuments(foldersWithDocs);
-      const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
-      setMessage(`✅ Loaded ${totalDocs} documents from ${foldersWithDocs.length} folders`);
-      setTimeout(() => setMessage(''), 5000);
-    }
-  };
+      const foldersWithDocs: IFolderWithDocuments[] = [];
 
-  const mapFileToDocument = (file: any): IDocument => {
-    const fileName: string = file.Name || file.LeafRef || 'Unknown';
-    const fileType: string = fileName.split('.').pop() || 'file';
-    
-    let modifiedBy = 'Unknown';
-    let orderBy: number = 999;
-    
-    if (file.ModifiedBy && file.ModifiedBy.Title) {
-      modifiedBy = file.ModifiedBy.Title.trim();
-    } else if (file.Author && file.Author.Title) {
-      modifiedBy = file.Author.Title.trim();
-    }
-
-    if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
-      modifiedBy = modifiedBy.split('@')[0];
-    }
-    
-    // ✅ Get OrderBy from file (now we know it exists)
-    if (file.OrderBy !== null && file.OrderBy !== undefined) {
-      const parsed = parseInt(file.OrderBy, 10);
-      if (!isNaN(parsed)) {
-        orderBy = parsed;
-        console.log(`✅ OrderBy from file object: ${orderBy}`);
+      for (const folderName of Object.keys(folderGroups)) {
+        const sortedDocs = sortDocumentsByOrderOnly(folderGroups[folderName].documents);
+        foldersWithDocs.push({
+          name: folderName,
+          documents: sortedDocs.slice(0, 4),
+          allDocuments: sortedDocs,
+          folderPath: folderGroups[folderName].folderPath,
+          orderBy: folderGroups[folderName].orderBy
+        });
       }
+
+      foldersWithDocs.sort((a, b) => {
+        const aOrder = a.orderBy !== undefined ? a.orderBy : 999;
+        const bOrder = b.orderBy !== undefined ? b.orderBy : 999;
+        return aOrder - bOrder;
+      });
+
+      if (foldersWithDocs.length === 0) {
+        setFoldersWithDocuments([]);
+        setMessage(`⚠️ No documents found`);
+        setTimeout(() => setMessage(''), 8000);
+      } else {
+        setFoldersWithDocuments(foldersWithDocs);
+        const totalDocs = foldersWithDocs.reduce((sum, folder) => sum + folder.allDocuments.length, 0);
+        setMessage(`✅ Loaded ${totalDocs} documents from ${foldersWithDocs.length} folders`);
+        setTimeout(() => setMessage(''), 5000);
+      }
+    } catch (error: any) {
+      console.error('Error in processFolderData:', error);
+      setMessage(`❌ Error processing folder data: ${error.message || 'Unknown error'}`);
+      setTimeout(() => setMessage(''), 8000);
+      setFoldersWithDocuments([]);
     }
-
-    let documentUrl = '#';
-    if (file.ServerRelativeUrl) {
-      documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
-    }
-
-    const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-    const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
-
-    let description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
-
-    return {
-      id: file.UniqueId || Math.random().toString(),
-      name: fileName.replace(/\.[^/.]+$/, ""),
-      fileType: fileType,
-      modified: formatDate(modifiedDate),
-      modifiedBy: modifiedBy,
-      serverRelativeUrl: documentUrl,
-      downloadUrl: file.ServerRelativeUrl || '#',
-      iconName: getFileIcon(fileType),
-      description: description,
-      createdDate: formatDate(createdDate),
-      modifiedTimestamp: modifiedDate.getTime(),
-      createdTimestamp: createdDate.getTime(),
-      orderBy: orderBy
-    } as any;
   };
+
+  // const mapFileToDocument = (file: any): IDocument => {
+  //   const fileName: string = file.Name || file.LeafRef || 'Unknown';
+  //   const fileType: string = fileName.split('.').pop() || 'file';
+
+  //   let modifiedBy = 'Unknown';
+  //   let orderBy: number = 999;
+
+  //   if (file.ModifiedBy && file.ModifiedBy.Title) {
+  //     modifiedBy = file.ModifiedBy.Title.trim();
+  //   } else if (file.Author && file.Author.Title) {
+  //     modifiedBy = file.Author.Title.trim();
+  //   }
+
+  //   if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
+  //     modifiedBy = modifiedBy.split('@')[0];
+  //   }
+
+  //   if (file.OrderBy !== null && file.OrderBy !== undefined) {
+  //     const parsed = parseInt(file.OrderBy, 10);
+  //     if (!isNaN(parsed)) {
+  //       orderBy = parsed;
+  //     }
+  //   }
+
+  //   let documentUrl = '#';
+  //   if (file.ServerRelativeUrl) {
+  //     documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
+  //   }
+
+  //   const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+  //   const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+
+  //   let description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
+
+  //   return {
+  //     id: file.UniqueId || Math.random().toString(),
+  //     name: fileName.replace(/\.[^/.]+$/, ""),
+  //     fileType: fileType,
+  //     modified: formatDate(modifiedDate),
+  //     modifiedBy: modifiedBy,
+  //     serverRelativeUrl: documentUrl,
+  //     downloadUrl: file.ServerRelativeUrl || '#',
+  //     iconName: getFileIcon(fileType),
+  //     description: description,
+  //     createdDate: formatDate(createdDate),
+  //     modifiedTimestamp: modifiedDate.getTime(),
+  //     createdTimestamp: createdDate.getTime(),
+  //     orderBy: orderBy
+  //   } as any;
+  // };
 
   const handleDocumentClick = (doc: IDocument): void => {
     if (!doc.serverRelativeUrl || doc.serverRelativeUrl === '#') {
@@ -439,10 +509,8 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
     }
 
     try {
-      console.log('Opening document URL:', doc.serverRelativeUrl);
       window.open(doc.serverRelativeUrl, '_blank');
-    } catch (error) {
-      console.error('Failed to open document:', error);
+    } catch {
       setMessage('❌ Unable to open document. Please check your permissions.');
       setTimeout(() => setMessage(''), 5000);
     }
@@ -465,16 +533,16 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
   const handleDownloadDocument = (doc: IDocument): void => {
     if (doc.downloadUrl && doc.downloadUrl !== '#') {
       const downloadUrl = doc.downloadUrl.startsWith('http') ? doc.downloadUrl : `${window.location.protocol}//${window.location.host}${doc.downloadUrl}`;
-      
+
       const link = window.document.createElement('a');
       link.href = downloadUrl;
       link.download = `${doc.name}.${doc.fileType}`;
       link.style.display = 'none';
-      
+
       window.document.body.appendChild(link);
       link.click();
       window.document.body.removeChild(link);
-      
+
       setMessage(`Downloading ${doc.name}...`);
       setTimeout(() => setMessage(''), 3000);
     } else {
@@ -498,8 +566,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
         (window as any).SP.UI.ModalDialog.showModalDialog(options);
         setMessage(`Opening SharePoint sharing for "${doc.name}"`);
         setTimeout(() => setMessage(''), 3000);
-      } catch (error) {
-        console.error('SharePoint sharing failed:', error);
+      } catch {
         fallbackShare(doc);
       }
     } else {
@@ -516,8 +583,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
     };
 
     if (navigator.share) {
-      navigator.share(shareData).catch((error) => {
-        console.error('Web Share API failed:', error);
+      navigator.share(shareData).catch(() => {
         copyToClipboard(shareUrl, doc.name);
       });
     } else {
@@ -530,8 +596,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
       navigator.clipboard.writeText(url).then(() => {
         setMessage(`Link for "${documentName}" copied to clipboard!`);
         setTimeout(() => setMessage(''), 3000);
-      }).catch((err) => {
-        console.error('Failed to copy link:', err);
+      }).catch(() => {
         setMessage('Failed to copy link to clipboard');
         setTimeout(() => setMessage(''), 3000);
       });
@@ -544,8 +609,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
         window.document.execCommand('copy');
         setMessage(`Link for "${documentName}" copied to clipboard!`);
         setTimeout(() => setMessage(''), 3000);
-      } catch (err) {
-        console.error('Fallback copy failed:', err);
+      } catch {
         setMessage('Failed to copy link to clipboard');
         setTimeout(() => setMessage(''), 3000);
       }
@@ -556,7 +620,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
   const handleSelectAllChange = (): void => {
     const newSelectAll = !selectAllChecked;
     setSelectAllChecked(newSelectAll);
-    
+
     if (newSelectAll) {
       setCheckedItems(new Set(currentDocuments.map((doc: IDocument) => String(doc.id))));
     } else {
@@ -661,8 +725,8 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
           padding: '60px 20px',
           textAlign: 'center'
         }}>
-          <Icon 
-            iconName="DocumentSet" 
+          <Icon
+            iconName="DocumentSet"
             style={{
               fontSize: '48px',
               color: '#0078d4',
@@ -682,14 +746,14 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
     return (
       <div className={styles.documentLibrary}>
         {message && (
-          <MessageBar 
-            messageBarType={message.includes('❌') ? MessageBarType.error : MessageBarType.warning} 
+          <MessageBar
+            messageBarType={message.includes('❌') ? MessageBarType.error : MessageBarType.warning}
             isMultiline={false}
           >
             {message}
           </MessageBar>
         )}
-        
+
         <div className={styles.mainHeader}>
           <h2 className={styles.mainTitle}>{pageTitle}</h2>
         </div>
@@ -702,8 +766,8 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
           padding: '60px 20px',
           textAlign: 'center'
         }}>
-          <Icon 
-            iconName="DocumentSet" 
+          <Icon
+            iconName="DocumentSet"
             style={{
               fontSize: '64px',
               color: '#a19f9d',
@@ -740,11 +804,11 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
             {message}
           </MessageBar>
         )}
-        
+
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <Icon 
-              iconName="ChevronLeft" 
+            <Icon
+              iconName="ChevronLeft"
               className={styles.backIcon}
               onClick={handleBackClick}
               style={{ cursor: 'pointer', marginRight: '12px' }}
@@ -758,7 +822,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
           <p style={{ color: '#666', marginBottom: '20px', fontSize: '16px' }}>
             Below are documents related to {currentFolder}.
           </p>
-          
+
           {currentDocuments.length === 0 ? (
             <div className={styles.noDocuments}>
               <Icon iconName="DocumentSet" className={styles.noDocumentsIcon} />
@@ -769,7 +833,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
               <div className={styles.documentsTable}>
                 <div className={styles.tableHeader}>
                   <div className={styles.headerCell}>
-                    <div 
+                    <div
                       className={styles.checkbox}
                       onClick={handleSelectAllChange}
                       role="checkbox"
@@ -799,12 +863,12 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
                   {sortDocumentsByOrderOnly(currentDocuments).map((doc: IDocument) => {
                     const isChecked = checkedItems.has(String(doc.id));
                     return (
-                      <div 
+                      <div
                         key={String(doc.id)}
                         className={`${styles.tableRow} ${isChecked ? styles.selected : ''}`}
                       >
                         <div className={styles.nameCell}>
-                          <div 
+                          <div
                             className={styles.checkbox}
                             onClick={() => handleCheckboxChange(String(doc.id))}
                             role="checkbox"
@@ -814,7 +878,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
                             {isChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
                           </div>
                           <Icon iconName={doc.iconName} className={styles.fileIcon} />
-                          <span 
+                          <span
                             className={styles.fileName}
                             onClick={() => handleDocumentClick(doc)}
                             style={{ cursor: 'pointer', color: '#000' }}
@@ -860,19 +924,19 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
   return (
     <div className={styles.documentLibrary}>
       {message && (
-        <MessageBar 
-          messageBarType={message.includes('Failed') || message.includes('❌') ? MessageBarType.error : MessageBarType.success} 
+        <MessageBar
+          messageBarType={message.includes('Failed') || message.includes('❌') ? MessageBarType.error : MessageBarType.success}
           isMultiline={false}
         >
           {message}
         </MessageBar>
       )}
-      
+
       <div className={styles.mainHeader}>
         <h2 className={styles.mainTitle}>{pageTitle}</h2>
       </div>
 
-      <div style={{ fontSize: '16px', color: '#0', marginBottom: '30px' }}>
+      <div style={{ fontSize: '16px', color: '#666', marginBottom: '30px' }}>
         <p>Below are documents related to {pageTitle}.</p>
       </div>
 
@@ -881,15 +945,14 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
           <div key={folder.name} className={styles.folderSection}>
             <div className={styles.folderHeader}>
               <h3 className={styles.folderTitle}>{folder.name}</h3>
-              <PrimaryButton 
+              <PrimaryButton
                 className={styles.viewAllButton}
                 text="View all"
                 onClick={() => handleViewAll(folder.name)}
               />
             </div>
-            
+
             <div className={styles.documentsGrid}>
-              {/* ✅ Documents sorted by OrderBy */}
               {folder.documents
                 .sort((a, b) => {
                   const aOrder = (a as any).orderBy !== undefined ? (a as any).orderBy : 999;
@@ -899,7 +962,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
                 .map((doc: IDocument) => (
                   <div key={String(doc.id)} className={styles.documentCard}>
                     <div className={styles.cardContent}>
-                      <h4 
+                      <h4
                         className={styles.documentTitle}
                         onClick={() => handleDocumentClick(doc)}
                         style={{ cursor: 'pointer', color: '#000' }}
@@ -913,7 +976,7 @@ const getDocumentsWithRealUsers = async (files: any[], folderPath: string, libra
                         {doc.description}
                       </p>
                     </div>
-                    
+
                     <div className={styles.cardActions}>
                       <button
                         className={styles.cardActionButton}
