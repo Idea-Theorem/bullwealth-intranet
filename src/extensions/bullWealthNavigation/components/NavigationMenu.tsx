@@ -69,7 +69,7 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
       <nav className={styles.navigationMenu}>
         <div className={styles.brand}>
           <a href="https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/SitePages/Home.aspx">
-            <h1 className={styles.brandTitle}>Mrked Capital Intranet</h1>
+            <h1 className={styles.brandTitle}><span className={styles.bigtext}>M</span>RKED <span className={styles.bigtext}>I</span>NSIDER</h1>
           </a>
         </div>
 

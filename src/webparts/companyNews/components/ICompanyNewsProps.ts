@@ -9,6 +9,7 @@ export interface ICompanyNewsProps {
 }
 
 export interface INewsItem {
+  name?: string; // make it optional
   id: string;
   title: string;
   author: string;
@@ -16,4 +17,5 @@ export interface INewsItem {
   imageUrl: string;
   readMoreUrl: string;
   shareUrl?: string; // ✅ Made optional with ?
+  
 }

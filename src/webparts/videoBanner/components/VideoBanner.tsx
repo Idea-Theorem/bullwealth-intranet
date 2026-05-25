@@ -271,102 +271,105 @@ export default class VideoBanner extends React.Component<IVideoBannerProps, IVid
   };
 
   public render(): React.ReactElement<IVideoBannerProps> {
-    const { showDetailView, latestMessage, loading, currentSlideIndex, userName } = this.state;
-    const { backgroundImages } = this.props;
+  const { showDetailView, latestMessage, loading, currentSlideIndex, userName } = this.state;
+  const { backgroundImages } = this.props;
 
-    if (showDetailView) {
-      return (
-        <DetailedView
-          messageData={latestMessage}
-          onBack={this.handleBackFromDetail}
-          context={this.props.context}
-        />
-      );
-    }
-
-    const displayTitle = latestMessage?.Title || 'Latest News';
-    const displayMessage = latestMessage
-      ? this.truncateText(this.stripHtmlTags(latestMessage.Content))
-      : 'Stay updated with our latest announcements and news.';
-    const displayDate = latestMessage
-      ? (this.formatDate(latestMessage.PublishedDate) || this.formatDate(latestMessage.Created))
-      : null;
-
-    let displayBackground = this.getDefaultBackground();
-    if (backgroundImages && backgroundImages.length > 0) {
-      displayBackground = backgroundImages[currentSlideIndex];
-    }
-
-    const rightSideImage = latestMessage?.FeaturedImageUrl || this.getDefaultThumbnail();
-    const videoUrl: string | undefined = latestMessage?.VideoUrl;
-    const hasVideo = !!(videoUrl && videoUrl.trim() !== '');
-
-    const backgroundStyle = {
-      backgroundImage: `linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)),url(${displayBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      transition: 'background-image 0.8s ease-in-out'
-    };
-
-    if (loading) {
-      return (
-        <div className={styles.loadingSpinner}>
-          <div className={styles.spinner}></div>
-          Loading latest news...
-        </div>
-      );
-    }
-
+  if (showDetailView) {
     return (
-      <div className={styles.fullWidthContainer}>
-        <div className={styles.welcomeStrip}>
-          Welcome, {userName}
-        </div>
+      <DetailedView
+        messageData={latestMessage}
+        onBack={this.handleBackFromDetail}
+        context={this.props.context}
+      />
+    );
+  }
 
-        <div className={styles.videoBanner}>
-          <div className={styles.thumbnailWrapper} style={backgroundStyle}>
-            <div className={styles.overlay}></div>
-            
-            <div className={styles.contentWrapper}>
-              <div className={styles.textContent}>
-                <h2 className={styles.title}>{displayTitle}</h2>
-                {displayDate && (
-                  <p className={styles.publishedDate}>{displayDate}</p>
+  const displayTitle = latestMessage?.Title || 'Latest News';
+  const displayMessage = latestMessage
+    ? this.truncateText(this.stripHtmlTags(latestMessage.Content))
+    : 'Stay updated with our latest announcements and news.';
+  const displayDate = latestMessage
+    ? (this.formatDate(latestMessage.PublishedDate) || this.formatDate(latestMessage.Created))
+    : null;
+
+  let displayBackground = this.getDefaultBackground();
+  if (backgroundImages && backgroundImages.length > 0) {
+    displayBackground = backgroundImages[currentSlideIndex];
+  }
+
+  const rightSideImage = latestMessage?.FeaturedImageUrl || this.getDefaultThumbnail();
+  const videoUrl: string | undefined = latestMessage?.VideoUrl;
+  const hasVideo = !!(videoUrl && videoUrl.trim() !== '');
+
+  const backgroundStyle = {
+    backgroundImage: `linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)),url(${displayBackground})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    transition: 'background-image 0.8s ease-in-out'
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loadingSpinner}>
+        <div className={styles.spinner}></div>
+        Loading latest news...
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.fullWidthContainer}>
+      <div className={styles.videoBanner}>
+        <div className={styles.thumbnailWrapper} style={backgroundStyle}>
+          <div className={styles.overlay}></div>
+          
+          {/* Welcome message - OUTSIDE and ABOVE content box */}
+          <div className={styles.welcomeStrip}>
+            Welcome, {userName}
+          </div>
+          
+          {/* White content box - SEPARATE div below welcome */}
+          <div className={styles.contentWrapper}>
+            <div className={styles.textContent}>
+              <h2 className={styles.title}>{displayTitle}</h2>
+              {displayDate && (
+                <p className={styles.publishedDate}>{displayDate}</p>
+              )}
+              <p className={styles.message}>{displayMessage}</p>
+              <button
+                className={styles.readMoreButton}
+                onClick={this.handleReadMore}
+              >
+                READ MORE
+              </button>
+            </div>
+
+            <div className={styles.videoSection}>
+              <div className={styles.thumbnailContainer}>
+                <img
+                  className={styles.thumbnail}
+                  src={rightSideImage}
+                  alt={displayTitle}
+                  onError={(e): void => {
+                    (e.target as HTMLImageElement).src = this.getDefaultThumbnail();
+                  }}
+                />
+                {hasVideo && (
+                  <button
+                    className={styles.playButton}
+                    onClick={this.handlePlayClick}
+                    aria-label="Play video"
+                  >
+                    <div className={styles.playIcon}></div>
+                  </button>
                 )}
-                <p className={styles.message}>{displayMessage}</p>
-                <button
-                  className={styles.readMoreButton}
-                  onClick={this.handleReadMore}
-                >
-                  READ MORE
-                </button>
-              </div>
-
-              <div className={styles.videoSection}>
-                <div className={styles.thumbnailContainer}>
-                  <img
-                    className={styles.thumbnail}
-                    src={rightSideImage}
-                    alt={displayTitle}
-                    onError={(e): void => {
-                      (e.target as HTMLImageElement).src = this.getDefaultThumbnail();
-                    }}
-                  />
-                  {hasVideo && (
-                    <button
-                      className={styles.playButton}
-                      onClick={this.handlePlayClick}
-                      aria-label="Play video"
-                    >
-                      <div className={styles.playIcon}></div>
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 }

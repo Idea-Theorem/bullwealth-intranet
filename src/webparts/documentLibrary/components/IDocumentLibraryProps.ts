@@ -5,6 +5,7 @@ export interface IDocumentLibraryProps {
 }
 
 export interface IDocument {
+  title: string;
   id: string | number;
   name: string;
   fileType: string;

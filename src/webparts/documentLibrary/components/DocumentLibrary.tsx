@@ -30,6 +30,8 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [pageTitle, setPageTitle] = useState<string>('Documents');
+  const [shareDoc, setShareDoc] = useState<IDocument | null>(null);
+  const [showSharePanel, setShowSharePanel] = useState<boolean>(false);
 
   useEffect(() => {
     if (!currentFolder) {
@@ -106,8 +108,9 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
 
     for (const folderPath of folderPaths) {
       try {
-        const folderUrl = `${baseUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderPath)}')?$expand=Folders,Files`;
-
+        const folderUrl =
+          `${baseUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderPath)}')` +
+          `?$expand=Folders,Files,ListItemAllFields`;
         const response = await props.context.spHttpClient.get(
           folderUrl,
           SPHttpClient.configurations.v1
@@ -131,177 +134,197 @@ const DocumentLibrary: React.FC<IDocumentLibraryProps> = (props) => {
     setFoldersWithDocuments([]);
   };
 
-  // const getLibraryTitleFromProps = (): string => {
-  //   const parts = props.listName.split('/').filter(p => p.length > 0);
-  //   return parts[0] || 'Documents';
-  // };
+  const getAllFolderMetadata = async (folderPath: string): Promise<Record<string, any>> => {
+    const baseUrl = props.context.pageContext.web.absoluteUrl;
 
-  // ✅ FINAL FIX: Extract library name from actual folder path
-const getAllFolderMetadata = async (folderPath: string): Promise<Record<string, any>> => {
-  const baseUrl = props.context.pageContext.web.absoluteUrl;
-  
-  // ✅ Extract library name from the folder path
-  // Example path: /sites/MrkedCapitalIntranet/BullWealth Documents/Advisory Group/...
-  const pathParts = folderPath.split('/').filter(p => p.length > 0);
-  
-  let libraryTitle = 'Documents';
-  
-  // Find the library name (usually 3rd segment after /sites/sitename/)
-  if (pathParts.length >= 3) {
-    // Skip 'sites' and site name, get library
-    libraryTitle = pathParts[2];
-  } else if (pathParts.length >= 1) {
-    libraryTitle = pathParts[0];
-  }
+    const libraryNames = [
+      'Documents',
+      'Shared Documents',
+      'Site Assets',
+      'Style Library'
+    ];
 
-  console.log('📡 Folder path:', folderPath);
-  console.log('📡 Extracted library name:', libraryTitle);
+    for (const libraryTitle of libraryNames) {
+      try {
+        const itemsUrl =
+          `${baseUrl}/_api/web/lists/getbytitle('${encodeURIComponent(libraryTitle)}')/items?` +
+          `$select=ID,Title,FileLeafRef,FileRef,FSObjType,OrderBy&` +
+          `$top=5000`;
 
-  try {
-    const itemsUrl =
-      `${baseUrl}/_api/web/lists/getbytitle('${encodeURIComponent(libraryTitle)}')/items?` +
-      `$select=FileRef,FileLeafRef,OrderBy,Editor/Title,Author/Title,FSObjType&` +
-      `$expand=Editor,Author&` +
-      `$filter=FSObjType eq 0&` +
-      `$top=5000`;
+        const res = await props.context.spHttpClient.get(itemsUrl, SPHttpClient.configurations.v1);
 
-    console.log('📡 Fetching from:', itemsUrl);
-    
-    const res = await props.context.spHttpClient.get(itemsUrl, SPHttpClient.configurations.v1);
-    
-    if (!res.ok) {
-      console.error('❌ Metadata fetch failed:', res.status, res.statusText);
-      const errorText = await res.text();
-      console.error('❌ Response:', errorText);
-      return {};
+        if (res.ok) {
+          const data = await res.json();
+
+          if (data.value.length === 0) {
+            continue;
+          }
+
+          const lookup: Record<string, any> = {};
+          const folderNameLookup: Record<string, any> = {};
+
+          let folderCount = 0;
+
+          for (const item of data.value) {
+            const isFolderItem = item.FSObjType === 1;
+
+            if (isFolderItem) {
+              folderCount++;
+            }
+
+            let orderByValue = 999;
+            if (item.OrderBy !== null && item.OrderBy !== undefined && item.OrderBy !== '') {
+              const parsed = parseInt(String(item.OrderBy), 10);
+              if (!isNaN(parsed)) {
+                orderByValue = parsed;
+              }
+            }
+
+            const metadata = {
+              OrderBy: orderByValue,
+              FileRef: item.FileRef,
+              FileLeafRef: item.FileLeafRef,
+              FSObjType: item.FSObjType,
+              isFolder: isFolderItem,
+              Title: item.Title
+            };
+
+            if (item.FileRef) {
+              const pathKey = item.FileRef.toLowerCase();
+              lookup[pathKey] = metadata;
+            }
+
+            if (isFolderItem && item.FileLeafRef) {
+              const names = [
+                item.FileLeafRef,
+                item.Title,
+                item.FileLeafRef.replace(/-/g, ' '),
+                item.FileLeafRef.replace(/\s+/g, '-'),
+                item.FileLeafRef.replace(/[\s-]+/g, '').toLowerCase()
+              ].filter(Boolean);
+
+              for (const name of names) {
+                if (name) {
+                  const key = String(name).toLowerCase().trim();
+                  folderNameLookup[key] = metadata;
+                }
+              }
+            }
+          }
+
+          return {
+            ...lookup,
+            __folderNameLookup: folderNameLookup
+          };
+        }
+      } catch (error: any) {
+        continue;
+      }
     }
 
-    const data = await res.json();
-    const lookup: Record<string, any> = {};
-    
-    console.log('📥 Total items received:', data.value.length);
-    
-    if (data.value.length === 0) {
-      console.warn('⚠️ No items found in library!');
-      return {};
-    }
-    
-    for (const item of data.value) {
-      if (!item.FileRef) continue;
-      
-      let editorName = 'Unknown';
-      if (item.Editor && item.Editor.Title) {
-        editorName = item.Editor.Title;
-      } else if (item.Author && item.Author.Title) {
-        editorName = item.Author.Title;
-      }
-      
-      // Clean username
-      if (editorName.includes('@')) {
-        editorName = editorName.split('@')[0];
-      }
-      if (editorName.includes('|')) {
-        const parts = editorName.split('|');
-        editorName = parts[parts.length - 1].split('@')[0];
-      }
-      
-      let orderByValue = 999;
-      if (item.OrderBy !== null && item.OrderBy !== undefined && item.OrderBy !== '') {
-        const parsed = parseInt(String(item.OrderBy), 10);
-        if (!isNaN(parsed)) {
-          orderByValue = parsed;
+    return {};
+  };
+
+  const extractUrlFromFile = async (serverRelativeUrl: string): Promise<string | null> => {
+    const baseUrl = props.context.pageContext.web.absoluteUrl;
+
+    try {
+      const fileContentUrl = `${baseUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(serverRelativeUrl)}')/$value`;
+
+      const response = await props.context.spHttpClient.get(
+        fileContentUrl,
+        SPHttpClient.configurations.v1
+      );
+
+      if (response.ok) {
+        const fileContent = await response.text();
+
+        const urlPatterns = [
+          /URL=(.+?)(?:\r|\n|$)/i,
+          /URL\s*=\s*(.+?)(?:\r|\n|$)/i,
+          /\[InternetShortcut\][\s\S]*?URL=(.+?)(?:\r|\n|$)/i,
+          /(https?:\/\/[^\s\r\n]+)/i
+        ];
+
+        for (const pattern of urlPatterns) {
+          const match = fileContent.match(pattern);
+          if (match && match[1]) {
+            const extractedUrl = match[1].trim();
+            return extractedUrl;
+          }
         }
       }
-      
-      const metadata = {
-        OrderBy: orderByValue,
-        EditorTitle: editorName,
-        FileRef: item.FileRef
-      };
-      
-      // ✅ Store with lowercase key
-      const key = item.FileRef.toLowerCase();
-      lookup[key] = metadata;
-      
-      // Log first 5 items
-      if (Object.keys(lookup).length <= 5) {
-        console.log(`📄 Key: ${key}`);
-        console.log(`   OrderBy: ${orderByValue}, ModifiedBy: ${editorName}`);
+    } catch (error) {
+      console.error('❌ Error extracting URL:', error);
+    }
+
+    return null;
+  };
+
+  const getDocumentsWithRealUsers = async (
+    files: any[],
+    metadataLookup: Record<string, any>
+  ): Promise<IDocument[]> => {
+    const documentPromises = files.map(async (file) => {
+      const fileName = file.Name || 'Unknown';
+      const serverRelativeUrl = file.ServerRelativeUrl || '';
+
+      const lookupKey = serverRelativeUrl.toLowerCase();
+      const itemMeta = metadataLookup[lookupKey];
+
+      let modifiedBy = 'Unknown';
+      let orderBy: number = 999;
+
+      if (itemMeta) {
+        modifiedBy = itemMeta.EditorTitle || 'Unknown';
+        orderBy = itemMeta.OrderBy ?? 999;
       }
-    }
-    
-    console.log(`✅ Created ${Object.keys(lookup).length} lookup entries`);
-    console.log(`✅ Sample keys:`, Object.keys(lookup).slice(0, 3));
-    
-    return lookup;
-  } catch (error) {
-    console.error('❌ Error fetching metadata:', error);
-    return {};
-  }
-};
 
+      const isUrlFile = fileName.toLowerCase().endsWith('.url');
 
-// ✅ FIXED: Match by ServerRelativeUrl
-const getDocumentsWithRealUsers = async (
-  files: any[],
-  metadataLookup: Record<string, any>
-): Promise<IDocument[]> => {
-  const documents: IDocument[] = [];
+      const isLink =
+        file.ListItemAllFields &&
+        file.ListItemAllFields.File_x0020_Type === 'url';
 
-  console.log(`🔍 Processing ${files.length} files with ${Object.keys(metadataLookup).length} metadata keys`);
+      let openUrl = `${window.location.protocol}//${window.location.host}${serverRelativeUrl}`;
+      let actualUrl = openUrl;
 
-  for (const file of files) {
-    const fileName = file.Name || 'Unknown';
-    const serverRelativeUrl = file.ServerRelativeUrl || '';
-    
-    // ✅ Match using lowercase ServerRelativeUrl (which is the FileRef)
-    const lookupKey = serverRelativeUrl.toLowerCase();
-    const itemMeta = metadataLookup[lookupKey];
+      if (isUrlFile) {
+        const extractedUrl = await extractUrlFromFile(serverRelativeUrl);
+        if (extractedUrl) {
+          actualUrl = extractedUrl;
+        }
+      } else if (isLink && file.ListItemAllFields.URL) {
+        actualUrl = file.ListItemAllFields.URL;
+      }
 
-    let modifiedBy = 'Unknown';
-    let orderBy: number = 999;
+      const fileType = isUrlFile || isLink ? 'url' : (fileName.split('.').pop() || 'file');
 
-    if (itemMeta) {
-      modifiedBy = itemMeta.EditorTitle || 'Unknown';
-      orderBy = itemMeta.OrderBy !== undefined ? itemMeta.OrderBy : 999;
-      
-      console.log(`✅ ${fileName}: OrderBy=${orderBy}, ModifiedBy=${modifiedBy}`);
-    } else {
-      console.warn(`⚠️ No metadata for: ${fileName}`);
-      console.warn(`   Looking for key: ${lookupKey}`);
-    }
+      const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
+      const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
 
-    const fileType = fileName.split('.').pop() || 'file';
-    const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-    const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
+      return {
+        id: file.UniqueId || Math.random().toString(),
+        name: fileName.replace(/\.[^/.]+$/, ''),
+        fileType,
+        modified: formatDate(modifiedDate),
+        modifiedBy,
+        serverRelativeUrl: actualUrl,
+        originalServerRelativeUrl: serverRelativeUrl,
+        downloadUrl: (isLink || isUrlFile) ? undefined : serverRelativeUrl,
+        iconName: (isLink || isUrlFile) ? 'Globe' : getFileIcon(fileType),
+        description: fileName.replace(/\.[^/.]+$/, ''),
+        createdDate: formatDate(createdDate),
+        modifiedTimestamp: modifiedDate.getTime(),
+        createdTimestamp: createdDate.getTime(),
+        orderBy
+      } as any;
+    });
 
-    const documentUrl = `${window.location.protocol}//${window.location.host}${serverRelativeUrl}`;
-    const description = fileName.replace(/\.[^/.]+$/, '') || 'No description';
+    const resolvedDocuments = await Promise.all(documentPromises);
+    return resolvedDocuments;
+  };
 
-    documents.push({
-      id: file.UniqueId || Math.random().toString(),
-      name: fileName.replace(/\.[^/.]+$/, ''),
-      fileType,
-      modified: formatDate(modifiedDate),
-      modifiedBy,
-      serverRelativeUrl: documentUrl,
-      downloadUrl: serverRelativeUrl,
-      iconName: getFileIcon(fileType),
-      description,
-      createdDate: formatDate(createdDate),
-      modifiedTimestamp: modifiedDate.getTime(),
-      createdTimestamp: createdDate.getTime(),
-      orderBy
-    } as any);
-  }
-
-  return documents;
-};
-
-
-
-
-  // ✅ OPTIMIZED: Single metadata fetch for entire folder structure
   const processFolderData = async (data: any, folderPath: string): Promise<void> => {
     try {
       const subfolders = data.Folders || [];
@@ -314,15 +337,11 @@ const getDocumentsWithRealUsers = async (
         return;
       }
 
-      // ✅ PERFORMANCE: Get ALL metadata in ONE API call
       const allMetadata = await getAllFolderMetadata(folderPath);
-
-     // const pathParts = props.listName.split('/');
-      //let libraryName = pathParts[0] || 'Documents';
+      const folderNameLookup = allMetadata.__folderNameLookup || {};
 
       const folderGroups: { [key: string]: { documents: IDocument[], folderPath: string, orderBy?: number } } = {};
 
-      // Process root files
       if (files.length > 0) {
         const mappedDocuments = await getDocumentsWithRealUsers(files, allMetadata);
         const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
@@ -355,14 +374,15 @@ const getDocumentsWithRealUsers = async (
         };
       }
 
-      // ✅ OPTIMIZED: Process subfolders in parallel
       const subfolderPromises = subfolders.map(async (subfolder: any) => {
         const subfolderName = subfolder.Name;
         const subfolderPath = subfolder.ServerRelativeUrl;
 
         try {
-          //const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated`;
-          const subfolderUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')/Files?$select=Name,ServerRelativeUrl,UniqueId,TimeLastModified,TimeCreated,FileLeafRef`;
+          const subfolderUrl =
+            `${props.context.pageContext.web.absoluteUrl}` +
+            `/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(subfolderPath)}')` +
+            `/Files?$expand=ListItemAllFields`;
 
           const subfolderResponse = await props.context.spHttpClient.get(
             subfolderUrl,
@@ -374,15 +394,30 @@ const getDocumentsWithRealUsers = async (
             const subfolderFiles = subfolderData.value || [];
 
             if (subfolderFiles.length > 0) {
-              // ✅ Use pre-fetched metadata (already includes subfolders)
               const mappedDocuments = await getDocumentsWithRealUsers(subfolderFiles, allMetadata);
               const sortedDocuments = sortDocumentsByOrderOnly(mappedDocuments);
 
-              // Get folder OrderBy from metadata
-              let folderOrderBy: number | undefined = undefined;
-              const folderKey = subfolderPath.toLowerCase();
-              if (allMetadata[folderKey] && allMetadata[folderKey].OrderBy !== undefined) {
-                folderOrderBy = parseInt(String(allMetadata[folderKey].OrderBy), 10);
+              let folderOrderBy: number = 999;
+
+              const searchKeys = [
+                subfolderName.toLowerCase().trim(),
+                subfolderName.toLowerCase().replace(/\s+/g, '-'),
+                subfolderName.toLowerCase().replace(/-/g, ' '),
+                subfolderName.toLowerCase().replace(/[\s-]+/g, '')
+              ];
+
+              for (const searchKey of searchKeys) {
+                if (folderNameLookup[searchKey]) {
+                  folderOrderBy = folderNameLookup[searchKey].OrderBy ?? 999;
+                  break;
+                }
+              }
+
+              if (folderOrderBy === 999) {
+                const pathKey = subfolderPath.toLowerCase();
+                if (allMetadata[pathKey]) {
+                  folderOrderBy = allMetadata[pathKey].OrderBy ?? 999;
+                }
               }
 
               return {
@@ -394,15 +429,13 @@ const getDocumentsWithRealUsers = async (
             }
           }
         } catch (error) {
-          console.error(`Error processing subfolder ${subfolderName}:`, error);
+          console.error(`❌ Error processing subfolder ${subfolderName}:`, error);
         }
         return null;
       });
 
-      // ✅ Wait for all subfolders in parallel
       const resolvedSubfolders = await Promise.all(subfolderPromises);
 
-      // Add valid subfolders to groups
       resolvedSubfolders.forEach(subfolder => {
         if (subfolder && subfolder.documents.length > 0) {
           folderGroups[subfolder.name] = {
@@ -417,12 +450,14 @@ const getDocumentsWithRealUsers = async (
 
       for (const folderName of Object.keys(folderGroups)) {
         const sortedDocs = sortDocumentsByOrderOnly(folderGroups[folderName].documents);
+        const folderOrderBy = folderGroups[folderName].orderBy ?? 999;
+
         foldersWithDocs.push({
           name: folderName,
           documents: sortedDocs.slice(0, 4),
           allDocuments: sortedDocs,
           folderPath: folderGroups[folderName].folderPath,
-          orderBy: folderGroups[folderName].orderBy
+          orderBy: folderOrderBy
         });
       }
 
@@ -443,65 +478,14 @@ const getDocumentsWithRealUsers = async (
         setTimeout(() => setMessage(''), 5000);
       }
     } catch (error: any) {
-      console.error('Error in processFolderData:', error);
+      console.error('❌ Error in processFolderData:', error);
       setMessage(`❌ Error processing folder data: ${error.message || 'Unknown error'}`);
       setTimeout(() => setMessage(''), 8000);
       setFoldersWithDocuments([]);
     }
   };
 
-  // const mapFileToDocument = (file: any): IDocument => {
-  //   const fileName: string = file.Name || file.LeafRef || 'Unknown';
-  //   const fileType: string = fileName.split('.').pop() || 'file';
-
-  //   let modifiedBy = 'Unknown';
-  //   let orderBy: number = 999;
-
-  //   if (file.ModifiedBy && file.ModifiedBy.Title) {
-  //     modifiedBy = file.ModifiedBy.Title.trim();
-  //   } else if (file.Author && file.Author.Title) {
-  //     modifiedBy = file.Author.Title.trim();
-  //   }
-
-  //   if (modifiedBy !== 'Unknown' && modifiedBy.includes('@')) {
-  //     modifiedBy = modifiedBy.split('@')[0];
-  //   }
-
-  //   if (file.OrderBy !== null && file.OrderBy !== undefined) {
-  //     const parsed = parseInt(file.OrderBy, 10);
-  //     if (!isNaN(parsed)) {
-  //       orderBy = parsed;
-  //     }
-  //   }
-
-  //   let documentUrl = '#';
-  //   if (file.ServerRelativeUrl) {
-  //     documentUrl = `${window.location.protocol}//${window.location.host}${file.ServerRelativeUrl}`;
-  //   }
-
-  //   const modifiedDate = file.TimeLastModified ? new Date(file.TimeLastModified) : new Date();
-  //   const createdDate = file.TimeCreated ? new Date(file.TimeCreated) : modifiedDate;
-
-  //   let description = fileName.replace(/\.[^/.]+$/, "") || 'No description available';
-
-  //   return {
-  //     id: file.UniqueId || Math.random().toString(),
-  //     name: fileName.replace(/\.[^/.]+$/, ""),
-  //     fileType: fileType,
-  //     modified: formatDate(modifiedDate),
-  //     modifiedBy: modifiedBy,
-  //     serverRelativeUrl: documentUrl,
-  //     downloadUrl: file.ServerRelativeUrl || '#',
-  //     iconName: getFileIcon(fileType),
-  //     description: description,
-  //     createdDate: formatDate(createdDate),
-  //     modifiedTimestamp: modifiedDate.getTime(),
-  //     createdTimestamp: createdDate.getTime(),
-  //     orderBy: orderBy
-  //   } as any;
-  // };
-
-  const handleDocumentClick = (doc: IDocument): void => {
+  const handleDocumentClick = async (doc: IDocument): Promise<void> => {
     if (!doc.serverRelativeUrl || doc.serverRelativeUrl === '#') {
       setMessage('❌ Document URL not available');
       setTimeout(() => setMessage(''), 3000);
@@ -509,16 +493,32 @@ const getDocumentsWithRealUsers = async (
     }
 
     try {
-      window.open(doc.serverRelativeUrl, '_blank');
-    } catch {
+      if (doc.fileType === 'url' || doc.iconName === 'Globe') {
+        let urlToOpen = doc.serverRelativeUrl;
+
+        if (urlToOpen.includes('.sharepoint.com') && urlToOpen.includes('.url')) {
+          const originalUrl = (doc as any).originalServerRelativeUrl || doc.serverRelativeUrl;
+          const extractedUrl = await extractUrlFromFile(originalUrl);
+
+          if (extractedUrl) {
+            urlToOpen = extractedUrl;
+          }
+        }
+
+        window.open(urlToOpen, '_blank', 'noopener,noreferrer');
+      } else {
+        window.open(doc.serverRelativeUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening document:', error);
       setMessage('❌ Unable to open document. Please check your permissions.');
       setTimeout(() => setMessage(''), 5000);
     }
   };
 
   const getFileIcon = (fileType: string): string => {
-    const type = (fileType || '').toLowerCase();
-    switch (type) {
+    switch (fileType.toLowerCase()) {
+      case 'url': return 'Globe';
       case 'pdf': return 'PDF';
       case 'doc':
       case 'docx': return 'WordDocument';
@@ -530,65 +530,39 @@ const getDocumentsWithRealUsers = async (
     }
   };
 
-  const handleDownloadDocument = (doc: IDocument): void => {
-    if (doc.downloadUrl && doc.downloadUrl !== '#') {
-      const downloadUrl = doc.downloadUrl.startsWith('http') ? doc.downloadUrl : `${window.location.protocol}//${window.location.host}${doc.downloadUrl}`;
+  const handleDownloadDocument = async (doc: IDocument): Promise<void> => {
+    if (doc.fileType === 'url') {
+      await handleDocumentClick(doc);
+      return;
+    }
 
-      const link = window.document.createElement('a');
+    if (doc.downloadUrl) {
+      const downloadUrl = doc.downloadUrl.startsWith('http')
+        ? doc.downloadUrl
+        : `${window.location.protocol}//${window.location.host}${doc.downloadUrl}`;
+
+      const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `${doc.name}.${doc.fileType}`;
-      link.style.display = 'none';
-
-      window.document.body.appendChild(link);
+      document.body.appendChild(link);
       link.click();
-      window.document.body.removeChild(link);
-
-      setMessage(`Downloading ${doc.name}...`);
-      setTimeout(() => setMessage(''), 3000);
-    } else {
-      setMessage('Download not available for this document');
-      setTimeout(() => setMessage(''), 3000);
+      document.body.removeChild(link);
     }
   };
+
+  // ─── SHARE FUNCTIONS ───────────────────────────────────────────────────────
 
   const handleShareDocument = (doc: IDocument): void => {
-    if ((window as any).SP && (window as any).SP.UI && (window as any).SP.UI.ModalDialog) {
-      try {
-        const shareUrl = doc.serverRelativeUrl || window.location.href;
-        const options = {
-          url: `${props.context.pageContext.web.absoluteUrl}/_layouts/15/sharedialog.aspx?obj=${encodeURIComponent(shareUrl)}&ma=0`,
-          title: 'Share Document',
-          allowMaximize: false,
-          showClose: true,
-          width: 600,
-          height: 650
-        };
-        (window as any).SP.UI.ModalDialog.showModalDialog(options);
-        setMessage(`Opening SharePoint sharing for "${doc.name}"`);
-        setTimeout(() => setMessage(''), 3000);
-      } catch {
-        fallbackShare(doc);
-      }
-    } else {
-      fallbackShare(doc);
-    }
+    setShareDoc(doc);
+    setShowSharePanel(true);
   };
 
-  const fallbackShare = (doc: IDocument): void => {
+  const getEncodedUrl = (doc: IDocument): string => {
     const shareUrl = doc.serverRelativeUrl || window.location.href;
-    const shareData = {
-      title: doc.name,
-      text: `Check out this document: ${doc.name}`,
-      url: shareUrl
-    };
-
-    if (navigator.share) {
-      navigator.share(shareData).catch(() => {
-        copyToClipboard(shareUrl, doc.name);
-      });
-    } else {
-      copyToClipboard(shareUrl, doc.name);
-    }
+    const absoluteUrl = shareUrl.startsWith('http')
+      ? shareUrl
+      : `${window.location.protocol}//${window.location.host}${shareUrl}`;
+    return absoluteUrl.replace(/ /g, '%20');
   };
 
   const copyToClipboard = (url: string, documentName: string): void => {
@@ -616,6 +590,48 @@ const getDocumentsWithRealUsers = async (
       window.document.body.removeChild(textArea);
     }
   };
+
+  // Opens Outlook desktop app via mailto with URL on its own line
+  const openOutlookAppShare = async (doc: IDocument, encodedUrl: string): Promise<void> => {
+  const displayName = doc.name || (doc as any).title;
+  const subject = encodeURIComponent(`Sharing: ${displayName}`);
+
+  let shareUrl = encodedUrl;
+
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(encodedUrl)}`);
+    if (res.ok) {
+      const short = await res.text();
+      if (short.startsWith('https://tinyurl.com')) {
+        shareUrl = short.trim();
+      }
+    }
+  } catch (e) { /* fallback */ }
+
+  const body = encodeURIComponent(`Hi,\r\n\r\nPlease find the link below:\r\n\r\n${displayName}\r\n${shareUrl} \r\n\r\nBest regards,`);
+
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  setShowSharePanel(false);
+};
+
+  // Opens Outlook Web (OWA) with proper HTML hyperlink
+  // const openOutlookWebShare = (doc: IDocument, encodedUrl: string): void => {
+  //   const displayName = doc.name;
+  //   const subject = encodeURIComponent(`Sharing: ${displayName}`);
+  //   const htmlBody = encodeURIComponent(
+  //     `<p>Hi,</p>` +
+  //     `<p>Please find the link below:</p>` +
+  //     `<p><b>${displayName}</b></p>` +
+  //     `<p><a href="${encodedUrl}" style="color:#0078d4;text-decoration:underline;">Click here to view</a></p>` +
+  //     `<p>Kindly let me know if you face any access issues.</p>` +
+  //     `<p>Best regards,</p>`
+  //   );
+  //   const owaUrl = `https://outlook.office365.com/mail/deeplink/compose?subject=${subject}&body=${htmlBody}&ishtml=true`;
+  //   window.open(owaUrl, '_blank', 'noopener,noreferrer');
+  //   setShowSharePanel(false);
+  // };
+
+  // ─── END SHARE FUNCTIONS ───────────────────────────────────────────────────
 
   const handleSelectAllChange = (): void => {
     const newSelectAll = !selectAllChecked;
@@ -675,6 +691,7 @@ const getDocumentsWithRealUsers = async (
         text: 'View',
         iconProps: { iconName: 'View' },
         onClick: () => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
           handleDocumentClick(selectedDocument);
           dismissContextMenu();
         }
@@ -690,9 +707,10 @@ const getDocumentsWithRealUsers = async (
       },
       {
         key: 'export',
-        text: 'Export',
-        iconProps: { iconName: 'Download' },
+        text: selectedDocument.fileType === 'url' ? 'Open Link' : 'Export',
+        iconProps: { iconName: selectedDocument.fileType === 'url' ? 'Globe' : 'Download' },
         onClick: () => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
           handleDownloadDocument(selectedDocument);
           dismissContextMenu();
         }
@@ -711,6 +729,111 @@ const getDocumentsWithRealUsers = async (
     ];
   };
 
+  // ─── SHARE PANEL JSX ──────────────────────────────────────────────────────
+  const renderSharePanel = (): JSX.Element | null => {
+    if (!showSharePanel || !shareDoc) return null;
+
+    const encodedUrl = getEncodedUrl(shareDoc);
+
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }} onClick={() => setShowSharePanel(false)}>
+        <div style={{
+          background: '#fff', borderRadius: '12px', padding: '24px',
+          width: '380px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+        }} onClick={(e) => e.stopPropagation()}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontWeight: 600, fontSize: '16px' }}>Share</span>
+            <button onClick={() => setShowSharePanel(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#605e5c' }}>✕</button>
+          </div>
+
+          <p style={{ fontSize: '13px', color: '#605e5c', marginBottom: '20px', wordBreak: 'break-all' }}>
+            {shareDoc.name}
+          </p>
+
+          {/* Share icons */}
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '24px', flexWrap: 'wrap' }}>
+
+            {/* Outlook Desktop */}
+            <div style={{ textAlign: 'center', cursor: 'pointer' }}
+              onClick={() => { void openOutlookAppShare(shareDoc, encodedUrl); }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#0078d4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
+                <Icon iconName="OutlookLogo" style={{ fontSize: 24, color: '#fff' }} />
+              </div>
+              <span style={{ fontSize: '11px' }}>Outlook<br />App</span>
+            </div>
+
+            {/* Outlook Web */}
+            {/* <div style={{ textAlign: 'center', cursor: 'pointer' }}
+              onClick={() => openOutlookWebShare(shareDoc, encodedUrl)}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#005a9e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
+                <Icon iconName="OutlookLogo" style={{ fontSize: 24, color: '#fff' }} />
+              </div>
+              <span style={{ fontSize: '11px' }}>Outlook<br />Web</span>
+            </div> */}
+
+            {/* Teams */}
+            <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => {
+              const url = `https://teams.microsoft.com/share?href=${encodeURIComponent(encodedUrl)}&msgText=${encodeURIComponent(`Check out: ${shareDoc.name}`)}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+              setShowSharePanel(false);
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#6264a7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
+                <Icon iconName="TeamsLogo" style={{ fontSize: 24, color: '#fff' }} />
+              </div>
+              <span style={{ fontSize: '11px' }}>Teams</span>
+            </div>
+
+            {/* WhatsApp */}
+            <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => {
+              const url = `https://wa.me/?text=${encodeURIComponent(`${shareDoc.name}\n${encodedUrl}`)}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+              setShowSharePanel(false);
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#25d366', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
+                <Icon iconName="Chat" style={{ fontSize: 24, color: '#fff' }} />
+              </div>
+              <span style={{ fontSize: '11px' }}>WhatsApp</span>
+            </div>
+
+            {/* Gmail */}
+            <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => {
+              const url = `https://mail.google.com/mail/?view=cm&su=${encodeURIComponent(`Sharing: ${shareDoc.name}`)}&body=${encodeURIComponent(`Hi,\n\nPlease find the link below:\n${shareDoc.name}\n${encodedUrl}\n\nBest regards`)}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+              setShowSharePanel(false);
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#ea4335', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px' }}>
+                <Icon iconName="Mail" style={{ fontSize: 24, color: '#fff' }} />
+              </div>
+              <span style={{ fontSize: '11px' }}>Gmail</span>
+            </div>
+          </div>
+
+          {/* Copy Link */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            border: '1px solid #edebe9', borderRadius: '6px', padding: '10px 12px'
+          }}>
+            <span style={{ flex: 1, fontSize: '12px', color: '#605e5c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {encodedUrl}
+            </span>
+            <PrimaryButton text="Copy" onClick={() => {
+              copyToClipboard(encodedUrl, shareDoc.name);
+              setShowSharePanel(false);
+            }} styles={{ root: { minWidth: '60px', height: '28px', padding: '0 12px' } }} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+  // ─── END SHARE PANEL ──────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <div className={styles.documentLibrary}>
@@ -725,18 +848,8 @@ const getDocumentsWithRealUsers = async (
           padding: '60px 20px',
           textAlign: 'center'
         }}>
-          <Icon
-            iconName="DocumentSet"
-            style={{
-              fontSize: '48px',
-              color: '#0078d4',
-              marginBottom: '16px',
-              opacity: 0.8
-            }}
-          />
-          <p style={{ fontSize: '16px', color: '#605e5c', margin: 0 }}>
-            Loading documents...
-          </p>
+          <Icon iconName="DocumentSet" style={{ fontSize: '48px', color: '#0078d4', marginBottom: '16px', opacity: 0.8 }} />
+          <p style={{ fontSize: '16px', color: '#605e5c', margin: 0 }}>Loading documents...</p>
         </div>
       </div>
     );
@@ -746,49 +859,17 @@ const getDocumentsWithRealUsers = async (
     return (
       <div className={styles.documentLibrary}>
         {message && (
-          <MessageBar
-            messageBarType={message.includes('❌') ? MessageBarType.error : MessageBarType.warning}
-            isMultiline={false}
-          >
+          <MessageBar messageBarType={message.includes('❌') ? MessageBarType.error : MessageBarType.warning} isMultiline={false}>
             {message}
           </MessageBar>
         )}
-
         <div className={styles.mainHeader}>
           <h2 className={styles.mainTitle}>{pageTitle}</h2>
         </div>
-
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '60px 20px',
-          textAlign: 'center'
-        }}>
-          <Icon
-            iconName="DocumentSet"
-            style={{
-              fontSize: '64px',
-              color: '#a19f9d',
-              marginBottom: '24px'
-            }}
-          />
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: 600,
-            color: '#323130',
-            margin: '0 0 16px 0'
-          }}>
-            No documents found
-          </h3>
-          <p style={{
-            fontSize: '16px',
-            color: '#605e5c',
-            margin: '8px 0',
-            maxWidth: '400px',
-            lineHeight: 1.5
-          }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' }}>
+          <Icon iconName="DocumentSet" style={{ fontSize: '64px', color: '#a19f9d', marginBottom: '24px' }} />
+          <h3 style={{ fontSize: '24px', fontWeight: 600, color: '#323130', margin: '0 0 16px 0' }}>No documents found</h3>
+          <p style={{ fontSize: '16px', color: '#605e5c', margin: '8px 0', maxWidth: '400px', lineHeight: 1.5 }}>
             There are no documents in this folder.
           </p>
         </div>
@@ -800,19 +881,12 @@ const getDocumentsWithRealUsers = async (
     return (
       <div className={styles.documentLibrary}>
         {message && (
-          <MessageBar messageBarType={MessageBarType.success} isMultiline={false}>
-            {message}
-          </MessageBar>
+          <MessageBar messageBarType={MessageBarType.success} isMultiline={false}>{message}</MessageBar>
         )}
 
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <Icon
-              iconName="ChevronLeft"
-              className={styles.backIcon}
-              onClick={handleBackClick}
-              style={{ cursor: 'pointer', marginRight: '12px' }}
-            />
+            <Icon iconName="ChevronLeft" className={styles.backIcon} onClick={handleBackClick} style={{ cursor: 'pointer', marginRight: '12px' }} />
             <h2 className={styles.mainTitle}>{pageTitle}</h2>
           </div>
         </div>
@@ -833,14 +907,7 @@ const getDocumentsWithRealUsers = async (
               <div className={styles.documentsTable}>
                 <div className={styles.tableHeader}>
                   <div className={styles.headerCell}>
-                    <div
-                      className={styles.checkbox}
-                      onClick={handleSelectAllChange}
-                      role="checkbox"
-                      tabIndex={0}
-                      aria-checked={selectAllChecked}
-                      aria-label="Select all documents"
-                    >
+                    <div className={styles.checkbox} onClick={handleSelectAllChange} role="checkbox" tabIndex={0} aria-checked={selectAllChecked} aria-label="Select all documents">
                       {selectAllChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
                     </div>
                     <span>Name</span>
@@ -851,47 +918,25 @@ const getDocumentsWithRealUsers = async (
                     <Icon iconName="ChevronDown" className={styles.sortIcon} />
                   </div>
                   <div className={styles.headerCell}>
-                    <span>Modified By</span>
-                    <Icon iconName="ChevronDown" className={styles.sortIcon} />
-                  </div>
-                  <div className={styles.headerCell}>
                     <span>Actions</span>
                   </div>
                 </div>
 
                 <div className={styles.tableBody}>
-                  {sortDocumentsByOrderOnly(currentDocuments).map((doc: IDocument) => {
+                  {currentDocuments.map((doc: IDocument) => {
                     const isChecked = checkedItems.has(String(doc.id));
                     return (
-                      <div
-                        key={String(doc.id)}
-                        className={`${styles.tableRow} ${isChecked ? styles.selected : ''}`}
-                      >
+                      <div key={String(doc.id)} className={`${styles.tableRow} ${isChecked ? styles.selected : ''}`}>
                         <div className={styles.nameCell}>
-                          <div
-                            className={styles.checkbox}
-                            onClick={() => handleCheckboxChange(String(doc.id))}
-                            role="checkbox"
-                            tabIndex={0}
-                            aria-checked={isChecked}
-                          >
+                          <div className={styles.checkbox} onClick={() => handleCheckboxChange(String(doc.id))} role="checkbox" tabIndex={0} aria-checked={isChecked}>
                             {isChecked && <Icon iconName="CheckMark" className={styles.checkIcon} />}
                           </div>
                           <Icon iconName={doc.iconName} className={styles.fileIcon} />
-                          <span
-                            className={styles.fileName}
-                            onClick={() => handleDocumentClick(doc)}
-                            style={{ cursor: 'pointer', color: '#000' }}
-                          >
+                          <span className={styles.fileName} onClick={() => handleDocumentClick(doc)} style={{ cursor: 'pointer', color: '#000' }}>
                             {doc.name}
                           </span>
                         </div>
-                        <div className={styles.dataCell}>
-                          {doc.modified}
-                        </div>
-                        <div className={styles.dataCell}>
-                          {doc.modifiedBy}
-                        </div>
+                        <div className={styles.dataCell}>{doc.modified}</div>
                         <div className={styles.actionsCell}>
                           <IconButton
                             iconProps={{ iconName: 'MoreVertical' }}
@@ -910,13 +955,10 @@ const getDocumentsWithRealUsers = async (
         </div>
 
         {contextMenuTarget && (
-          <ContextualMenu
-            items={getContextMenuItems()}
-            target={contextMenuTarget}
-            onDismiss={dismissContextMenu}
-            directionalHint={6}
-          />
+          <ContextualMenu items={getContextMenuItems()} target={contextMenuTarget} onDismiss={dismissContextMenu} directionalHint={6} />
         )}
+
+        {renderSharePanel()}
       </div>
     );
   }
@@ -924,10 +966,7 @@ const getDocumentsWithRealUsers = async (
   return (
     <div className={styles.documentLibrary}>
       {message && (
-        <MessageBar
-          messageBarType={message.includes('Failed') || message.includes('❌') ? MessageBarType.error : MessageBarType.success}
-          isMultiline={false}
-        >
+        <MessageBar messageBarType={message.includes('Failed') || message.includes('❌') ? MessageBarType.error : MessageBarType.success} isMultiline={false}>
           {message}
         </MessageBar>
       )}
@@ -945,60 +984,38 @@ const getDocumentsWithRealUsers = async (
           <div key={folder.name} className={styles.folderSection}>
             <div className={styles.folderHeader}>
               <h3 className={styles.folderTitle}>{folder.name}</h3>
-              <PrimaryButton
-                className={styles.viewAllButton}
-                text="View all"
-                onClick={() => handleViewAll(folder.name)}
-              />
+              <PrimaryButton className={styles.viewAllButton} text="View all" onClick={() => handleViewAll(folder.name)} />
             </div>
 
             <div className={styles.documentsGrid}>
-              {folder.documents
-                .sort((a, b) => {
-                  const aOrder = (a as any).orderBy !== undefined ? (a as any).orderBy : 999;
-                  const bOrder = (b as any).orderBy !== undefined ? (b as any).orderBy : 999;
-                  return aOrder - bOrder;
-                })
-                .map((doc: IDocument) => (
-                  <div key={String(doc.id)} className={styles.documentCard}>
-                    <div className={styles.cardContent}>
-                      <h4
-                        className={styles.documentTitle}
-                        onClick={() => handleDocumentClick(doc)}
-                        style={{ cursor: 'pointer', color: '#000' }}
-                      >
-                        {doc.name}
-                      </h4>
-                      <p className={styles.documentMeta}>
-                        Modified {doc.modified}
-                      </p>
-                      <p className={styles.documentDescription}>
-                        {doc.description}
-                      </p>
-                    </div>
-
-                    <div className={styles.cardActions}>
-                      <button
-                        className={styles.cardActionButton}
-                        onClick={() => handleDownloadDocument(doc)}
-                      >
-                        <Icon iconName="Download" className={styles.actionIcon} />
-                        Export
-                      </button>
-                      <button
-                        className={styles.cardActionButton}
-                        onClick={() => handleShareDocument(doc)}
-                      >
-                        <Icon iconName="Share" className={styles.actionIcon} />
-                        Share
-                      </button>
-                    </div>
+              {folder.documents.map((doc: IDocument) => (
+                <div key={String(doc.id)} className={styles.documentCard}>
+                  <div className={styles.cardContent}>
+                    <h4 className={styles.documentTitle} onClick={() => handleDocumentClick(doc)} style={{ cursor: 'pointer', color: '#000' }}>
+                      {doc.name}
+                    </h4>
+                    <p className={styles.documentMeta}>Modified {doc.modified}</p>
+                    <p className={styles.documentDescription}>{doc.description}</p>
                   </div>
-                ))}
+
+                  <div className={styles.cardActions}>
+                    <button className={styles.cardActionButton} onClick={() => handleDownloadDocument(doc)}>
+                      <Icon iconName={doc.fileType === 'url' ? 'Globe' : 'Download'} className={styles.actionIcon} />
+                      {doc.fileType === 'url' ? 'Open Link' : 'Export'}
+                    </button>
+                    <button className={styles.cardActionButton} onClick={() => handleShareDocument(doc)}>
+                      <Icon iconName="Share" className={styles.actionIcon} />
+                      Share
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
+
+      {renderSharePanel()}
     </div>
   );
 };
