@@ -14,7 +14,7 @@ export class NavigationService {
   // ✅ Main navigation fetcher (hybrid: static + dynamic)
   public async getNavigationItems(): Promise<INavigationItem[]> {
     try {
-      const navListUrl = `${this.siteUrl}/_api/web/lists/getbytitle('Navigation%20Items')/items?$select=Id,Title,URL,Icon,Parent,Order0,Order,IsActive&$orderby=Id asc`;
+      const navListUrl = `${this.siteUrl}/_api/web/lists/getbytitle('Navigation%20Items')/items?$select=Id,Title,URL,Icon,Parent,Order0,Order,IsActive,Library&$orderby=Id asc`;
 
       const response = await this.spHttpClient.get(navListUrl, SPHttpClient.configurations.v1);
       if (!response.ok) {
@@ -30,33 +30,23 @@ export class NavigationService {
 
       const baseNavigation = this.buildNavigationTree(activeItems);
 
-      // ✅ Hybrid configuration for multiple libraries
-      const hybridConfigs = [
-        { name: "BullWealth", library: "BullWealth Documents" },
-        { name: "CAI", library: "Clover Documents" },
-       // { name: "HR & Finance", library: "HR & Finance" },
-        { name: "Mrked", library: "Mrked" },
-      ];
-
-      // Loop through each hybrid parent and attach its dynamic folders
-      for (const config of hybridConfigs) {
-        const parentNode = baseNavigation.find(
-          (n) => n.name.toLowerCase() === config.name.toLowerCase()
-        );
-
-        if (parentNode) {
-          const dynamicFolders = await this.getDynamicFoldersAndFiles(config.library);
-          if (dynamicFolders.length > 0) {
-
-            // Show dynamic folders first, then static ones (no separator)
-            parentNode.children = [
-              ...dynamicFolders.sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
-              ...(parentNode.children || []),
-            ];
-          }
+      // ✅ Data-driven: any top-level nav item whose "Library" field (set on the
+      // Navigation Items list) is populated gets its subfolders attached automatically.
+      // No code change is needed to enable this for a new section going forward —
+      // just set the Library column on that item in SharePoint.
+      for (const parentNode of baseNavigation as (INavigationItem & { library?: string })[]) {
+        const libraryName = parentNode.library;
+        if (!libraryName) {
+          continue;
         }
-        else {
-          console.warn(`⚠️ Parent ${config.name} not found in Navigation Items list`);
+
+        const dynamicFolders = await this.getDynamicFoldersAndFiles(libraryName);
+        if (dynamicFolders.length > 0) {
+          // Show dynamic folders first, then static ones (no separator)
+          parentNode.children = [
+            ...dynamicFolders.sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
+            ...(parentNode.children || []),
+          ];
         }
       }
 
@@ -145,6 +135,7 @@ export class NavigationService {
         icon: item.Icon || "Home",
         parent: item.Parent || null,
         order: item.Order0 || item.Order || index,
+        library: item.Library || undefined,
       };
     });
 
@@ -162,11 +153,12 @@ export class NavigationService {
             order: child.order,
           }));
 
-        const navItem: INavigationItem = {
+        const navItem: INavigationItem & { library?: string } = {
           name: parent.name,
           url: parent.url,
           icon: parent.icon,
           order: parent.order ?? 999,
+          library: parent.library,
         };
 
         if (subItems.length > 0) navItem.children = subItems;
