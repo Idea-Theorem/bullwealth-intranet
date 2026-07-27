@@ -1,116 +1,65 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-// Import main styles (this loads the font faces)
-import '../../styles/main.scss';
-
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneTextField,
-  PropertyPaneToggle
+  PropertyPaneToggle,
+  PropertyPaneSlider,
+  PropertyPaneButton,
+  PropertyPaneButtonType,
+  PropertyPaneLabel
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { IReadonlyTheme } from '@microsoft/sp-component-base';
-
-// Import PnP property controls
-import {
-  PropertyFieldFilePicker,
-  IFilePickerResult
-} from '@pnp/spfx-property-controls/lib/PropertyFieldFilePicker';
-
 import VideoBanner from './components/VideoBanner';
 import { IVideoBannerProps } from './components/IVideoBannerProps';
 
 export interface IVideoBannerWebPartProps {
-  title: string;
-  message: string;
-  buttonText: string;
-  videoUrl: string;
-  videoFile?: IFilePickerResult;
-  thumbnailUrl: string;
-  thumbnailFile?: IFilePickerResult;
-  backgroundImageUrl: string;
-  backgroundImageFile?: IFilePickerResult;
-  autoPlay: boolean;
-  showInModal: boolean;
+  description: string;
+  backgroundImages: string;
+  autoSlide: boolean;
+  slideInterval: number;
 }
 
 export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBannerWebPartProps> {
-
-  private _isDarkTheme: boolean = false;
-  private _environmentMessage: string = '';
+  
+  protected get disableReactivePropertyChanges(): boolean {
+    return true;
+  }
 
   public render(): void {
-    // Safe property access with optional chaining
-    const thumbnailUrl = this.properties.thumbnailFile?.fileAbsoluteUrl || this.properties.thumbnailUrl;
-    const backgroundImageUrl = this.properties.backgroundImageFile?.fileAbsoluteUrl || this.properties.backgroundImageUrl;
-    const videoUrl = this.properties.videoFile?.fileAbsoluteUrl || this.properties.videoUrl;
+    const bgImages = this.properties.backgroundImages 
+      ? this.properties.backgroundImages.split(',').map(url => url.trim()).filter(url => url.length > 0)
+      : [];
 
     const element: React.ReactElement<IVideoBannerProps> = React.createElement(
       VideoBanner,
       {
-        title: this.properties.title || 'Message from CEO',
-        message: this.properties.message || '"We wouldn\'t be where we are today without each and every one of you. Thank you for making us successful!"',
-        buttonText: this.properties.buttonText || 'Read More',
-        videoUrl: videoUrl || '',
-        thumbnailUrl: thumbnailUrl || '',
-        backgroundImageUrl: backgroundImageUrl || '',
-        autoPlay: this.properties.autoPlay || false,
-        showInModal: this.properties.showInModal !== false,
-        isDarkTheme: this._isDarkTheme,
-        environmentMessage: this._environmentMessage,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName
+        context: this.context,
+        backgroundImages: bgImages,
+        autoSlide: this.properties.autoSlide !== undefined ? this.properties.autoSlide : true,
+        slideInterval: this.properties.slideInterval || 5
       }
     );
-
+    
+    // Enable full-width rendering by removing container constraints
+    if (this.domElement) {
+      this.domElement.style.maxWidth = 'none';
+      this.domElement.style.width = '100%';
+    }
+    
+    if (this.domElement.parentElement) {
+      this.domElement.parentElement.style.maxWidth = 'none';
+      this.domElement.parentElement.style.padding = '0';
+      this.domElement.parentElement.style.margin = '0';
+    }
+    
+    // Also try to remove constraints from grandparent
+    if (this.domElement.parentElement?.parentElement) {
+      this.domElement.parentElement.parentElement.style.maxWidth = 'none';
+    }
+    
     ReactDom.render(element, this.domElement);
-  }
-
-  protected onInit(): Promise<void> {
-    return this._getEnvironmentMessage().then(message => {
-      this._environmentMessage = message;
-    });
-  }
-
-  private _getEnvironmentMessage(): Promise<string> {
-    if (!!this.context.sdks.microsoftTeams) {
-      return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
-        .then(context => {
-          let environmentMessage: string = '';
-          switch (context.app.host.name) {
-            case 'Office':
-              environmentMessage = 'Office';
-              break;
-            case 'Outlook':
-              environmentMessage = 'Outlook';
-              break;
-            case 'Teams':
-              environmentMessage = 'Teams';
-              break;
-            default:
-              environmentMessage = 'SharePoint';
-          }
-          return environmentMessage;
-        });
-    }
-
-    return Promise.resolve('SharePoint');
-  }
-
-  protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
-    if (!currentTheme) {
-      return;
-    }
-
-    this._isDarkTheme = !!currentTheme.isInverted;
-    const { semanticColors } = currentTheme;
-
-    if (semanticColors) {
-      this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
-      this.domElement.style.setProperty('--link', semanticColors.link || null);
-      this.domElement.style.setProperty('--linkHovered', semanticColors.linkHovered || null);
-    }
   }
 
   protected onDispose(): void {
@@ -121,123 +70,69 @@ export default class VideoBannerWebPart extends BaseClientSideWebPart<IVideoBann
     return Version.parse('1.0');
   }
 
+  private _openSiteAssets = (): void => {
+    const siteUrl = this.context.pageContext.web.absoluteUrl;
+    window.open(`${siteUrl}/SiteAssets/Forms/AllItems.aspx`, '_blank');
+  };
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
+    const imageCount = this.properties.backgroundImages 
+      ? this.properties.backgroundImages.split(',').filter(url => url.trim().length > 0).length 
+      : 0;
+
     return {
       pages: [
         {
           header: {
-            description: 'Configure Video Banner'
+            description: 'Video Banner - Content managed from "Archived-Messages" list'
           },
           groups: [
             {
-              groupName: 'Content Settings',
+              groupName: 'Information',
               groupFields: [
-                PropertyPaneTextField('title', {
-                  label: 'Title',
-                  placeholder: 'Message from CEO'
-                }),
-                PropertyPaneTextField('message', {
-                  label: 'Message',
+                PropertyPaneTextField('description', {
+                  label: 'All content is managed in the "Archived-Messages" SharePoint list.',
+                  value: 'Title, Content, PublishedDate, FeaturedImage, and NewsletterVideo columns.',
                   multiline: true,
-                  rows: 4,
-                  placeholder: 'Enter your message here'
-                }),
-                PropertyPaneTextField('buttonText', {
-                  label: 'Button Text',
-                  placeholder: 'Read More'
+                  disabled: true
                 })
               ]
             },
             {
-              groupName: 'Media Settings',
+              groupName: 'Background Carousel Settings',
               groupFields: [
-                // Video File Picker
-                PropertyFieldFilePicker('videoFile', {
-                  context: this.context as any,
-                  key: 'videoFilePicker',
-                  buttonLabel: 'Select Video',
-                  label: 'Video',
-                  accepts: ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'],
-                  buttonIcon: 'Video',
-                  onPropertyChange: this.onPropertyPaneFieldChanged.bind(this),
-                  properties: this.properties,
-                  filePickerResult: this.properties.videoFile || ({} as IFilePickerResult),
-                  onSave: (filePickerResult: IFilePickerResult) => {
-                    this.properties.videoFile = filePickerResult;
-                    this.render();
-                  },
-                  onChanged: (filePickerResult: IFilePickerResult) => {
-                    this.properties.videoFile = filePickerResult;
-                  },
-                  hideStockImages: true,
-                  hideWebSearchTab: true
+                PropertyPaneLabel('imageCount', {
+                  text: `Currently selected: ${imageCount} image(s)`
                 }),
-                PropertyPaneTextField('videoUrl', {
-                  label: 'Or Video URL',
-                  placeholder: 'https://your-video-url.mp4 or YouTube/Stream URL'
+                PropertyPaneButton('openLibrary', {
+                  text: '📁 Open SharePoint Image Library',
+                  buttonType: PropertyPaneButtonType.Primary,
+                  onClick: this._openSiteAssets
                 }),
-                
-                // Thumbnail File Picker
-                PropertyFieldFilePicker('thumbnailFile', {
-                  context: this.context as any,
-                  key: 'thumbnailFilePicker',
-                  buttonLabel: 'Select Thumbnail',
-                  label: 'Video Thumbnail',
-                  accepts: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'],
-                  buttonIcon: 'FileImage',
-                  onPropertyChange: this.onPropertyPaneFieldChanged.bind(this),
-                  properties: this.properties,
-                  filePickerResult: this.properties.thumbnailFile || ({} as IFilePickerResult),
-                  onSave: (filePickerResult: IFilePickerResult) => {
-                    this.properties.thumbnailFile = filePickerResult;
-                    this.render();
-                  },
-                  onChanged: (filePickerResult: IFilePickerResult) => {
-                    this.properties.thumbnailFile = filePickerResult;
-                  }
+                PropertyPaneLabel('instructions', {
+                  text: 'Steps: 1) Click button above 2) Upload/select images 3) Right-click → Copy link 4) Paste URLs below'
                 }),
-                PropertyPaneTextField('thumbnailUrl', {
-                  label: 'Or Thumbnail URL',
-                  placeholder: 'https://your-site/thumbnail.jpg'
+                PropertyPaneTextField('backgroundImages', {
+                  label: 'Background Image URLs (comma-separated)',
+                  description: 'Paste image URLs from SharePoint, separated by commas',
+                  value: this.properties.backgroundImages || '',
+                  multiline: true,
+                  rows: 6,
+                  placeholder: 'https://tenant.sharepoint.com/sites/site/SiteAssets/bg1.jpg,\nhttps://tenant.sharepoint.com/sites/site/SiteAssets/bg2.jpg,\nhttps://tenant.sharepoint.com/sites/site/SiteAssets/bg3.jpg'
                 }),
-
-                // Background Image File Picker
-                PropertyFieldFilePicker('backgroundImageFile', {
-                  context: this.context as any,
-                  key: 'backgroundImageFilePicker',
-                  buttonLabel: 'Select Background Image',
-                  label: 'Background Image',
-                  accepts: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'],
-                  buttonIcon: 'Photo2',
-                  onPropertyChange: this.onPropertyPaneFieldChanged.bind(this),
-                  properties: this.properties,
-                  filePickerResult: this.properties.backgroundImageFile || ({} as IFilePickerResult),
-                  onSave: (filePickerResult: IFilePickerResult) => {
-                    this.properties.backgroundImageFile = filePickerResult;
-                    this.render();
-                  },
-                  onChanged: (filePickerResult: IFilePickerResult) => {
-                    this.properties.backgroundImageFile = filePickerResult;
-                  }
+                PropertyPaneToggle('autoSlide', {
+                  label: 'Auto-advance slides',
+                  checked: this.properties.autoSlide !== undefined ? this.properties.autoSlide : true,
+                  onText: 'On',
+                  offText: 'Off'
                 }),
-                PropertyPaneTextField('backgroundImageUrl', {
-                  label: 'Or Background Image URL',
-                  placeholder: 'https://your-site/background.jpg'
-                })
-              ]
-            },
-            {
-              groupName: 'Display Settings',
-              groupFields: [
-                PropertyPaneToggle('showInModal', {
-                  label: 'Play video in modal',
-                  onText: 'Modal',
-                  offText: 'Inline'
-                }),
-                PropertyPaneToggle('autoPlay', {
-                  label: 'Auto-play video',
-                  onText: 'Yes',
-                  offText: 'No'
+                PropertyPaneSlider('slideInterval', {
+                  label: 'Slide interval (seconds)',
+                  min: 3,
+                  max: 15,
+                  step: 1,
+                  value: this.properties.slideInterval || 5,
+                  showValue: true
                 })
               ]
             }

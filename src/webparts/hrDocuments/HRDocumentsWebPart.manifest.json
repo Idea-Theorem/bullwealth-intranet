@@ -14,7 +14,7 @@
     "group": { "default": "Advanced" },
     "title": { "default": "HR Documents" },
     "description": { "default": "Display HR documents with customizable icons" },
-    "officeFabricIconFontName": "DocumentSet",
+    "iconImageUrl":"https://woodbine.blob.core.windows.net/assets/logo.svg",
     "properties": {
       "title": "Common HR Documents",
       "columnsPerRow": 4,

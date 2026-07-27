@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import styles from './EmployeeDirectory.module.scss';
@@ -7,226 +9,193 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import { Spinner } from '@fluentui/react/lib/Spinner';
 
 const EmployeeDirectory: React.FC<IEmployeeDirectoryProps> = (props) => {
-  const [allEmployees, setAllEmployees] = useState<IEmployee[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [employees, setEmployees] = useState<IEmployee[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const employeesPerPage = 4; // Show 4 employees per page
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const cardsPerPage = props.maxEmployeesToShow || 5;
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    fetchEmployees().catch((err) => {
-      console.error('Error in fetchEmployees:', err);
-    });
-  }, []);
-
-  const fetchEmployees = async (): Promise<void> => {
-    try {
+    const fetchEmployees = async () => {
       setLoading(true);
-      
-      // Try to get from SharePoint User Information List
-      const usersUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/siteusers?$filter=PrincipalType eq 1&$select=Id,Title,Email,JobTitle,Picture&$top=50`;
-      
-      const response: SPHttpClientResponse = await props.context.spHttpClient.get(
-        usersUrl,
-        SPHttpClient.configurations.v1
-      );
+      try {
+        // ✅ Build filter query based on selected company
+        let filterQuery = '';
+        if (props.selectedCompany && props.selectedCompany !== 'All') {
+          filterQuery = `&$filter=CompanyName eq '${props.selectedCompany.replace(/'/g, "''")}'`;
+        }
 
-      if (response.ok) {
-        const data = await response.json();
+        const url = `${props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(props.listName)}')/items?$select=Id,Title,Email,CompanyName,GroupName&$top=1000${filterQuery}`;
+        console.log('Fetching employees from:', url);
         
-        if (data.value && data.value.length > 0) {
-          // Map SharePoint users to our employee interface
-          const sharePointEmployees: IEmployee[] = data.value
-            .filter((user: any) => user.Email && user.Email.indexOf('@') > -1) // Only users with valid emails
-            .map((user: any, index: number) => ({
-              id: user.Id || index + 1,
-              name: user.Title || 'Unknown User',
-              title: user.JobTitle || 'Employee',
-              email: user.Email,
-              phone: '555-123-4567', // Default phone since SP doesn't have this in user info
-              profileImage: user.Picture || `/_layouts/15/userphoto.aspx?size=L&username=${user.Email}`,
-              department: 'General'
-            }));
-
-          setAllEmployees(sharePointEmployees);
+        const response: SPHttpClientResponse = await props.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Data received:', data);
+          
+          // ✅ Map and sort alphabetically
+          const employeeList: IEmployee[] = Array.isArray(data.value) 
+            ? data.value
+                .map((item: any, idx: number) => ({
+                  id: item.Id || idx + 1,
+                  name: item.Title || "Unknown Employee",
+                  title: item.CompanyName || "Employee",
+                  email: item.Email || "employee@company.com",
+                  phone: "",
+                  profileImage: '',
+                  groupName: item.GroupName || "General"
+                }))
+                .sort((a: IEmployee, b: IEmployee) => a.name.localeCompare(b.name))
+            : [];
+          
+          console.log(`Processed ${employeeList.length} employees`);
+          setEmployees(employeeList);
+          
         } else {
-          // Fallback to demo data if no SharePoint users found
-          throw new Error('No users found in SharePoint');
+          const errorText = await response.text();
+          console.error('Error fetching employees:', response.status, errorText);
+          setEmployees([]);
         }
-      } else {
-        throw new Error('Failed to fetch from SharePoint');
+      } catch (error) {
+        console.error('Exception fetching employees:', error);
+        setEmployees([]);
       }
-    } catch (err: any) {
-      console.error('Error fetching employees, using demo data:', err);
       
-      // Fallback demo data - more realistic variety
-      const demoEmployees: IEmployee[] = [
-        {
-          id: 1,
-          name: 'Sarah Johnson',
-          title: 'Senior Tax Accountant',
-          email: 'sarah.johnson@company.com',
-          phone: '555-123-4567',
-          profileImage: `https://randomuser.me/api/portraits/women/44.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 2,
-          name: 'Michael Chen',
-          title: 'Financial Analyst',
-          email: 'michael.chen@company.com',
-          phone: '555-123-4568',
-          profileImage: `https://randomuser.me/api/portraits/men/32.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 3,
-          name: 'Emily Davis',
-          title: 'Compliance Manager',
-          email: 'emily.davis@company.com',
-          phone: '555-123-4569',
-          profileImage: `https://randomuser.me/api/portraits/women/68.jpg`,
-          department: 'Compliance'
-        },
-        {
-          id: 4,
-          name: 'Robert Wilson',
-          title: 'Senior Auditor',
-          email: 'robert.wilson@company.com',
-          phone: '555-123-4570',
-          profileImage: `https://randomuser.me/api/portraits/men/75.jpg`,
-          department: 'Audit'
-        },
-        {
-          id: 5,
-          name: 'Lisa Martinez',
-          title: 'Risk Analyst',
-          email: 'lisa.martinez@company.com',
-          phone: '555-123-4571',
-          profileImage: `https://randomuser.me/api/portraits/women/55.jpg`,
-          department: 'Risk Management'
-        },
-        {
-          id: 6,
-          name: 'David Thompson',
-          title: 'Tax Specialist',
-          email: 'david.thompson@company.com',
-          phone: '555-123-4572',
-          profileImage: `https://randomuser.me/api/portraits/men/41.jpg`,
-          department: 'Finance'
-        },
-        {
-          id: 7,
-          name: 'Jennifer Brown',
-          title: 'Compliance Officer',
-          email: 'jennifer.brown@company.com',
-          phone: '555-123-4573',
-          profileImage: `https://randomuser.me/api/portraits/women/22.jpg`,
-          department: 'Compliance'
-        },
-        {
-          id: 8,
-          name: 'James Rodriguez',
-          title: 'Financial Controller',
-          email: 'james.rodriguez@company.com',
-          phone: '555-123-4574',
-          profileImage: `https://randomuser.me/api/portraits/men/18.jpg`,
-          department: 'Finance'
-        }
-      ];
+      setLoading(false);
+    };
 
-      setAllEmployees(demoEmployees);
-    } finally {
+    if (props.listName) {
+      fetchEmployees();
+    } else {
       setLoading(false);
     }
+  }, [props.listName, props.context, props.selectedCompany]);
+
+  const getInitials = (name: string): string => {
+    const nameParts = name.trim().split(' ');
+    if (nameParts.length >= 2) {
+      return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    } else if (nameParts.length === 1) {
+      return nameParts[0].substring(0, 2).toUpperCase();
+    }
+    return 'NA';
   };
 
-  const handleContact = (employee: IEmployee): void => {
-    window.open(`mailto:${employee.email}`, '_blank');
+  const getAvatarColor = (name: string): string => {
+    const colors = [
+      '#0078D4', '#107C10', '#D83B01', '#8764B8', '#008272',
+      '#CA5010', '#00BCF2', '#498205', '#C239B3', '#0063B1'
+    ];
+    const charCode = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[charCode % colors.length];
   };
 
-  const handlePageChange = (pageIndex: number): void => {
-    setCurrentPage(pageIndex);
+  const handleContactClick = (email: string) => {
+    window.open(`mailto:${email}`, "_blank");
   };
 
-  // Calculate pagination
-  const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
-  const startIndex = currentPage * employeesPerPage;
-  const currentEmployees = allEmployees.slice(startIndex, startIndex + employeesPerPage);
+  const handlePageChange = (pageNum: number) => {
+    setCurrentPage(pageNum);
+  };
+
+  const renderEmployeeCard = (employee: IEmployee) => {
+    const initials = getInitials(employee.name);
+    const avatarColor = getAvatarColor(employee.name);
+
+    return (
+      <div className={styles.employeeCard} key={employee.id}>
+        <div className={styles.profileSection}>
+          <div 
+            className={styles.initialsAvatar}
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initials}
+          </div>
+
+          <div className={styles.employeeInfo}>
+            <h3 className={styles.employeeName}>{employee.name}</h3>
+          </div>
+        </div>
+        <p className={styles.employeeTitle}>{employee.title}</p>
+        <div className={styles.contactInfo}>
+          <div className={styles.contactItem}>
+            <Icon iconName="Mail" className={styles.contactIcon} />
+            <span className={styles.contactText}>{employee.email}</span>
+          </div>
+        </div>
+        <div className={styles.actionSection}>
+          <button 
+            className={styles.contactButton} 
+            onClick={() => handleContactClick(employee.email)} 
+            type="button"
+          >
+            <Icon iconName="Mail" className={styles.buttonIcon} />
+            Contact
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
-      <div className={styles.employeeDirectory}>
-        <div className={styles.header}>
-          <h2>{props.title}</h2>
-        </div>
-        <div className={styles.loading}>
-          <Spinner label="Loading employees..." />
-        </div>
+      <div className={styles.loaderContainer}>
+        <Spinner label="Loading employees..." />
       </div>
     );
   }
 
+  // ✅ Calculate pagination
+  const pageCount = Math.ceil(employees.length / cardsPerPage);
+  const startIdx = currentPage * cardsPerPage;
+  const currentEmployees = employees.slice(startIdx, startIdx + cardsPerPage);
+
   return (
     <div className={styles.employeeDirectory}>
       <div className={styles.header}>
-        <h2>{props.title}</h2>
+        <h1>{props.title}</h1>
+        {props.orgChartLink && (
+          <a 
+            href={props.orgChartLink} 
+            className={styles.orgChartLink}
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            View Organization Chart
+          </a>
+        )}
       </div>
-      
-      <div className={styles.employeeGrid}>
-        {currentEmployees.map((employee) => (
-          <div key={employee.id} className={styles.employeeCard}>
-            <div className={styles.profileSection}>
-              <img 
-                src={employee.profileImage} 
-                alt={`${employee.name} profile`}
-                className={styles.profileImage}
-                onError={(e: any) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23e1e1e1'/%3E%3Ctext x='16' y='21' font-family='Arial' font-size='14' text-anchor='middle' fill='%23666'%3E${employee.name.split(' ').map(n => n[0]).join('')}%3C/text%3E%3C/svg%3E`;
-                }}
-              />
-              <div className={styles.employeeInfo}>
-                <h3 className={styles.employeeName}>{employee.name}</h3>
-                <p className={styles.employeeTitle}>{employee.title}</p>
-                <div className={styles.contactInfo}>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Mail" className={styles.contactIcon} />
-                    <span>{employee.email}</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <Icon iconName="Phone" className={styles.contactIcon} />
-                    <span>{employee.phone}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className={styles.actionSection}>
-              <button 
-                className={styles.contactButton}
-                onClick={() => handleContact(employee)}
-                title={`Email ${employee.name}`}
-              >
-                <Icon iconName="Mail" className={styles.buttonIcon} />
-                Contact
-              </button>
-            </div>
+
+      {/* ✅ REMOVED: Frontend filter dropdown */}
+
+      {currentEmployees.length > 0 ? (
+        <>
+          <div className={styles.employeeGrid}>
+            {currentEmployees.map(renderEmployeeCard)}
           </div>
-        ))}
-      </div>
-      
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          {Array.from({ length: totalPages }, (_, index) => (
-            <button
-              key={index}
-              className={`${styles.paginationDot} ${index === currentPage ? styles.active : ''}`}
-              onClick={() => handlePageChange(index)}
-              title={`Page ${index + 1}`}
-              aria-label={`Go to page ${index + 1}`}
-            />
-          ))}
+          
+          {pageCount > 1 && (
+            <div className={styles.pagination}>
+              {Array.from({ length: pageCount }).map((_, idx: number) => (
+                <button
+                  key={idx}
+                  className={`${styles.paginationDot} ${idx === currentPage ? styles.active : ''}`}
+                  onClick={() => handlePageChange(idx)}
+                  type="button"
+                  aria-label={`Page ${idx + 1}`}
+                >
+                  ●
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className={styles.noEmployees}>
+          {props.selectedCompany && props.selectedCompany !== 'All' 
+            ? `No employees found for ${props.selectedCompany}.` 
+            : 'No employees found.'}
         </div>
       )}
     </div>

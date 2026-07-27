@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Feature xmlns="http://schemas.microsoft.com/sharepoint/"
+         Title="BullWealth Navigation Feature"
+         Description="Site-scoped deployment of custom navigation"
+         Id="d3c0475b-59bb-4570-bfcc-0ce0c0426620"
+         Version="1.0.0.1"
+         Scope="Site">
+    <ElementManifests>
+        <ElementManifest Location="ClientSideInstance.xml"/>
+    </ElementManifests>
+</Feature>

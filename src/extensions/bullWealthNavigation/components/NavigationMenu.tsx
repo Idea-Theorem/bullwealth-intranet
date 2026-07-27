@@ -1,11 +1,40 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { INavigationMenuProps, INavigationItem } from './INavigationProps';
 import styles from './NavigationMenu.module.scss';
 
 const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
+
+  const isActive = (item: INavigationItem): boolean => {
+    const itemUrl = item.url.startsWith('http') ? item.url : `${siteUrl}${item.url}`;
+    const normalizedItemUrl = itemUrl.toLowerCase().replace(/\/$/, '');
+    const normalizedCurrentUrl = currentUrl.toLowerCase().replace(/\/$/, '');
+
+    if (normalizedCurrentUrl === normalizedItemUrl) return true;
+
+    if (item.children) {
+      return item.children.some((child) => {
+        const childUrl = child.url.startsWith('http')
+          ? child.url
+          : `${siteUrl}${child.url}`;
+        const normalizedChildUrl = childUrl.toLowerCase().replace(/\/$/, '');
+        return (
+          normalizedCurrentUrl === normalizedChildUrl ||
+          normalizedCurrentUrl.includes(normalizedChildUrl)
+        );
+      });
+    }
+
+    return false;
+  };
 
   const handleLinkClick = (url: string, external?: boolean): void => {
     if (external) {
@@ -15,84 +44,64 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
     }
   };
 
-  // Navigation items matching your design exactly
-  const navigationItems: INavigationItem[] = [
-    {
-      name: 'Home',
-      url: '/',
-      icon: 'Home'
-    },
-    {
-      name: 'BullWealth',
-      url: '#',
-      icon: 'FolderHorizontal',
-      children: [
-        { name: 'Compliance', url: '/sites/bullwealth/compliance' },
-        { name: 'Research & Investment', url: '/sites/bullwealth/research' },
-        { name: 'Advisory Group', url: '/sites/bullwealth/advisory' },
-        { name: 'Operations', url: '/sites/bullwealth/operations' },
-        { name: 'Business Development', url: '/sites/bullwealth/business-development' },
-        { name: 'Tax and Accounting', url: '/sites/bullwealth/tax-accounting' },
-        { name: 'Employee Directory', url: '/sites/bullwealth/employee-directory' }
-      ]
-    },
-    {
-      name: 'Clover',
-      url: '#',
-      icon: 'FolderHorizontal',
-      children: [
-        { name: 'Platform Overview', url: '/sites/clover/platform' },
-        { name: 'Documentation', url: '/sites/clover/docs' },
-        { name: 'Support Center', url: '/sites/clover/support' },
-        { name: 'Training', url: '/sites/clover/training' },
-        { name: 'Updates', url: '/sites/clover/updates' }
-      ]
-    },
-    {
-      name: 'Human Resource',
-      url: '/sites/hr',
-      icon: 'People'
-    },
-    {
-      name: 'IT Policy',
-      url: '/sites/it-policy',
-      icon: 'DocumentSet'
-    },
-    {
-      name: 'Help Centre',
-      url: '/sites/help',
-      icon: 'Help'
-    }
-  ];
+  const getFallbackNavigation = (): INavigationItem[] => {
+    return [
+      { name: 'Home', url: '/', icon: 'Home', order: 0 },
+      {
+        name: 'BullWealth',
+        url: '#',
+        icon: 'Building',
+        children: [
+          { name: 'Compliance', url: '/sites/bullwealth/compliance', order: 0 },
+          { name: 'Research & Investment', url: '/sites/bullwealth/research', order: 0 },
+        ],
+      },
+      { name: 'Human Resource', url: '/sites/hr', icon: 'People', order: 0 },
+      { name: 'IT Policy', url: '/sites/it-policy', icon: 'Shield', order: 0 },
+      { name: 'Help Centre', url: '/sites/help', icon: 'Help', order: 0 },
+    ];
+  };
+
+  const navigationItems = items && items.length > 0 ? items : getFallbackNavigation();
 
   return (
     <div className={styles.navigationWrapper}>
       <nav className={styles.navigationMenu}>
         <div className={styles.brand}>
-          <h1 className={styles.brandTitle}>BullWealth Intranet</h1>
+          <a href="https://bullwealthmanagementgro.sharepoint.com/sites/MrkedCapitalIntranet/SitePages/Home.aspx">
+            <h1 className={styles.brandTitle}><span className={styles.bigtext}>M</span>RKED <span className={styles.bigtext}>I</span>NSIDER</h1>
+          </a>
         </div>
 
         <ul className={styles.navList}>
           {navigationItems.map((item, index) => (
-            <li 
-              key={index} 
-              className={`${styles.navItem} ${item.children ? styles.dropdown : ''} ${item.name === 'Home' ? styles.activeItem : ''}`}
+            <li
+              key={index}
+              className={`${styles.navItem} ${
+                item.children ? styles.dropdown : ''
+              } ${isActive(item) ? styles.activeItem : ''}`}
               onMouseEnter={() => item.children && setActiveDropdown(item.name)}
               onMouseLeave={() => item.children && setActiveDropdown(null)}
             >
-              <a 
+              <a
                 href="#"
                 className={styles.navLink}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (!item.children) {
+                  if (item.children) {
+                    if (item.url && item.url !== '#') {
+                      handleLinkClick(item.url, item.external);
+                    } else {
+                      setActiveDropdown(
+                        activeDropdown === item.name ? null : item.name
+                      );
+                    }
+                  } else {
                     handleLinkClick(item.url, item.external);
                   }
                 }}
               >
-                {item.icon && (
-                  <Icon iconName={item.icon} className={styles.navIcon} />
-                )}
+                {item.icon && <Icon iconName={item.icon} className={styles.navIcon} />}
                 <span className={styles.navText}>{item.name}</span>
                 {item.children && (
                   <Icon iconName="ChevronDown" className={styles.dropdownArrow} />
@@ -100,14 +109,16 @@ const NavigationMenu: React.FC<INavigationMenuProps> = ({ items, siteUrl }) => {
               </a>
 
               {item.children && (
-                <div className={`${styles.dropdown} ${activeDropdown === item.name ? styles.show : ''}`}>
-                  <div className={styles.dropdownHeader}>
-                    {item.name} Dropdown
-                  </div>
+                <div
+                  className={`${styles.dropdown} ${
+                    activeDropdown === item.name ? styles.show : ''
+                  }`}
+                >
+                  <div className={styles.dropdownHeader}>{item.name}</div>
                   <ul className={styles.dropdownList}>
                     {item.children.map((child, childIndex) => (
                       <li key={childIndex} className={styles.dropdownItem}>
-                        <a 
+                        <a
                           href="#"
                           className={styles.dropdownLink}
                           onClick={(e) => {

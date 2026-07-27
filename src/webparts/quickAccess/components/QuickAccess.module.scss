@@ -33,28 +33,28 @@
 }
 
 .right {
-  width: 250px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   margin-left: 16px;
 }
 
 .tile {
+    display: flex;
     align-items: center;
     background-color: #fff;
     border: 1px solid #4caf50;
     border-radius: 12px;
     box-shadow: 0 2px 4px #00000024;
     color: #333;
-    height: 124px;
+    gap: 12px;
+    height: 130px;
     justify-content: center;
-    margin: 0 10px;
+    margin: 0 10px 5px;
     text-decoration: none;
     transition: box-shadow .2s;
-    width: 150px;
-    display: flex;
+    width: 170px;
     flex-direction: column;
-    gap: 12px;
 
 
 
@@ -70,15 +70,17 @@
 }
 
 .tileTitle {
-  font-size: 14px;
-  text-align: center;
+      font-size: 14px;
+    text-align: center;
+    font-weight: 500;
+   //@include calibri-body; // Uses Calibri Regular
 }
 
 .support {
   background-color: #fff;
   border: 0px solid #4caf50;
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 30px;
   margin-bottom: 16px;
 }
 

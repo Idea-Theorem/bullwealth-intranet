@@ -1,10 +1,16 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import * as React from 'react';
 import styles from './Documents.module.scss';
 import { IDocumentsProps, IDocumentCategory } from './IDocumentsProps';
+import { SPHttpClient } from '@microsoft/sp-http';
+import { Spinner } from '@fluentui/react/lib/Spinner';
 
 export interface IDocumentsState {
   categories: IDocumentCategory[];
-  editMode: boolean;
+  loading: boolean;
 }
 
 export default class Documents extends React.Component<IDocumentsProps, IDocumentsState> {
@@ -12,176 +18,306 @@ export default class Documents extends React.Component<IDocumentsProps, IDocumen
     super(props);
     this.state = {
       categories: props.categories,
-      editMode: false
+      loading: props.isDynamicMode
     };
+  }
+
+  public componentDidMount(): void {
+    if (this.props.isDynamicMode) {
+      this.fetchFoldersFromLibrary();
+    }
   }
 
   public componentDidUpdate(prevProps: IDocumentsProps): void {
-    if (JSON.stringify(prevProps.categories) !== JSON.stringify(this.props.categories)) {
-      this.setState({ categories: this.props.categories });
-    }
-  }
-  
-  private handleCategoryClick = (category: IDocumentCategory): void => {
-    if (category.libraryUrl && category.libraryUrl !== '') {
-      // Validate URL format
-      const url = this.formatUrl(category.libraryUrl);
-      window.open(url, '_self');
+    if (
+      prevProps.isDynamicMode !== this.props.isDynamicMode ||
+      prevProps.folderPath !== this.props.folderPath ||
+      prevProps.documentLibraryName !== this.props.documentLibraryName
+    ) {
+      if (this.props.isDynamicMode) {
+        this.fetchFoldersFromLibrary();
+      }
     }
   }
 
-  private formatUrl = (url: string): string => {
-    // If URL doesn't start with http:// or https://, add https://
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return `https://${url}`;
-    }
-    return url;
-  }
+  private fetchFoldersFromLibrary = async (): Promise<void> => {
+  this.setState({ loading: true });
 
-  private isValidUrl = (url: string): boolean => {
+  try {
+    const { context, documentLibraryName, folderPath } = this.props;
+    const siteUrl = context.pageContext.web.absoluteUrl;
+    const sitePath = context.pageContext.web.serverRelativeUrl;
+    const cleanLibraryName = documentLibraryName.trim();
+    const cleanFolderPath = folderPath.trim();
+    const fullPath = `${sitePath}/${cleanLibraryName}/${cleanFolderPath}`.replace(/\/+/g, '/');
+
+    console.log('📁 Fetching folders from:', fullPath);
+
+    // ✅ Step 1: Get folders under the given path
+    const foldersApiUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(@path)/Folders?@path='${encodeURIComponent(
+      fullPath
+    )}'&$select=Name,ServerRelativeUrl`;
+
+    const foldersResponse = await context.spHttpClient.get(
+      foldersApiUrl,
+      SPHttpClient.configurations.v1
+    );
+
+    if (!foldersResponse.ok) {
+      console.error('❌ Folders API failed:', foldersResponse.status);
+      this.setState({ categories: [], loading: false });
+      return;
+    }
+
+    const foldersData = await foldersResponse.json();
+    const folderList = foldersData.value || [];
+
+    console.log('✅ Folders found:', folderList.length);
+    folderList.forEach((f: any) => console.log(`  📁 ${f.Name}`));
+
+    if (folderList.length === 0) {
+      this.setState({ categories: [], loading: false });
+      return;
+    }
+
+    // ✅ Step 2: Build OrderBy Map (fetch metadata for each folder)
+    const orderByMap: { [key: string]: number } = {};
+
+    for (const folder of folderList) {
+      const folderName = folder.Name;
+      const folderServerUrl = folder.ServerRelativeUrl;
+
+      console.log(`📡 Checking OrderBy for folder: ${folderName}`);
+
+      try {
+        // ✅ FIX: Use ListItemAllFields for folder (no more filter failures)
+        const folderItemUrl = `${siteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(
+          folderServerUrl
+        )}')/ListItemAllFields?$select=OrderBy,Order,Order_x0020_By`;
+
+        const folderItemResponse = await context.spHttpClient.get(
+          folderItemUrl,
+          SPHttpClient.configurations.v1
+        );
+
+        if (folderItemResponse.ok) {
+          const folderItemData = await folderItemResponse.json();
+
+          let orderValue: any = null;
+          const possibleKeys = ['OrderBy', 'Order', 'Order_x0020_By'];
+
+          for (const key of possibleKeys) {
+            if (folderItemData[key] !== undefined && folderItemData[key] !== null) {
+              orderValue = folderItemData[key];
+              break;
+            }
+          }
+
+          if (orderValue !== null) {
+            const parsedOrder = parseInt(String(orderValue), 10);
+            if (!isNaN(parsedOrder)) {
+              orderByMap[folderName] = parsedOrder;
+              console.log(`✅ ${folderName} → OrderBy = ${parsedOrder}`);
+            }
+          } else {
+            console.warn(`⚠️ No OrderBy value found for ${folderName}`);
+          }
+        } else {
+          console.warn(`⚠️ Could not fetch OrderBy for ${folderName}: ${folderItemResponse.status}`);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Error fetching OrderBy for ${folderName}`, err);
+      }
+    }
+
+    console.log('📊 OrderBy Map:', orderByMap);
+
+    // ✅ Step 3: Map folders to categories with OrderBy
+    const categoriesWithOrder: IDocumentCategory[] = folderList.map((folder: any) => {
+      const folderName = folder.Name;
+      const orderBy = orderByMap[folderName] || 999;
+      const libraryParam = `${cleanLibraryName}/${cleanFolderPath}/${folderName}`;
+
+      return {
+        id: folderName,
+        title: folderName,
+        folderName: folderName,
+        orderBy: orderBy,
+        imageData: '',
+        libraryUrl: '',
+        viewAllUrl: '',
+        pageUrl: '',
+        viewDocumentsText: 'View Documents',
+        libraryParam: libraryParam
+      };
+    });
+
+    // ✅ Step 4: Sort folders by OrderBy
+    const sortedCategories = categoriesWithOrder.sort(
+      (a, b) => (a.orderBy || 999) - (b.orderBy || 999)
+    );
+
+    const finalOrder = sortedCategories
+      .map((c: IDocumentCategory) => `${c.title}(${c.orderBy})`)
+      .join(' → ');
+
+    console.log('✅ Final sorted folder order:', finalOrder);
+
+    // ✅ Step 5: Update UI state
+    this.setState({ categories: sortedCategories, loading: false });
+  } catch (error) {
+    console.error('❌ Error fetching folders:', error);
+    this.setState({ categories: [], loading: false });
+  }
+};
+
+
+
+  private handleViewDocuments = (category: IDocumentCategory): void => {
     try {
-      const formattedUrl = this.formatUrl(url);
-      new URL(formattedUrl);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private handleViewDocuments = (category: IDocumentCategory, event: React.MouseEvent): void => {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    if (category.viewAllUrl && category.viewAllUrl !== '') {
-      const url = this.formatUrl(category.viewAllUrl);
-      window.open(url, '_self');
-    } else if (category.libraryUrl && category.libraryUrl !== '') {
-      // For SharePoint document libraries, append /Forms/AllItems.aspx if it's a SharePoint URL
-      let url = this.formatUrl(category.libraryUrl);
-      if (url.includes('sharepoint.com') && !url.includes('/Forms/AllItems.aspx')) {
-        // Remove trailing slash and add AllItems.aspx
-        url = url.replace(/\/$/, '') + '/Forms/AllItems.aspx';
+      if (category.libraryUrl && category.libraryUrl.trim() !== '') {
+        window.open(category.libraryUrl, '_self');
+        return;
       }
-      window.open(url, '_self');
-    }
-  }
 
-  private handleImageUpload = (categoryId: string): void => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      const file = target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageData = event.target?.result as string;
-          const updatedCategories = this.state.categories.map(cat =>
-            cat.id === categoryId 
-              ? { ...cat, imageData: imageData }
-              : cat
-          );
-          this.setState({ categories: updatedCategories });
-          this.props.onCategoriesUpdate(updatedCategories);
-        };
-        reader.readAsDataURL(file);
+      if ((category as any).libraryParam) {
+        const libraryParam = encodeURIComponent((category as any).libraryParam);
+        const currentSiteUrl = this.props.context.pageContext.web.absoluteUrl;
+        const docLibraryPageUrl = `${currentSiteUrl}/SitePages/DocumentLibrary.aspx`;
+        const url = `${docLibraryPageUrl}?library=${libraryParam}`;
+        window.location.href = url;
       }
-    };
-    fileInput.click();
-  }
-
-  private handleDeleteCategory = (categoryId: string, event: React.MouseEvent): void => {
-    event.stopPropagation();
-    if (confirm('Are you sure you want to delete this category?')) {
-      const updatedCategories = this.state.categories.filter(cat => cat.id !== categoryId);
-      this.setState({ categories: updatedCategories });
-      this.props.onCategoriesUpdate(updatedCategories);
+    } catch (error) {
+      console.error('Error navigating:', error);
     }
-  }
+  };
 
-  private getDefaultImage = (title: string): string => {
-    const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22'];
-    const colorIndex = title.length % colors.length;
-    const color = colors[colorIndex];
-    
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='${encodeURIComponent(color)}'/%3E%3Cg fill='white'%3E%3Crect x='150' y='80' width='100' height='80' rx='5' fill='none' stroke='white' stroke-width='3'/%3E%3Cpolyline points='170,100 170,140 230,140' fill='none' stroke='white' stroke-width='3'/%3E%3Cpolyline points='180,110 210,110' fill='none' stroke='white' stroke-width='2'/%3E%3Cpolyline points='180,120 220,120' fill='none' stroke='white' stroke-width='2'/%3E%3Cpolyline points='180,130 200,130' fill='none' stroke='white' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E`;
-  }
+  private getGradientForFolder = (index: number): { bg: string; icon: string } => {
+    const colors = [
+      { bg: '#2c3e50', icon: '#ffffff' },
+      { bg: '#27ae60', icon: '#ffffff' },
+      { bg: '#3498db', icon: '#ffffff' },
+      { bg: '#2980b9', icon: '#ffffff' },
+      { bg: '#e74c3c', icon: '#ffffff' },
+      { bg: '#f39c12', icon: '#ffffff' }
+    ];
+    return colors[index % colors.length];
+  };
 
-  private toggleEditMode = (): void => {
-    this.setState({ editMode: !this.state.editMode });
-  }
+  private getColorfulImage = (title: string, index: number): string => {
+    const colors = this.getGradientForFolder(index);
+    const encodedBg = colors.bg.replace('#', '%23');
 
-  public render(): React.ReactElement<IDocumentsProps> {
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 280'%3E%3Crect width='400' height='280' fill='${encodedBg}'/%3E%3Cg%3E%3Crect x='130' y='80' width='140' height='140' rx='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cline x1='150' y1='110' x2='250' y2='110' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3Cline x1='150' y1='140' x2='250' y2='140' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3Cline x1='150' y1='170' x2='210' y2='170' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E`;
+  };
+
+  public render(): React.ReactElement {
     const { columnsPerRow } = this.props;
-    const { categories, editMode } = this.state;
-    
+    const { categories, loading } = this.state;
     const gridClassName = (styles as any)[`columns${columnsPerRow}`] || styles.columns4;
 
-    return (
-      <div className={styles.documents}>
-        <div className={`${styles.categoriesGrid} ${gridClassName}`}>
-          {categories.map((category) => (
-            <div 
-              key={category.id} 
-              className={`${styles.categoryCard} ${!this.isValidUrl(category.libraryUrl) ? styles.invalidUrl : ''}`}
-              onClick={() => !editMode && this.handleCategoryClick(category)}
-            >
-              {editMode && (
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => this.handleDeleteCategory(category.id, e)}
-                  title="Delete category"
-                >
-                  ×
-                </button>
-              )}
-              <div className={styles.imageContainer}>
-                <img 
-                  src={category.imageData || this.getDefaultImage(category.title)} 
-                  alt={category.title}
-                  className={styles.categoryImage}
-                />
-                {editMode && (
-                  <div className={styles.editOverlay}>
-                    <button 
-                      className={styles.uploadButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        this.handleImageUpload(category.id);
-                      }}
-                    >
-                      📷 Upload Image
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className={styles.categoryInfo}>
-                <h3 className={styles.categoryTitle}>{category.title}</h3>
-                {/* <div className={styles.urlInfo}>
-                  <span className={styles.urlText} title={category.libraryUrl}>
-                    {category.libraryUrl ? this.formatUrl(category.libraryUrl) : 'No URL provided'}
-                  </span>
-                </div> */}
-                <a 
-                  href="#"
-                  className={styles.viewAllLink}
-                  onClick={(e) => this.handleViewDocuments(category, e)}
-                >
-                  View Documents
-                </a>
-              </div>
-            </div>
-          ))}
+    if (loading) {
+      return <Spinner label="Loading folders..." />;
+    }
+
+    if (categories.length === 0) {
+      return (
+        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+          No folders found in the library.
         </div>
-        
-        <button 
-          className={styles.editModeToggle}
-          onClick={this.toggleEditMode}
-          title={editMode ? "Done editing" : "Edit categories"}
-        >
-          {editMode ? '✓' : '✏️'}
-        </button>
+      );
+    }
+
+    return (
+      <div className={`${styles.categoriesGrid} ${gridClassName}`}>
+        {categories.map((category, index) => (
+          <div
+            key={category.id}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                height: '200px',
+                overflow: 'hidden',
+                position: 'relative',
+                backgroundColor: '#f5f5f5'
+              }}
+            >
+              <img
+                src={category.imageData || this.getColorfulImage(category.title, index)}
+                alt={category.title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              />
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <h3
+                style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: '#1a1a1a',
+                  lineHeight: '1.3'
+                }}
+              >
+                {category.title}
+              </h3>
+
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  this.handleViewDocuments(category);
+                }}
+                style={{
+                  display: 'inline-block',
+                  color: '#2ecc71',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#27ae60';
+                  e.currentTarget.style.textDecoration = 'underline';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#2ecc71';
+                  e.currentTarget.style.textDecoration = 'none';
+                }}
+              >
+                {category.viewDocumentsText || 'View Documents'}
+              </a>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

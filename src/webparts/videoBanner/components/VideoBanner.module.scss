@@ -1,39 +1,88 @@
 @import '~@fluentui/react/dist/sass/References.scss';
-@import '../../../styles/fonts';
+//@import '../../../styles/fonts';
 
 :global {
   .ControlZone {
-     margin: 0px 0 !important;
+    margin: 0px 0 !important;
     padding: 0px !important;
   }
 }
 
-.ControlZone {
-  @include calibri-font;
+// Full width container - breaks out of SPFx constraints
+.fullWidthContainer {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+// Welcome strip - INSIDE the hero image at the top
+.welcomeStrip {
+  position: absolute;
+  top: auto;
+  bottom: 50%; // Positioned above the content box
+  left: 50%;
+  transform: translateX(-50%);
+  // background-color: #4169E1; // Blue background like in your screenshot
+  color: white;
+  padding: 12px 40px;
+  font-size: 45px;
+  font-weight: 700;
+  border-radius: 4px 4px 0 0;
+  max-width: 1076px;
+  width: 100%;
+  z-index: 3;
+  margin-bottom: -1px; // Connects to content box
+  
+  @media (max-width: 768px) {
+    padding: 10px 20px;
+    font-size: 16px;
+    max-width: 600px;
+  }
 }
 
 .videoBanner {
   //@include calibri-font;
   position: relative;
   width: 100%;
-  min-height: 500px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-radius: 12px;
-  overflow: hidden;
+  overflow: visible; // Allow content to extend below
+  background: white;
+  padding-bottom: 250px; // Space for the bottom half of content box
   
   @media (max-width: 768px) {
-    min-height: 400px;
+    padding-bottom: 150px;
   }
   
   @media (max-width: 480px) {
-    min-height: 350px;
-    border-radius: 8px;
+    padding-bottom: 100px;
   }
-  // * {
-  //   @include calibri-font;
-  // }
+  
+  .thumbnailWrapper {
+    position: relative;
+    width: 100%;
+    height: 500px; // Fixed height for background section
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: flex-end; // Align content to bottom
+    justify-content: center;
+    padding: 0 40px 0; // No bottom padding
+    transition: background-image 0.8s ease-in-out;
+    
+    @media (max-width: 768px) {
+      height: 400px;
+      padding: 0 20px 0;
+    }
+    
+    @media (max-width: 480px) {
+      height: 350px;
+      align-items: center;
+      padding: 0 10px 0;
+    }
+  }
 }
 
 .overlay {
@@ -42,34 +91,34 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: transparent;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0px;
-  
-  @media (max-width: 768px) {
-    padding: 30px;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 20px;
-  }
+  // background: rgba(0, 0, 0, 0.35);
+  z-index: 1;
 }
 
 .contentWrapper {
+  position: relative;
+  z-index: 2;
   background: white;
   border-radius: 12px 12px 0px 0px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   display: flex;
   max-width: 1076px;
   width: 100%;
   overflow: hidden;
-      height: 433px;
+  height: 433px;
+  transform: translateY(50%); // Move content down by 50% to create overlap
+  margin: 0 auto;
   
   @media (max-width: 768px) {
     flex-direction: column;
     max-width: 600px;
+    height: auto;
+    transform: translateY(30%);
+  }
+  
+  @media (max-width: 480px) {
+    transform: translateY(0);
+    border-radius: 8px;
   }
 }
 
@@ -90,15 +139,15 @@
 }
 
 .title {
-  @include calibri-title; // Uses Calibri Bold
+  // @include calibri-title; // Uses Calibri Bold
   color: #000000;
-    font-size: 40px;
-    font-weight: 700;
-    margin: 0 0 15px;
-    line-height: 1.5;
+  font-size: 40px;
+  font-weight: 700;
+  margin: 0 0 0px;
+  line-height: 1.2;
   
   @media (max-width: 768px) {
-    font-size: 24px;
+    font-size: 32px;
   }
   
   @media (max-width: 480px) {
@@ -106,16 +155,40 @@
   }
 }
 
+// Published date visibility - NO ICON
+.publishedDate {
+  background: rgb(0 0 0 / 0%);
+  border-radius: 6px;
+  color: #000000 !important;
+  display: block !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  margin-bottom: 15px !important;
+  padding: 0px 0px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  // Remove any icons or pseudo-elements
+  &:before {
+    display: none !important;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 14px !important;
+  }
+}
+
 .message {
-  @include calibri-body; // Uses Calibri Regular
   color: #000000;
-    font-size: 22px;
-    font-style: normal;
-    line-height: 1.5;
-    margin: 0 0 10px;
+  font-size: 18px;
+  font-style: normal;
+  line-height: 28px;
+  margin: 0px 0 0px;
   
   @media (max-width: 480px) {
     font-size: 16px;
+    line-height: 24px;
   }
 }
 
@@ -131,6 +204,8 @@
   transition: all 0.3s ease;
   align-self: flex-start;
   margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   
   &:hover {
     background-color: #229954;
@@ -138,8 +213,12 @@
     box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
   }
   
+  &:active {
+    transform: translateY(0);
+  }
+  
   &:focus {
-    outline: 2px solid #27ae60;
+    outline: 2px solid #42B574;
     outline-offset: 2px;
   }
   
@@ -150,19 +229,24 @@
 }
 
 .videoSection {
-      background: transparent !important;
-    flex: 0 0 400px;
-    position: relative;
-    padding: 30px !important;
+  background: transparent !important;
+  flex: 0 0 400px;
+  position: relative;
+  padding: 30px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   @media (max-width: 768px) {
     flex: 1;
     width: 100%;
     height: 300px;
+    padding: 20px !important;
   }
   
   @media (max-width: 480px) {
     height: 250px;
+    padding: 15px !important;
   }
 }
 
@@ -171,6 +255,12 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  
+  @media (max-width: 480px) {
+    border-radius: 8px;
+  }
 }
 
 .thumbnail {
@@ -178,7 +268,6 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
-  border-radius: 12px;
 }
 
 .playButton {
@@ -186,35 +275,42 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    
-    .playIcon {
-      filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.3));
-    }
-  }
-  
-  &:focus {
-    outline: 3px solid white;
-    outline-offset: 4px;
-    border-radius: 50%;
-  }
-}
-
-.playIcon {
   width: 80px;
   height: 80px;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
-  transition: filter 0.3s ease;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  
+  &:hover {
+    background: white;
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  }
   
   @media (max-width: 480px) {
     width: 60px;
     height: 60px;
+  }
+}
+
+.playIcon {
+  width: 0;
+  height: 0;
+  border-left: 22px solid #d97642;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  margin-left: 5px;
+  
+  @media (max-width: 480px) {
+    border-left: 18px solid #d97642;
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid transparent;
   }
 }
 
@@ -224,58 +320,107 @@
   object-fit: cover;
 }
 
-// Modal Styles
 .modal {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 10000;
+  align-items: center;
+  z-index: 9999;
   padding: 20px;
-  animation: fadeIn 0.3s ease;
 }
 
 .modalContent {
   position: relative;
-  width: 100%;
+  width: 90%;
   max-width: 1000px;
   max-height: 90vh;
-  background: black;
-  border-radius: 8px;
+  background: white;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .closeButton {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
+  top: 15px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.7);
   border: none;
+  color: white;
+  font-size: 24px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  font-size: 24px;
   cursor: pointer;
-  z-index: 10001;
-  transition: all 0.3s ease;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
   
   &:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: rotate(90deg);
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
   }
 }
 
-.videoFrame,
+.videoContainer {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; // 16:9 aspect ratio
+}
+
+.videoFrame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 .modalVideo {
   width: 100%;
-  height: 80vh;
-  border: none;
+  height: auto;
+  max-height: 80vh;
+}
+
+.loadingSpinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 60px 20px;
+  gap: 16px;
+  font-size: 16px;
+  color: #666;
+  
+  p {
+    color: #666666;
+    font-size: 16px;
+    margin-top: 15px;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #42B574;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {
@@ -287,6 +432,10 @@
   }
 }
 
+.fadeIn {
+  animation: fadeIn 0.5s ease-in;
+}
+
 // Support for Microsoft Teams
 .teams {
   .videoBanner {
@@ -294,8 +443,18 @@
   }
 }
 
-/* Add your styles here */
-
-.viewButton { background-color: #0078d4; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
-
-.viewButton:hover, .viewButton:focus { background-color: #005a9e; }
+.viewButton {
+  background-color: #0078d4;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+  
+  &:hover,
+  &:focus {
+    background-color: #005a9e;
+  }
+}

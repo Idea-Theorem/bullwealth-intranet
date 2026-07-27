@@ -3,7 +3,9 @@ export interface INavigationItem {
   url: string;
   icon?: string;
   external?: boolean;
+  order?: number; // ✅ Make optional
   children?: INavigationItem[];
+  
 }
 
 export interface INavigationMenuProps {

@@ -23,7 +23,7 @@ export const ContactCard: React.FC<IContactCardProps> = (props) => {
     titleColor,
     subtitleColor,
     nameColor,
-    contactColor,
+    //contactColor,
     emailButtonColor,
     phoneButtonColor,
     onEmailClick,
@@ -46,9 +46,9 @@ export const ContactCard: React.FC<IContactCardProps> = (props) => {
     color: nameColor || '#323130'
   };
 
-  const contactStyle: React.CSSProperties = {
-    color: contactColor || '#0078d4'
-  };
+  // const contactStyle: React.CSSProperties = {
+  //   color: contactColor || '#0078d4'
+  // };
 
   const emailButtonStyle: React.CSSProperties = {
     backgroundColor: emailButtonColor || '#5cb85c'
@@ -109,13 +109,13 @@ export const ContactCard: React.FC<IContactCardProps> = (props) => {
           <div className={styles.contactDetails}>
             <div className={styles.contactItem}>
               <Icon iconName="Mail" className={styles.contactIcon} />
-              <a href={`mailto:${email}`} className={styles.contactLink} style={contactStyle}>
+              <a href={`mailto:${email}`} className={styles.contactLink} >
                 {email || 'joralad@company.com'}
               </a>
             </div>
             <div className={styles.contactItem}>
               <Icon iconName="Phone" className={styles.contactIcon} />
-              <a href={`tel:${phone}`} className={styles.contactLink} style={contactStyle}>
+              <a href={`tel:${phone}`} className={styles.contactLink} >
                 {phone || '555-123-4567'}
               </a>
             </div>

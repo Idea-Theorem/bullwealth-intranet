@@ -1,73 +1,62 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-// Import global styles - ADD THIS LINE
-import '../../styles/main.scss';
-
 import { Version } from '@microsoft/sp-core-library';
 import {
   IPropertyPaneConfiguration,
-  PropertyPaneTextField,
-  PropertyPaneSlider
+  PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
-
-import * as strings from 'DocumentLibraryWebPartStrings';
 import DocumentLibrary from './components/DocumentLibrary';
-import { IDocumentLibraryProps } from './components/IDocumentLibraryProps';
 
 export interface IDocumentLibraryWebPartProps {
   title: string;
   description: string;
   listName: string;
-  itemsPerPage: number;
 }
 
 export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocumentLibraryWebPartProps> {
-
-
+  // ✅ FIXED: Added error handling wrapper
   public render(): void {
-  const element: React.ReactElement<IDocumentLibraryProps> = React.createElement(
-    DocumentLibrary,
-    {
-      title: this.properties.title || 'Document Library',
-      listName: this.properties.listName || 'Documents/Compliance',
-      context: this.context
-    }
-  );
+    const urlParams = new URLSearchParams(window.location.search);
+    const libraryPath = urlParams.get('library');
 
-  ReactDom.render(element, this.domElement);
-}
+    let listName = libraryPath || this.properties.listName || 'Documents';
 
-  protected onInit(): Promise<void> {
-    return this._getEnvironmentMessage().then(message => {
-    });
-  }
-
-  private _getEnvironmentMessage(): Promise<string> {
-    if (!!this.context.sdks.microsoftTeams) {
-      return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
-        .then(context => {
-          let environmentMessage: string = '';
-          switch (context.app.host.name) {
-            case 'Office':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOffice : strings.AppOfficeEnvironment;
-              break;
-            case 'Outlook':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOutlook : strings.AppOutlookEnvironment;
-              break;
-            case 'Teams':
-            case 'TeamsModern':
-              environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentTeams : strings.AppTeamsTabEnvironment;
-              break;
-            default:
-              environmentMessage = strings.UnknownEnvironment;
-          }
-          return environmentMessage;
-        });
+    if (libraryPath) {
+      listName = decodeURIComponent(libraryPath);
+      console.log('✅ DocumentLibrary WebPart - Using library from URL:', listName);
+    } else {
+      console.log('📋 DocumentLibrary WebPart - Using default listName:', listName);
     }
 
-    return Promise.resolve(this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentSharePoint : strings.AppSharePointEnvironment);
+    try {
+      const element: React.ReactElement = React.createElement(DocumentLibrary, {
+        context: this.context,
+        title: this.properties.title || 'Document Library',
+        listName: listName
+      });
+
+      ReactDom.render(element, this.domElement);
+    } catch (error) {
+      console.error('Error rendering DocumentLibrary:', error);
+      this.domElement.innerHTML = `
+        <div style="padding: 20px; color: #d13438; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+          <h3 style="margin: 0 0 12px 0; font-size: 20px;">Something went wrong</h3>
+          <p style="margin: 8px 0; font-size: 14px; color: #605e5c;">Please refresh the page. If the problem persists, contact the site administrator.</p>
+          <button 
+            onclick="window.location.reload()" 
+            style="padding: 8px 16px; margin-top: 16px; cursor: pointer; background: #0078d4; color: white; border: none; border-radius: 2px; font-size: 14px;"
+          >
+            Refresh Page
+          </button>
+          <div style="margin-top: 20px; padding: 12px; background: #f3f2f1; border-radius: 2px; font-size: 12px; color: #605e5c; text-align: left;">
+            <strong>Technical Details:</strong><br/>
+            ${error instanceof Error ? error.message : String(error)}
+          </div>
+        </div>
+      `;
+    }
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
@@ -76,16 +65,10 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
     }
 
     const { semanticColors } = currentTheme;
-
     if (semanticColors) {
       this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
       this.domElement.style.setProperty('--link', semanticColors.link || null);
-      this.domElement.style.setProperty('--linkHovered', semanticColors.linkHovered || null);
     }
-  }
-
-  protected onDispose(): void {
-    ReactDom.unmountComponentAtNode(this.domElement);
   }
 
   protected get dataVersion(): Version {
@@ -97,32 +80,25 @@ export default class DocumentLibraryWebPart extends BaseClientSideWebPart<IDocum
       pages: [
         {
           header: {
-            description: strings.PropertyPaneDescription
+            description: 'Configure Document Library WebPart'
           },
           groups: [
             {
-              groupName: strings.BasicGroupName,
+              groupName: 'Settings',
               groupFields: [
                 PropertyPaneTextField('title', {
                   label: 'Web Part Title',
-                  value: 'Compliance'
+                  value: this.properties.title || 'Document Library'
+                }),
+                PropertyPaneTextField('listName', {
+                  label: 'Default Library Path',
+                  value: this.properties.listName || 'Documents',
+                  description: 'Used if no ?library= URL parameter is provided'
                 }),
                 PropertyPaneTextField('description', {
                   label: 'Description',
-                  value: 'Below are documents related to Compliance.'
-                }),
-                PropertyPaneTextField('listName', {
-                  label: 'Document Library Name',
-                  value: 'Documents',
-                  description: 'Enter the name of the SharePoint document library'
-                }),
-                PropertyPaneSlider('itemsPerPage', {
-                  label: 'Items per page',
-                  min: 5,
-                  max: 50,
-                  value: 10,
-                  showValue: true,
-                  step: 5
+                  value: this.properties.description || '',
+                  description: 'Optional description'
                 })
               ]
             }

@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
-// Import main styles (this loads the font faces)
 import '../../styles/main.scss';
 import { Version } from '@microsoft/sp-core-library';
 import {
@@ -11,19 +10,16 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
-// Import PnP Property Controls
 import { PropertyFieldCollectionData, CustomCollectionFieldType } from '@pnp/spfx-property-controls/lib/PropertyFieldCollectionData';
 import { DatePicker } from '@fluentui/react/lib/DatePicker';
 
 import CompanyNews from './components/CompanyNews';
 import { ICompanyNewsProps, INewsItem } from './components/ICompanyNewsProps';
 
-// Import PnP JS - FIXED
 import { spfi, SPFx } from '@pnp/sp';
 import '@pnp/sp/webs';
 import '@pnp/sp/folders';
 import '@pnp/sp/files';
-
 import '@pnp/polyfill-ie11';
 
 export interface ICompanyNewsWebPartProps {
@@ -33,8 +29,6 @@ export interface ICompanyNewsWebPartProps {
   autoScrollInterval: number;
   itemsToShow: number;
   showDots: boolean;
-  showArrows: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -45,10 +39,8 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
   protected async onInit(): Promise<void> {
     await super.onInit();
     
-    // FIXED: Initialize PnP correctly
     this._sp = spfi().using(SPFx(this.context));
 
-    // Initialize with sample data if empty
     if (!this.properties.newsItems || this.properties.newsItems.length === 0) {
       this.properties.newsItems = [
         {
@@ -57,8 +49,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
           author: 'John Doe',
           date: new Date().toISOString(),
           imageUrl: '',
-          readMoreUrl: '#',
-          shareUrl: ''
+          readMoreUrl: '#'
         },
         {
           id: '2',
@@ -66,8 +57,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
           author: 'John Doe',
           date: new Date().toISOString(),
           imageUrl: '',
-          readMoreUrl: '#',
-          shareUrl: ''
+          readMoreUrl: '#'
         },
         {
           id: '3',
@@ -75,8 +65,7 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
           author: 'John Doe',
           date: new Date().toISOString(),
           imageUrl: '',
-          readMoreUrl: '#',
-          shareUrl: ''
+          readMoreUrl: '#'
         },
         {
           id: '4',
@@ -84,16 +73,13 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
           author: 'John Doe',
           date: new Date().toISOString(),
           imageUrl: '',
-          readMoreUrl: '#',
-          shareUrl: ''
+          readMoreUrl: '#'
         }
       ];
     }
 
-    // Set default values - Remove arrows, keep dots only
     if (!this.properties.itemsToShow) this.properties.itemsToShow = 4;
     if (this.properties.showDots === undefined) this.properties.showDots = true;
-    this.properties.showArrows = false; // ✅ Always disable arrows
   }
 
   public render(): void {
@@ -106,7 +92,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
         autoScrollInterval: this.properties.autoScrollInterval || 5000,
         itemsToShow: this.properties.itemsToShow || 4,
         showDots: this.properties.showDots,
-        showArrows: false, // ✅ Always false - no arrows
         context: this.context
       }
     );
@@ -114,7 +99,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     ReactDom.render(element, this.domElement);
   }
 
-  // Method to upload image to SharePoint - FIXED
   private async uploadImageToSharePoint(file: File): Promise<string> {
     try {
       const timestamp = new Date().getTime();
@@ -147,7 +131,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
     return Version.parse('1.0');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected onPropertyPaneFieldChanged(propertyPath: string, _oldValue: any, newValue: any): void {
     (this.properties as any)[propertyPath] = newValue;
     this.render();
@@ -223,8 +206,11 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       title: "Date",
                       type: CustomCollectionFieldType.custom,
                       required: true,
-                      onCustomRender: (field, value, onUpdate, item, itemId) => {
-                        return React.createElement("div", { style: { margin: "10px 0" } },
+                      onCustomRender: (field, value, onUpdate) => {
+                        return React.createElement("div", { 
+                          key: `date-${field.id}`,
+                          style: { margin: "10px 0" } 
+                        },
                           React.createElement("label", { 
                             style: { 
                               display: "block", 
@@ -247,12 +233,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                                 month: 'long', 
                                 day: 'numeric' 
                               }) : '';
-                            },
-                            style: { 
-                              width: "100%", 
-                              padding: "8px", 
-                              border: "1px solid #ccc", 
-                              borderRadius: "4px" 
                             }
                           })
                         );
@@ -263,8 +243,11 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       title: "Image",
                       type: CustomCollectionFieldType.custom,
                       required: false,
-                      onCustomRender: (field, value, onUpdate, item, itemId) => {
-                        return React.createElement("div", { style: { margin: "10px 0" } },
+                      onCustomRender: (field, value, onUpdate) => {
+                        return React.createElement("div", { 
+                          key: `image-${field.id}`,
+                          style: { margin: "10px 0" } 
+                        },
                           value && React.createElement("img", {
                             src: value,
                             alt: "Preview",
@@ -278,39 +261,25 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                               borderRadius: "4px"
                             }
                           }),
-                          React.createElement("div", { style: { marginBottom: "10px" } },
-                            React.createElement("input", {
-                              type: "file",
-                              accept: "image/*",
-                              style: { 
-                                padding: "8px",
-                                border: "1px solid #ccc",
-                                borderRadius: "4px",
-                                width: "100%"
-                              },
-                              onChange: async (e: any) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  try {
-                                    const uploadedUrl = await this.uploadImageToSharePoint(file);
-                                    onUpdate(field.id, uploadedUrl);
-                                  } catch (error) {
-                                    alert('Upload failed: ' + (error as Error).message);
-                                  }
-                                }
-                              }
-                            })
-                          ),
                           React.createElement("input", {
-                            type: "text",
-                            placeholder: "Or enter image URL",
-                            value: value || "",
-                            onChange: (e: any) => onUpdate(field.id, e.target.value),
+                            type: "file",
+                            accept: "image/*",
                             style: { 
-                              width: "100%", 
                               padding: "8px",
                               border: "1px solid #ccc",
-                              borderRadius: "4px"
+                              borderRadius: "4px",
+                              width: "100%"
+                            },
+                            onChange: async (e: any) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                try {
+                                  const uploadedUrl = await this.uploadImageToSharePoint(file);
+                                  onUpdate(field.id, uploadedUrl);
+                                } catch (error) {
+                                  alert('Upload failed: ' + (error as Error).message);
+                                }
+                              }
                             }
                           })
                         );
@@ -322,13 +291,6 @@ export default class CompanyNewsWebPart extends BaseClientSideWebPart<ICompanyNe
                       type: CustomCollectionFieldType.url,
                       required: false,
                       placeholder: "https://example.com/article"
-                    },
-                    {
-                      id: "shareUrl",
-                      title: "Share URL",
-                      type: CustomCollectionFieldType.url,
-                      required: false,
-                      placeholder: "https://example.com/share"
                     }
                   ],
                   disabled: false

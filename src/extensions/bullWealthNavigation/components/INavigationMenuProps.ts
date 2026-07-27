@@ -5,6 +5,7 @@ export interface INavigationMenuProps {
   hrUrl: string;
   itPolicyUrl: string;
   helpUrl: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any;
 }
 

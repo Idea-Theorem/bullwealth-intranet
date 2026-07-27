@@ -1,22 +1,21 @@
-import { WebPartContext } from '@microsoft/sp-webpart-base';
-
 export interface ICompanyNewsProps {
   title: string;
   newsItems: INewsItem[];
-  autoScroll?: boolean;
-  autoScrollInterval?: number;
-  itemsToShow?: number;
-  showDots?: boolean;
-  showArrows?: boolean;
-  context: WebPartContext;
+  itemsToShow: number;
+  autoScroll: boolean;
+  autoScrollInterval: number;
+  showDots: boolean;
+  context: any;
 }
 
 export interface INewsItem {
+  name?: string; // make it optional
   id: string;
   title: string;
   author: string;
   date: string;
   imageUrl: string;
   readMoreUrl: string;
-  shareUrl: string;
+  shareUrl?: string; // ✅ Made optional with ?
+  
 }

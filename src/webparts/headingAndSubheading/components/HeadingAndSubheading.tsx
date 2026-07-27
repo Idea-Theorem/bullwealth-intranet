@@ -15,9 +15,9 @@ export default class HeadingAndSubheading extends React.Component<IHeadingAndSub
       <section className={`${styles.headingAndSubheading} ${hasTeamsContext ? styles.teams : ''}`}>
         <div className={styles.container}>
           <div className={styles.content}>
-            <h1 className={styles.heading}>{heading || 'Human Resource'}</h1>
+            <h1 className={styles.heading}>{heading}</h1>
             <p className={styles.subheading}>
-              {subheading || 'Below is various documents, training and material for HR'}
+              {subheading}
             </p>
             {/* {userDisplayName && (
               <div className={styles.userInfo}>

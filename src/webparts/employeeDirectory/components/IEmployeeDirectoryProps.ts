@@ -3,19 +3,18 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 export interface IEmployeeDirectoryProps {
   title: string;
   maxEmployeesToShow: number;
-  isDarkTheme: boolean;
-  environmentMessage: string;
-  hasTeamsContext: boolean;
-  userDisplayName: string;
+  orgChartLink: string;
+  listName: string;
+  selectedCompany: string; // ✅ NEW: Pre-selected company filter
   context: WebPartContext;
 }
 
 export interface IEmployee {
   id: number;
   name: string;
-  title: string;
+  title: string; // CompanyName field
   email: string;
   phone: string;
   profileImage: string;
-  department?: string;
+  groupName: string;
 }

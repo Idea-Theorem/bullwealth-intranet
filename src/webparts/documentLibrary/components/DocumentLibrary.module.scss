@@ -26,8 +26,8 @@
 
 /* Main Title Header */
 .mainHeader {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 0px;
+  padding-bottom: 0px;
   border-bottom: 0px solid #e1dfdd;
 }
 
@@ -40,7 +40,7 @@
     margin: 0;
     padding: 0px;
     transition: all .2s ease;
-    font-family: Calibri;
+    //font-family: Calibri;
 }
 
 .mainTitle:hover {
@@ -80,7 +80,7 @@
     font-size: 26px;
     font-weight: 700;
     margin: 0;
-    font-family: Calibri;
+    //font-family: Calibri;
 }
 
 .viewAllButton {
@@ -145,15 +145,12 @@
 .documentTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #323130;
+  color: #000;
   margin: 0 0 12px 0;
-  line-height: 1.4;
+  line-height: 1.5;
   cursor: pointer;
   transition: color 0.2s ease;
-}
-
-.documentTitle:hover {
-  color: #0078d4;
+      font-weight: 700;
 }
 
 .documentMeta {
@@ -166,8 +163,9 @@
 .documentDescription {
   font-size: 14px;
   color: #323130;
+ // @include calibri-body; 
   margin: 0;
-  line-height: 1.5;
+  line-height: 25px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -371,7 +369,8 @@
     border: 2px solid #E5E6EB;
     border-radius: 2px;
     cursor: pointer;
-    display: flex;
+   // display: flex;
+   display: none;
     flex-shrink: 0;
     height: 14px;
     justify-content: center;
@@ -883,178 +882,7 @@
   }
 }
 
-/* Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  .documentLibrary {
-    background: #1f1f1f;
-    color: #ffffff;
-  }
-  
-  .folderSection {
-    border-left-color: #106ebe;
-  }
-  
-  .folderTitle {
-    color: #ffffff;
-  }
-  
-  .documentCard {
-    background: #2d2d2d;
-    border-color: #3c3c3c;
-  }
-  
-  .documentCard:hover {
-    border-color: #106ebe;
-    box-shadow: 0 4px 12px rgba(16, 110, 190, 0.2);
-  }
-  
-  .documentTitle {
-    color: #ffffff;
-  }
-  
-  .documentTitle:hover {
-    color: #106ebe;
-  }
-  
-  .documentMeta {
-    color: #b3b3b3;
-  }
-  
-  .documentDescription {
-    color: #e1e1e1;
-  }
-  
-  .cardActionButton {
-    background: #2d2d2d;
-    border-color: #3c3c3c;
-    color: #b3b3b3;
-  }
-  
-  .cardActionButton:hover {
-    border-color: #106ebe;
-    background: #1a3a5c;
-    color: #106ebe;
-  }
-  
-  .header h2 {
-    color: #ffffff;
-  }
-  
-  .description {
-    color: #b3b3b3;
-  }
-  
-  .backIcon {
-    color: #b3b3b3;
-  }
-  
-  .backIcon:hover {
-    color: #ffffff;
-    background: #3c3c3c;
-  }
-  
-  .sectionTitle {
-    color: #ffffff;
-  }
-  
-  .documentsTable {
-    background: #1f1f1f;
-    border-color: #3c3c3c;
-  }
-  
-  .tableHeader {
-    background: #2d2d2d;
-    border-bottom-color: #3c3c3c;
-  }
-  
-  .headerCell {
-    color: #ffffff;
-  }
-  
-  .headerCell:hover {
-    background: #3c3c3c;
-  }
-  
-  .sortIcon {
-    color: #b3b3b3;
-  }
-  
-  .tableBody {
-    background: #1f1f1f;
-  }
-  
-  .tableRow {
-    border-bottom-color: #2d2d2d;
-  }
-  
-  .tableRow:hover {
-    background: #2d2d2d;
-  }
-  
-  .selected {
-    background: #1a3a5c !important;
-  }
-  
-  .selected:hover {
-    background: #2d4f73 !important;
-  }
-  
-  .checkbox {
-    border-color: #b3b3b3;
-    background: transparent;
-  }
-  
-  // .checkbox:hover {
-  //   border-color: #106ebe;
-  // }
-  
-  .selected .checkbox {
-    background: #42b574;
-    border-color: #42b574
-  }
-  
-  .fileIcon {
-    color: #b3b3b3;
-  }
-  
-  .fileName {
-    color: #106ebe;
-  }
-  
-  .fileName:hover {
-    color: #4fa8d8;
-  }
-  
-  .dataCell {
-    color: #e1e1e1;
-  }
-  
-  .moreButton:hover {
-    background: #3c3c3c;
-  }
-  
-  .moreButton:active {
-    background: #4a4a4a;
-  }
-  
-  .moreButton i {
-    color: #b3b3b3;
-  }
-  
-  .noDocuments {
-    background: #2d2d2d;
-    border-color: #3c3c3c;
-    color: #b3b3b3;
-  }
-  
-  .noDocuments p:last-child {
-    color: #8a8a8a;
-  }
-  
-  .noDocumentsIcon {
-    color: #5c5c5c;
-  }
-}
+
 
 
 /* Breadcrumb and Subtitle Styles */
